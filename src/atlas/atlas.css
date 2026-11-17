@@ -1,4 +1,7 @@
 /* Brain atlas workspace. The specimen dominates; controls sit quietly at the edges. Tokens from styles.css. */
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
 .atlas { position: relative; display: grid; grid-template-columns: 1fr; height: 100%; min-height: 0; background: var(--surface-workspace); }
 .atlas.has-selection { grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 420px); }
 .atlas-stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; container: stage / inline-size; }
@@ -154,4 +157,5 @@
   .atlas.has-selection .atlas-gizmo { width: 60px; height: 60px; }
   .atlas-hint { top: 56px; font-size: 12.5px; }
   .tb-btn { height: 34px; }
+}
 }

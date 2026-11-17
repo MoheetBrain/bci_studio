@@ -1,0 +1,46 @@
+/* Research workspace. */
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
+.research h3 { margin: 16px 0 6px; font-size: 14px; }
+.rs-note { margin-top: 8px !important; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-raised); font-size: 13.5px; max-width: 90ch; }
+.searchbar { display: flex; gap: 8px; }
+.searchbar input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-panel); color: var(--fg); font: inherit; font-size: 15px; }
+.searchbar input:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.searchbar .btn-primary { height: 40px; padding: 0 18px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.svc { margin-top: 8px !important; font-size: 12.5px; color: var(--fg-tertiary); }
+.results { margin-top: 14px; }
+.found { font-size: 13.5px; color: var(--fg-secondary); }
+.unsupported { padding: 10px 12px; border-radius: 9px; border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); background: color-mix(in srgb, var(--warn) 9%, var(--surface-panel)); font-size: 14px; }
+.hits { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+.hit { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); display: grid; gap: 4px; }
+.hit-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rs-kind, .priv, .side { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 650; border: 1px solid currentColor; white-space: nowrap; }
+.rs-kind { color: var(--fg-secondary); }
+.rs-kind-RTL-source { color: var(--ok); }
+.rs-kind-project-document { color: var(--info); }
+.rs-kind-studio-card { color: var(--accent); }
+.rs-kind-published-abstract { color: var(--ev-scripted); }
+.rs-kind-user-supplied-source { color: var(--copper-hi); }
+.priv { color: var(--fg-tertiary); border-style: dashed; }
+.side { color: var(--warn); }
+.hit-title { font-size: 14px; }
+.hit-heading { font-size: 12.5px; color: var(--fg-secondary); }
+.hit-snip { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.hit-snip mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; padding: 0 1px; border-radius: 2px; }
+.hit-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 12px; }
+.loc { color: var(--fg-secondary); }
+.passage { margin: 6px 0 0; padding: 10px; border-radius: 8px; background: var(--surface-sunken); font: 12px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; }
+.inv { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 10px; }
+.inv th { text-align: left; font-weight: 600; color: var(--fg-tertiary); padding: 3px 10px 3px 0; border-bottom: 1px solid var(--border); }
+.inv td { padding: 3px 10px 3px 0; border-bottom: 1px solid var(--border-soft); vertical-align: top; overflow-wrap: anywhere; }
+.inv .num { text-align: right; font-variant-numeric: tabular-nums; }
+.research details { border-top: 1px solid var(--border-soft); padding-top: 8px; margin-top: 6px; }
+.research summary { cursor: pointer; font-weight: 600; }
+.missing { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13.5px; }
+.st-miss { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 650; border: 1px solid currentColor; color: var(--warn); margin-left: 4px; }
+@media (max-width: 760px) {
+  .inv th:nth-child(2), .inv td:nth-child(2) { display: none; }
+}
+}

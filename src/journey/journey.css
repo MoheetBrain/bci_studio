@@ -1,4 +1,7 @@
 /* Signal journey + neural interface lessons. Tokens from styles.css. */
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
 .jr-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .jr-header .lede { margin-top: 6px; }
 .btn-link.inline { display: inline; margin: 0; font: inherit; text-decoration: underline; cursor: pointer; }
@@ -107,4 +110,5 @@ legend { padding: 0 6px 0 0; font-size: 12px; font-weight: 650; color: var(--fg-
   .prm { grid-template-columns: 84px minmax(0, 1fr) 84px; }
   .wave figcaption { padding-left: 0; }
   .cons .why { display: none; }
+}
 }

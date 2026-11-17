@@ -1,0 +1,108 @@
+# Retrieval evaluation — 2026-11-17T11:38:24.336Z
+Index: 51 documents, 360 passages (built 2026-11-17T11:38:14.233Z). Private abstracts present: true.
+Method: SQLite FTS5 keyword retrieval (porter stemming, BM25, heading ×3), domain synonyms, and per-side retrieval for "A versus B" questions.
+No embeddings and no language model. Results are passages with locations, not answers.
+
+## HELD-OUT set (tests/corpus-heldout.json)
+Written after the retrieval rules were frozen; never used to adjust them.
+Answerable: expected document in the top 3: 14/15  (top-1: 14/15; skipped for missing private material: 0)
+Unanswerable correctly reported as unsupported: 5/5
+
+✓ reset synchroniser
+    rank 1, mode all; top 3: rtl:hbci02_chip_top.v, rtl:hbci02_chip_top.v, chip:docs/GAP_REGISTER.md
+✓ refractory counter hysteresis re-arm
+    rank 1, mode all; top 3: chip:README.md, rtl:hbci_event_core.v
+✓ cortex basal ganglia loops through the thalamus
+    rank 1, mode all; top 3: card:regions, card:regions
+✓ split brain corpus callosum
+    rank 1, mode all; top 3: abs:gazzaniga2000
+✓ probe with 384 channels and 960 sites
+    rank 1, mode all; top 3: card:stages, abs:jun2017
+✓ thermal noise of the electrode impedance
+    rank 1, mode all; top 3: card:stages, chip:docs/BIOHYBRID_INTERFACES.md
+✓ speech neuroprosthesis words per minute
+    rank 1, mode all; top 3: abs:willett2023
+✓ built-in self-test signature
+    rank 1, mode all; top 3: rtl:hbci02_digital_top.v, chip:docs/TEST_PLAN.md, rtl:hbci02_digital_top.v
+✗ RAW versus FEATURE records
+    rank 4, mode comparison; top 3: chip:BUILD_STATUS.md, chip:docs/RESEARCH_AUDIT.md, chip:docs/AI_DECODER.md
+✓ Intan RHD2216 price
+    rank 1, mode all; top 3: chip:docs/AFE_ADC_DECISION.md, chip:docs/FABRICATION_READINESS.md, chip:docs/AFE_ADC_DECISION.md
+✓ DRC and LVS results of the layout
+    rank 1, mode all; top 3: chip:BUILD_STATUS.md, chip:docs/PHYSICAL.md, chip:README.md
+✓ window energy sum of squares
+    rank 1, mode all; top 3: card:stages
+✓ fear conditioning
+    rank 1, mode all; top 3: card:regions, abs:ledoux2000
+✓ aliasing above half the sample rate
+    rank 1, mode all; top 3: card:stages
+✓ hippocampus versus amygdala
+    rank 1, mode comparison; top 3: card:regions, card:regions, card:regions
+✓ [unanswerable] optogenetics channelrhodopsin stimulation wavelength
+    mode any, coverage 0.25; top 3: card:regions, chip:docs/AFE_ADC_DECISION.md, chip:docs/BIOHYBRID_INTERFACES.md
+✓ [unanswerable] transformer attention heads language model fine-tuning
+    mode any, coverage 0.29; top 3: abs:gazzaniga2000, chip:docs/UI_V04_STATUS.md, chip:docs/ML_EVALUATION.md
+✓ [unanswerable] MRI gradient coil slew rate
+    mode any, coverage 0.40; top 3: chip:BUILD_STATUS.md, abs:desikan2006, card:regions
+✓ [unanswerable] serotonin reuptake inhibitor dosage
+    mode none, coverage 0.00; top 3: (none)
+✓ [unanswerable] electrode impedance spectroscopy Randles circuit fit
+    mode any, coverage 0.50; top 3: chip:docs/BIOHYBRID_INTERFACES.md, chip:docs/BIOHYBRID_INTERFACES.md, chip:docs/BIOHYBRID_INTERFACES.md
+
+## DEVELOPMENT set (tests/corpus-eval.json)
+Visible during development; a perfect score here is expected and proves little.
+Answerable: expected document in the top 3: 20/20  (top-1: 16/20; skipped for missing private material: 0)
+Unanswerable correctly reported as unsupported: 5/5
+
+✓ primary motor cortex
+    rank 1, mode all; top 3: card:regions, card:regions, abs:geyer1996
+✓ Is the precentral gyrus the same as M1?
+    rank 1, mode all; top 3: card:regions, abs:gordon2023
+✓ motor hand area knob landmark
+    rank 1, mode all; top 3: abs:yousry1997
+✓ AFE versus ADC
+    rank 1, mode comparison; top 3: card:stages, card:stages, chip:docs/ARCHITECTURE.md
+✓ Which external analogue front end is recommended for the first test chip?
+    rank 2, mode any; top 3: card:stages, chip:docs/AFE_ADC_DECISION.md, chip:docs/AFE_ADC_DECISION.md
+✓ What kinds of multiplexer are in the recording chain?
+    rank 3, mode any; top 3: rtl:hbci_readout_core.v, chip:docs/VERIFICATION.md, card:stages
+✓ record multiplexer arbiter FIFO drops
+    rank 1, mode all; top 3: rtl:hbci_readout_core.v, rtl:hbci_readout_core.v, chip:docs/V03_READOUT_SPEC.md
+✓ u_state versus u_fstate
+    rank 2, mode comparison; top 3: chip:docs/SEMICONDUCTOR_MICROSCOPE.md, rtl:hbci_event_core.v, rtl:hbci_readout_core.v
+✓ per-channel feature register file
+    rank 2, mode all; top 3: chip:docs/V03_READOUT_SPEC.md, rtl:hbci_readout_core.v, rtl:hbci_event_core.v
+✓ Which hardware is implemented and which is only conceptual?
+    rank 1, mode all; top 3: chip:BUILD_STATUS.md, card:stages
+✓ has the chip been fabricated or measured
+    rank 1, mode all; top 3: chip:README.md, abs:jun2017, chip:docs/PHYSICAL.md
+✓ on-chip decoder model words CRC
+    rank 1, mode all; top 3: chip:docs/AI_DECODER.md, rtl:hbci_ai_decoder.v, chip:docs/AI_DECODER.md
+✓ band-pass filter 70-150 Hz coefficients
+    rank 1, mode all; top 3: card:stages
+✓ sample stream SPI frame parity
+    rank 1, mode all; top 3: rtl:hbci02_chip_top.v, chip:docs/TEST_PLAN.md, rtl:hbci02_chip_top.v
+✓ How many neurons can one tetrode record?
+    rank 1, mode all; top 3: abs:henze2000
+✓ extracellular spike amplitude intracellular action potential
+    rank 1, mode all; top 3: abs:henze2000
+✓ microstimulation tactile sensations hand
+    rank 1, mode all; top 3: abs:flesher2016, card:regions
+✓ handwriting brain-to-text characters per minute
+    rank 1, mode all; top 3: abs:willett2021
+✓ event-only output lossy raw waveform
+    rank 1, mode all; top 3: chip:README.md, chip:docs/VERIFICATION.md, rtl:hbci_event_core.v
+✓ stimulation write path implemented
+    rank 1, mode all; top 3: chip:docs/BIOHYBRID_INTERFACES.md, chip:docs/AFE_ADC_DECISION.md
+✓ [unanswerable] microtubule quantum gravity consciousness collapse
+    mode any, coverage 0.20; top 3: chip:docs/BIOHYBRID_INTERFACES.md
+✓ [unanswerable] Neuralink battery capacity milliamp hours
+    mode any, coverage 0.20; top 3: chip:docs/BIOHYBRID_INTERFACES.md, abs:gazzaniga2000, chip:docs/FABRICATION_READINESS.md
+✓ [unanswerable] dopamine reward prediction error ventral tegmental
+    mode any, coverage 0.33; top 3: card:regions, chip:docs/TEST_PLAN.md, chip:docs/HBCI02_REPORT.md
+✓ [unanswerable] hemodynamic response function BOLD deconvolution
+    mode any, coverage 0.40; top 3: abs:crone1998, card:regions, abs:maynard1997
+✓ [unanswerable] zzqx flurbish
+    mode none, coverage 0.00; top 3: (none)
+
+Semantic (embedding) retrieval was NOT added: no measurement here shows it would beat this baseline, and the brief asks for it only on that evidence.

@@ -1,4 +1,7 @@
 /* Citations, claims and evidence tags (shared). Uses the studio tokens from styles.css. */
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
 .evtag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; font-size: 11px; font-weight: 650; letter-spacing: .02em; white-space: nowrap; background: var(--surface-panel); }
 .evtag-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .evtag-measured { color: var(--ok); }
@@ -30,4 +33,4 @@ a.cite:hover, button.cite:hover { border-color: var(--accent); color: var(--acce
 .sourcelist .src-title { font-style: italic; }
 .sourcelist .src-reading { display: block; color: var(--fg-tertiary); font-size: 11.5px; }
 .sourcelist a { color: var(--accent); }
-.muted { color: var(--fg-tertiary); }
+}

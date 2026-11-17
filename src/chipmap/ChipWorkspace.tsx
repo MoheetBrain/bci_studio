@@ -10,6 +10,7 @@ import { STAGES } from '../journey/stages';
 import { useShell } from '../shell/shellStore';
 import { useAtlas } from '../atlas/atlasStore';
 import { EvidenceTag } from '../science/Cite';
+import '../journey/journey.css';
 import './chip.css';
 
 const ChipStudio = lazy(() => import('../App'));

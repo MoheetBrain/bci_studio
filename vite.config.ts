@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { corpusSearch } from './server/searchPlugin.ts';
 
 // SHA-256 over the concatenated rtl/*.v (sorted, same as `cat rtl/*.v | shasum -a 256`) at server start /
 // build time. The studio compares it with the hash recorded in the generated artifacts to flag stale traces
@@ -19,7 +20,7 @@ function rtlSha256(): string {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), corpusSearch(__dirname)],
   define: { __RTL_SHA256__: JSON.stringify(rtlSha256()) },
   // the shared system model is imported from ./chip/system (snapshot of the chip repository)
   server: { host: '127.0.0.1' },

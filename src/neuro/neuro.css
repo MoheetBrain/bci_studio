@@ -1,4 +1,7 @@
 /* Neural interface lesson: scale ladder + schematics. */
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
 .scales { display: flex; align-items: stretch; gap: 0; }
 .scales > .scale-card { margin: 0; flex: 1 1 0; min-width: 0; }
 .scales > .scale-card:nth-of-type(3) { flex-grow: 1.15; }
@@ -50,4 +53,5 @@
   .scale-jump, .scale-jump:nth-of-type(2) { display: grid; padding: 4px 0; }
   .scale-jump span { writing-mode: horizontal-tb; transform: none; padding: 3px 10px; }
   .neuro-grid { grid-template-columns: 1fr; }
+}
 }

@@ -17,7 +17,8 @@
     "check": "npm run typecheck && npm test && npm run check:rtl",
     "chip:extract": "node tools/chip/extract-hierarchy.mjs",
     "corpus:abstracts": "node --disable-warning=ExperimentalWarning tools/corpus/fetch-abstracts.mjs",
-    "check:rtl": "node scripts/run-checks.mjs"
+    "check:rtl": "node scripts/run-checks.mjs",
+    "corpus:build": "node --disable-warning=ExperimentalWarning tools/corpus/build-index.mjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.0",
@@ -30,6 +31,7 @@
     "zustand": "4.5.5"
   },
   "devDependencies": {
+    "@types/node": "24.19.2",
     "@types/react": "18.3.11",
     "@types/react-dom": "18.3.1",
     "@types/three": "0.169.0",

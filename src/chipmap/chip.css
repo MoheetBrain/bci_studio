@@ -1,5 +1,7 @@
 /* "Our chip" map. */
-@import '../journey/journey.css';
+/* Scoped to the new shell, and stopped at the embedded chip studio, so these rules never restyle the existing
+   studio and its global classes (.btn, .kind, .sw, .muted …) never leak in here unopposed. */
+@scope (.shell) to (.chip-studio-body) {
 .chip h3 { margin: 12px 0 4px; font-size: 13px; color: var(--fg-secondary); }
 .layer-tag { display: inline-block; margin: 0 0 8px; padding: 2px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 650; letter-spacing: .01em; }
 .layer-tag.l1 { background: color-mix(in srgb, var(--ok) 14%, var(--surface-panel)); color: var(--ok); }
@@ -69,11 +71,6 @@
 .out { margin: 6px 0 0; padding: 6px 10px; border-radius: 7px; background: var(--surface-sunken); font: 11.5px/1.5 var(--mono); white-space: pre-wrap; }
 .checks .meta { font-size: 12px; }
 
-.chip-studio { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
-.chip-studio-bar { display: flex; align-items: center; gap: 12px; padding: 5px 12px; background: var(--surface-panel); border-bottom: 1px solid var(--border); font-size: 12.5px; }
-.chip-studio-body { position: relative; min-height: 0; }
-.chip-studio-body > .app { position: absolute; inset: 0; height: auto; }
-
 @media (max-width: 1100px) {
   .chip-grid { grid-template-columns: 1fr; }
   .chip-insp { position: static; }
@@ -83,3 +80,10 @@
   .concept-quote { grid-column: 1; }
   .paths .btn { height: 34px; }
 }
+}
+
+
+.chip-studio { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.chip-studio-bar { display: flex; align-items: center; gap: 12px; padding: 5px 12px; background: var(--surface-panel); border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.chip-studio-body { position: relative; min-height: 0; }
+.chip-studio-body > .app { position: absolute; inset: 0; height: auto; }
