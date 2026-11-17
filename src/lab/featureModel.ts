@@ -19,7 +19,12 @@ export const DEFAULT_FEATURE: FeatureConfig = {
 const sat16 = (v: number) => Math.max(-32768, Math.min(32767, v));
 const SAT32 = 4294967295;
 
-interface FState { x1: number; x2: number; y1: number; y2: number; acc: bigint; cnt: number; sat: boolean }
+export interface FState { x1: number; x2: number; y1: number; y2: number; acc: bigint; cnt: number; sat: boolean }
+
+/** Fresh per-channel FEATURE state (reset values of hbci_feature_state). */
+export function freshFeature(): FState {
+  return { x1: 0, x2: 0, y1: 0, y2: 0, acc: 0n, cnt: 0, sat: false };
+}
 
 export interface FeatStep { y: number; ysat: 0 | 1; acc: number; cnt: number; done: 0 | 1; energy: number; esat: 0 | 1 }
 

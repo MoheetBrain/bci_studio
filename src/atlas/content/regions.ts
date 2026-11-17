@@ -41,8 +41,8 @@ export const REGION_CARDS: RegionCard[] = [
     summarySources: ['penfield1937', 'geyer1996'],
     caution: {
       title: 'Gyrus ≠ primary motor cortex',
-      body: 'M1 (Brodmann area 4) is defined by its cell architecture, not by the fold. In humans it lies mostly on the anterior wall of the central sulcus and reaches the exposed crown mainly near the midline; much of the visible, more anterior surface of this gyrus is premotor cortex (area 6). This studio therefore labels the mesh “precentral gyrus” and treats it as a bounded approximation: the gyrus that contains M1, limited behind by the central sulcus and continued medially by the paracentral lobule.',
-      sources: ['geyer1996', 'rademacher2001'],
+      body: 'M1 corresponds to Brodmann’s cytoarchitectural area 4: it is defined by its cell architecture, not by the fold, and its borders vary considerably between brains and between hemispheres. Standard anatomical descriptions place area 4 mostly on the front wall of the central sulcus, with premotor cortex (area 6) on much of the exposed surface of this gyrus. This studio therefore labels the mesh “precentral gyrus” and treats it as a bounded approximation: the gyrus that contains M1, limited behind by the central sulcus and continued medially by the paracentral lobule.',
+      sources: ['geyer1996', 'rademacher2001', 'kandel2021'],
     },
     location: [
       { text: 'In this atlas it is a gyral label (value 1024 on the left, 2024 on the right) drawn on one volunteer’s MRI. The central sulcus behind it, the precentral sulcus in front of it and the paracentral lobule are separate selectable structures.', kind: 'observed', sources: ['spl-atlas'] },
@@ -54,12 +54,12 @@ export const REGION_CARDS: RegionCard[] = [
       { text: 'The tidy “homunculus” is a simplification: precision imaging reports effector regions for foot, hand and mouth alternating with regions linked to whole-body action planning.', kind: 'background', sources: ['gordon2023'] },
     ],
     bci: [
-      { text: 'Microelectrode arrays implanted in the hand and arm area of the precentral gyrus have let people with paralysis move cursors and robotic arms and produce text from attempted handwriting; arrays in its ventral part have decoded attempted speech.', kind: 'background', sources: ['hochberg2006', 'hochberg2012', 'collinger2013', 'willett2021', 'willett2023'] },
-      { text: 'Those systems record extracellular spiking from many electrodes and map it to intended movement with a decoder trained for that person and task. They decode attempted movement; they do not read arbitrary thoughts.', kind: 'background', sources: ['hochberg2006', 'willett2021'] },
+      { text: 'Microelectrode arrays implanted in motor cortex have let people with paralysis move a computer cursor, control robotic and prosthetic arms, and produce text from attempted handwriting (90 characters per minute in one participant); intracortical arrays have also decoded attempted speech.', kind: 'background', sources: ['hochberg2006', 'hochberg2012', 'collinger2013', 'willett2021', 'willett2023'] },
+      { text: 'Those systems record the spiking of a local population of neurons through an array of about a hundred microelectrodes and map it to intended movement with a trained decoder. They decode attempted movement; they do not read arbitrary thoughts.', kind: 'background', sources: ['hochberg2006', 'hochberg2012', 'willett2021'] },
     ],
     limits: [
       ATLAS_LIMIT,
-      { text: 'The border of area 4 varies between individuals and between hemispheres and cannot be read off the folds.', kind: 'background', sources: ['rademacher2001'] },
+      { text: 'In eleven post-mortem brains the borders of area 4 varied considerably between hemispheres and between brains, so the area cannot be read off the folds of a single atlas.', kind: 'background', sources: ['rademacher2001'] },
       NO_FUNCTION_MAP,
       { text: 'Educational material only: not a surgical plan and not a guide to electrode placement.', kind: 'assumption', sources: [] },
     ],
@@ -68,15 +68,16 @@ export const REGION_CARDS: RegionCard[] = [
   {
     key: 'central sulcus',
     summary: 'The deep groove separating the frontal lobe (in front) from the parietal lobe (behind). Primary motor cortex lies on its front wall, primary somatosensory cortex on its back wall.',
-    summarySources: ['geyer1996', 'geyer1999'],
+    summarySources: ['geyer1999', 'kandel2021'],
     location: [
       { text: 'In this atlas the sulcus is a surface drawn inside the fold. It exists only as a model: its label value has no voxels in the atlas label volume, so it could not be cross-checked against the volume.', kind: 'observed', sources: ['spl-atlas'] },
     ],
     functions: [
-      { text: 'Area 4 (primary motor) occupies the anterior wall; areas 3a and 3b (primary somatosensory) lie in the fundus and on the posterior wall.', kind: 'background', sources: ['geyer1996', 'geyer1999'] },
+      { text: 'Somatosensory area 3a lies in the fundus (floor) of the central sulcus and area 3b on the front bank of the postcentral gyrus, which is the sulcus’s back wall.', kind: 'background', sources: ['geyer1999'] },
+      { text: 'Primary motor cortex (area 4, itself divisible into an anterior and a posterior part) lies on the other side, in front of the sulcus.', kind: 'background', sources: ['geyer1996', 'kandel2021'] },
     ],
     bci: [
-      { text: 'Much of M1 is buried in this sulcus, which is one reason arrays placed on the exposed gyral crown sample only part of the motor map.', kind: 'background', sources: ['geyer1996', 'rademacher2001'] },
+      { text: 'Standard descriptions place much of area 4 inside this sulcus, out of reach of electrodes that sit on the exposed surface of the gyrus.', kind: 'background', sources: ['kandel2021'] },
     ],
     limits: [ATLAS_LIMIT, NO_FUNCTION_MAP],
   },
@@ -89,10 +90,10 @@ export const REGION_CARDS: RegionCard[] = [
     ],
     functions: [
       { text: 'Stimulation here evokes sensations referred to the opposite side of the body, in a medial-to-lateral order resembling the motor map.', kind: 'background', sources: ['penfield1937'] },
-      { text: 'Its anterior part comprises cytoarchitectonic areas 3a, 3b and 1.', kind: 'background', sources: ['geyer1999'] },
+      { text: 'Cytoarchitectonic area 3b lies on its front bank and area 1 on its crown; area 3a lies in the floor of the central sulcus.', kind: 'background', sources: ['geyer1999'] },
     ],
     bci: [
-      { text: 'In a research participant, microstimulation through electrodes in the hand area of somatosensory cortex evoked tactile sensations felt in the hand — the “write” direction of a bidirectional interface, demonstrated for touch only.', kind: 'background', sources: ['flesher2016'] },
+      { text: 'In one person with long-term spinal cord injury, microstimulation within the hand area of somatosensory cortex evoked tactile sensations perceived as coming from locations on the hand, graded by stimulus amplitude — the “write” direction of a bidirectional interface, shown for touch.', kind: 'background', sources: ['flesher2016'] },
       { text: 'This studio models recording only. It does not control stimulation and makes no claim about writing percepts beyond the cited result.', kind: 'assumption', sources: [] },
     ],
     limits: [ATLAS_LIMIT, NO_FUNCTION_MAP],
@@ -124,7 +125,7 @@ export const REGION_CARDS: RegionCard[] = [
     summary: 'An almond-shaped group of nuclei in the medial temporal lobe involved in learning and expressing emotional responses, studied most thoroughly for fear.',
     summarySources: ['ledoux2000'],
     location: [{ text: 'A subcortical label (18 left, 54 right) in this atlas.', kind: 'observed', sources: ['spl-atlas'] }],
-    functions: [{ text: 'It links sensory inputs to defensive responses in fear conditioning; this is a circuit-level role, not a one-region “emotion centre”.', kind: 'background', sources: ['ledoux2000'] }],
+    functions: [{ text: 'It is an important component of the system that acquires, stores and expresses fear memory in fear conditioning; this is a role within a circuit, not a one-region “emotion centre”.', kind: 'background', sources: ['ledoux2000'] }],
     bci: [],
     limits: [ATLAS_LIMIT, NO_FUNCTION_MAP],
   },
@@ -133,7 +134,7 @@ export const REGION_CARDS: RegionCard[] = [
     summary: 'The largest bundle of nerve fibres connecting the two cerebral hemispheres.',
     summarySources: ['gazzaniga2000'],
     location: [{ text: 'A single midline structure (label 3004) in this atlas.', kind: 'observed', sources: ['spl-atlas'] }],
-    functions: [{ text: 'It carries information between the hemispheres; after surgical section each hemisphere can process information the other cannot access.', kind: 'background', sources: ['gazzaniga2000'] }],
+    functions: [{ text: 'It is the main communication link between the hemispheres; studies of people whose hemispheres were surgically disconnected show how function is divided between them.', kind: 'background', sources: ['gazzaniga2000'] }],
     bci: [],
     limits: [ATLAS_LIMIT],
   },

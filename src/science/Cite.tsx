@@ -65,8 +65,9 @@ export function ClaimList({ claims }: { claims: Claim[] }) {
 }
 
 const READING: Record<Source['reading'], string> = {
-  'metadata-verified': 'Bibliographic record verified (Crossref); text not re-read in this build',
-  'abstract-reviewed': 'Abstract reviewed',
+  'metadata-verified': 'Bibliographic record verified (Crossref); no abstract available, text not read in this build',
+  'abstract-excerpt-reviewed': 'Key sentences of the abstract reviewed in this build',
+  'abstract-reviewed': 'Abstract read in this build; full text not retrieved',
   'section-reviewed': 'Relevant sections reviewed',
   'fully-reviewed': 'Reviewed in full',
   'not-retrieved': 'Not retrieved; cited as general background only',

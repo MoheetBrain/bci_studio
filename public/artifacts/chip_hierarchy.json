@@ -1,0 +1,5494 @@
+{
+ "generatedBy": "tools/chip/extract-hierarchy.mjs",
+ "source": {
+  "repository": "https://github.com/MoheetBrain/Hamiltonian-BCI-Chip",
+  "commit": "207285fcb7153f688751e5234e4b3d9d59025bf9",
+  "commitDate": "2026-10-27T09:59:47Z",
+  "rtlSha256": "13919ab2b8f9aae77b058db5ed29c653b62074fc99d8ead7ea7ad3b5b6b08b62",
+  "files": [
+   "rtl/hbci02_chip_top.v",
+   "rtl/hbci02_digital_top.v",
+   "rtl/hbci_ai_decoder.v",
+   "rtl/hbci_event_core.v",
+   "rtl/hbci_onchip_mlp.v",
+   "rtl/hbci_readout_core.v",
+   "rtl/hbci_v04_digital_top.v"
+  ]
+ },
+ "verification": {
+  "simulator": "Icarus Verilog version 14.0 (devel) (s20260301-617-geed9291c8-dirty)",
+  "ranAt": "2026-10-27T06:22:40+00:00",
+  "lint": {
+   "tool": "Verilator 5.053 devel rev v5.052-501-g770b7d009 (mod)",
+   "warnings": 0,
+   "errors": 0,
+   "messages": []
+  },
+  "suites": 31,
+  "passing": 31
+ },
+ "top": "hbci02_chip_top",
+ "modules": [
+  {
+   "name": "hbci_reset_sync",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 44,
+   "lineEnd": 59,
+   "doc": "Reset synchroniser: asynchronous assertion, release two clock edges after the pin rises, so every flop in the core sees a synchronous release (recovery/ removal timing is then internal to the chip).",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n_in"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rst_n_out"
+    }
+   ],
+   "params": [],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_spi_sync",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 65,
+   "lineEnd": 95,
+   "doc": "SPI mode-0 slave front end: synchronised inputs, sampled bits on SCLK rising edges, output bit changes on SCLK falling edges. Generic: delivers bit events.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sclk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cs_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "mosi"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "active"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "start"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "stop"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rise"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "fall"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "din"
+    }
+   ],
+   "params": [],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_spi_regbus",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 103,
+   "lineEnd": 162,
+   "doc": "Register-bus SPI slave: command byte {wr, addr[6:0]} then 32 data bits. Write: the register write pulses after the 40th bit. Read: the register is read (combinational reg_rdata) when the command byte completes and shifted out MSB first on the following falling edges.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sclk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cs_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "mosi"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "miso"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "reg_wr"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "reg_addr"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "reg_wdata"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "reg_rdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_spi_frames"
+    }
+   ],
+   "params": [],
+   "instances": [
+    {
+     "name": "u_sync",
+     "module": "hbci_spi_sync",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 117,
+     "parameters": null
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_spi_samples",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 167,
+   "lineEnd": 219,
+   "doc": "Sample-stream SPI slave: 24-bit frames {ch[2:0], 4'b0, parity, sample[15:0]}.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sclk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cs_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "mosi"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "in_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "in_sample"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_parity_err"
+    }
+   ],
+   "params": [
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_sync",
+     "module": "hbci_spi_sync",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 182,
+     "parameters": null
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_rec_serial",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 225,
+   "lineEnd": 265,
+   "doc": "Record serialiser: pops one record, shifts 96 bits MSB first at one bit per clk with rec_sfrm high, then pops the next.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_ready"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SEQ_W-1:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_data"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "sdo"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "sfrm"
+    }
+   ],
+   "params": [
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci02_chip_top",
+   "file": "rtl/hbci02_chip_top.v",
+   "lineStart": 270,
+   "lineEnd": 344,
+   "doc": "Chip top",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "spi_sclk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "spi_cs_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "spi_mosi"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "spi_miso"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "smp_sclk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "smp_cs_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "smp_mosi"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_sdo"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_sfrm"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_strobe"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "pred_class"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_irq"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "FIFO_LOG2",
+     "default": "4"
+    },
+    {
+     "name": "WIN_W",
+     "default": "10"
+    },
+    {
+     "name": "ACC_W",
+     "default": "48"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    },
+    {
+     "name": "NH",
+     "default": "4"
+    },
+    {
+     "name": "NO",
+     "default": "2"
+    },
+    {
+     "name": "PRED_LOG2",
+     "default": "2"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_rst",
+     "module": "hbci_reset_sync",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 300,
+     "parameters": null
+    },
+    {
+     "name": "u_spi",
+     "module": "hbci_spi_regbus",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 316,
+     "parameters": null
+    },
+    {
+     "name": "u_smp",
+     "module": "hbci_spi_samples",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 321,
+     "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W)"
+    },
+    {
+     "name": "u_core",
+     "module": "hbci02_digital_top",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 331,
+     "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2), .WIN_W(WIN_W), .ACC_W(ACC_W), .WIN_IDX_W(WIN_IDX_W), .NH(NH), .NO(NO), .PRED_LOG2(PRED_LOG2)"
+    },
+    {
+     "name": "u_rec",
+     "module": "hbci_rec_serial",
+     "file": "rtl/hbci02_chip_top.v",
+     "line": 339,
+     "parameters": ".CH_W(CH_W), .SEQ_W(SEQ_W), .TS_W(TS_W)"
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci02_digital_top",
+   "file": "rtl/hbci02_digital_top.v",
+   "lineStart": 22,
+   "lineEnd": 315,
+   "doc": "",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "reg_wr"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "reg_addr"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "reg_wdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "reg_rdata"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "in_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "in_sample"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SEQ_W-1:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_data"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_strobe"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "pred_class_out"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_irq"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "FIFO_LOG2",
+     "default": "4"
+    },
+    {
+     "name": "WIN_W",
+     "default": "10"
+    },
+    {
+     "name": "ACC_W",
+     "default": "48"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    },
+    {
+     "name": "NH",
+     "default": "4"
+    },
+    {
+     "name": "NO",
+     "default": "2"
+    },
+    {
+     "name": "PRED_LOG2",
+     "default": "2"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_readout",
+     "module": "hbci_readout_core",
+     "file": "rtl/hbci02_digital_top.v",
+     "line": 155,
+     "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2), .WIN_W(WIN_W), .ACC_W(ACC_W), .WIN_IDX_W(WIN_IDX_W)"
+    },
+    {
+     "name": "u_ai",
+     "module": "hbci_ai_decoder",
+     "file": "rtl/hbci02_digital_top.v",
+     "line": 204,
+     "parameters": ".NH(NH), .NO(NO), .TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W), .PRED_LOG2(PRED_LOG2)"
+    },
+    {
+     "name": "u_bist",
+     "module": "hbci_bist",
+     "file": "rtl/hbci02_digital_top.v",
+     "line": 231,
+     "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .WIN_IDX_W(WIN_IDX_W)"
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_bist",
+   "file": "rtl/hbci02_digital_top.v",
+   "lineStart": 328,
+   "lineEnd": 429,
+   "doc": "Built-in self-test: deterministic xorshift32 sample source (one sample every 4 cycles, channels round-robin, len samples) and a MISR over every record and prediction. The expected signature for a configuration comes from the Python golden models (scripts/check_top.py --bist), so this is a known-answer test of the whole DSP + AI path that needs no external stimulus. fold(sig, w) = rotl(sig, 5) ^ w record: sig = fold(fold(fold(sig, data), ts), {type, ch, flags, seq}) prediction: sig = fold(fold(fold(fold(sig, margin), ts), {frame_id, seq}), {class, flags}) A record and a prediction in the same cycle fold the record first.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "start"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clear"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "len"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "running"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "smp_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "smp_ch"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "smp_sample"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SEQ_W-1:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_data"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "pred_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_pop"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "pred_class"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "pred_margin"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "pred_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "pred_frame_id"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "pred_seq"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "pred_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "signature"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "count"
+    }
+   ],
+   "params": [
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_log_energy",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 34,
+   "lineEnd": 56,
+   "doc": "64*log2(e) with a 6-bit linear mantissa (Mitchell): l = 64*n + m, n = index of the leading one, m = the six bits below it. l = 0 for e = 0. Combinational.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "e"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[10:0]",
+     "name": "l"
+    }
+   ],
+   "params": [],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_feat_quant",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 62,
+   "lineEnd": 75,
+   "doc": "Feature quantiser (docs/AI_DECODER.md 3.1): x = sat_int8((l - centre) >>> qshift), 0 when the channel is not required. Combinational.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "energy"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[11:0]",
+     "name": "centre"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "qshift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enabled"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[10:0]",
+     "name": "l"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[7:0]",
+     "name": "x"
+    }
+   ],
+   "params": [],
+   "instances": [
+    {
+     "name": "u_log",
+     "module": "hbci_log_energy",
+     "file": "rtl/hbci_ai_decoder.v",
+     "line": 70,
+     "parameters": null
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_frame_collector",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 82,
+   "lineEnd": 190,
+   "doc": "Frame collector (docs/AI_DECODER.md section 2). One feature per cycle at most. A frame = one quantised feature from every channel in ch_mask, all with the same window index. Every abandoned frame and discarded feature is counted.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sync"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "ch_mask"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "frame_span"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "feat_ch"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[7:0]",
+     "name": "feat_x"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "feat_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_sat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "feat_win"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "frame_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "frame_id"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "frame_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "frame_x"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "frame_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_frames"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_incomplete"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_dup"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_late"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_span"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "last_missing"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "f_open"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "f_seen"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "f_id"
+    }
+   ],
+   "params": [
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_model_store",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 199,
+   "lineEnd": 345,
+   "doc": "Model store: 46 x 32-bit parameter words (docs/AI_DECODER.md 3.3), bus read and write, CRC-32 verification FSM, and the valid/error/busy/rejected status. Rows beyond NH/NO are not stored and read back as 0, so a model that does not fit this configuration fails its CRC check. Parameters are kept as flat vectors; word w of the W1 region is bits [32w +: 32] of w1_flat, etc.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ai_en"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "addr"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "wdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rdata"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "crc_we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "crc_wdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "crc_expected"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "verify"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clear_rej"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "error"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "busy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rejected"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_wr_rej"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[NH*64-1:0]",
+     "name": "w1_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[NO*64-1:0]",
+     "name": "w2_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[NH*32-1:0]",
+     "name": "b1_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[NO*32-1:0]",
+     "name": "b2_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[95:0]",
+     "name": "centre_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[23:0]",
+     "name": "qshift_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[4:0]",
+     "name": "s1"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "linear"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "model_id"
+    }
+   ],
+   "params": [
+    {
+     "name": "NH",
+     "default": "4"
+    },
+    {
+     "name": "NO",
+     "default": "2"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_mlp_engine",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 351,
+   "lineEnd": 522,
+   "doc": "MLP engine (docs/AI_DECODER.md 3.2): one 8x8 signed multiplier, 34-bit accumulator, NH*8 + NO*N2 + 2 cycles from start to done.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "start"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "busy"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "in_x"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "in_frame_id"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "in_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "in_sat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "linear"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[4:0]",
+     "name": "s1"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[NH*64-1:0]",
+     "name": "w1_flat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[NO*64-1:0]",
+     "name": "w2_flat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[NH*32-1:0]",
+     "name": "b1_flat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[NO*32-1:0]",
+     "name": "b2_flat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "done"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "out_cls"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "out_margin"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "out_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "out_frame_id"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "out_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "out_x"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "out_h"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[127:0]",
+     "name": "out_logit"
+    }
+   ],
+   "params": [
+    {
+     "name": "NH",
+     "default": "4"
+    },
+    {
+     "name": "NO",
+     "default": "2"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_ai_decoder",
+   "file": "rtl/hbci_ai_decoder.v",
+   "lineStart": 528,
+   "lineEnd": 768,
+   "doc": "Decoder top: quantiser, collector, pending register, model store, engine, prediction FIFO, counters and last-frame diagnostics.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cfg_ai_en"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_sync"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "cfg_ch_mask"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "cfg_frame_span"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "feat_ch"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "feat_energy"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "feat_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_sat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "feat_win"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "model_we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "model_addr"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "model_wdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "model_rdata"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "crc_we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "crc_wdata"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "crc_expected"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "model_verify"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "model_clear_rej"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_error"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_busy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_rejected"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "model_id"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_model_wr_rej"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "pred_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "pred_class"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "pred_margin"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "pred_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "pred_frame_id"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "pred_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "pred_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[PRED_LOG2:0]",
+     "name": "pred_count"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_strobe"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "pred_class_direct"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_frames"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_pred"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_incomplete"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_dup"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_late"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_span"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_busy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_pred_drop"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_nomodel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_sat_frames"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "last_frame_id"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "last_missing"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "last_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "last_x"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "last_h"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[127:0]",
+     "name": "last_logit"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "last_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "f_pend_v"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "f_eng_busy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "f_frame_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[63:0]",
+     "name": "f_frame_x"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "f_col_open"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "f_col_seen"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "f_col_id"
+    }
+   ],
+   "params": [
+    {
+     "name": "NH",
+     "default": "4"
+    },
+    {
+     "name": "NO",
+     "default": "2"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    },
+    {
+     "name": "PRED_LOG2",
+     "default": "2"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_model",
+     "module": "hbci_model_store",
+     "file": "rtl/hbci_ai_decoder.v",
+     "line": 616,
+     "parameters": ".NH(NH), .NO(NO)"
+    },
+    {
+     "name": "u_quant",
+     "module": "hbci_feat_quant",
+     "file": "rtl/hbci_ai_decoder.v",
+     "line": 634,
+     "parameters": null
+    },
+    {
+     "name": "u_collect",
+     "module": "hbci_frame_collector",
+     "file": "rtl/hbci_ai_decoder.v",
+     "line": 646,
+     "parameters": ".TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W)"
+    },
+    {
+     "name": "u_engine",
+     "module": "hbci_mlp_engine",
+     "file": "rtl/hbci_ai_decoder.v",
+     "line": 704,
+     "parameters": ".NH(NH), .NO(NO), .TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W)"
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "ai_model",
+    "ai_protocol",
+    "ai_stress",
+    "ai_gate_level",
+    "ai_mutation",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "ai_formal",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_event_core",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 27,
+   "lineEnd": 158,
+   "doc": "",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "cfg_threshold"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "cfg_hysteresis"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "cfg_refractory"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "cfg_alpha_shift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "in_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "in_ready"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "in_sample"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ev_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ev_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ev_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ev_timestamp"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ev_polarity"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "ev_magnitude"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "stat_samples"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "stat_events"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "stat_rejected"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "FRAC_W",
+     "default": "8"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "REFR_W",
+     "default": "8"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_state",
+     "module": "hbci_channel_state",
+     "file": "rtl/hbci_event_core.v",
+     "line": 85,
+     "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .BASE_W(BASE_W), .REFR_W(REFR_W)"
+    },
+    {
+     "name": "u_baseline",
+     "module": "hbci_baseline_ema",
+     "file": "rtl/hbci_event_core.v",
+     "line": 99,
+     "parameters": ".SAMPLE_W(SAMPLE_W), .FRAC_W(FRAC_W)"
+    },
+    {
+     "name": "u_threshold",
+     "module": "hbci_threshold_detector",
+     "file": "rtl/hbci_event_core.v",
+     "line": 111,
+     "parameters": ".SAMPLE_W(SAMPLE_W)"
+    },
+    {
+     "name": "u_refractory",
+     "module": "hbci_refractory_ctrl",
+     "file": "rtl/hbci_event_core.v",
+     "line": 123,
+     "parameters": ".REFR_W(REFR_W)"
+    },
+    {
+     "name": "u_timestamp",
+     "module": "hbci_timestamp",
+     "file": "rtl/hbci_event_core.v",
+     "line": 136,
+     "parameters": ".TS_W(TS_W)"
+    },
+    {
+     "name": "u_packer",
+     "module": "hbci_event_packer",
+     "file": "rtl/hbci_event_core.v",
+     "line": 148,
+     "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W)"
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_channel_state",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 163,
+   "lineEnd": 211,
+   "doc": "Per-channel state register file: one read/write port addressed by `ch`.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ch"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[BASE_W-1:0]",
+     "name": "rd_baseline"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "rd_refr"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rd_armed"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rd_primed"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "we"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[BASE_W-1:0]",
+     "name": "wr_baseline"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "wr_refr"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "wr_armed"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "BASE_W",
+     "default": "24"
+    },
+    {
+     "name": "REFR_W",
+     "default": "8"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_baseline_ema",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 220,
+   "lineEnd": 255,
+   "doc": "Baseline estimator (EMA) and residual. Combinational. residual = sample - floor(baseline) (SAMPLE_W+1 bits, signed) baseline_next = baseline + ((sample - baseline) >>> alpha_shift) The first sample of a channel (primed = 0) initialises the baseline to the sample and produces a zero residual.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "sample"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W+FRAC_W-1:0]",
+     "name": "baseline_q"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "alpha_shift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "primed"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W:0]",
+     "name": "residual"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W+FRAC_W-1:0]",
+     "name": "baseline_next"
+    }
+   ],
+   "params": [
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "FRAC_W",
+     "default": "8"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_threshold_detector",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 263,
+   "lineEnd": 287,
+   "doc": "Threshold detector. Combinational. magnitude = |residual| above = enable && magnitude >= threshold below_rearm = magnitude < max(threshold - hysteresis, 1)",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W:0]",
+     "name": "residual"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "threshold"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "hysteresis"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "magnitude"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "polarity"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "above"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "below_rearm"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    }
+   ],
+   "params": [
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_refractory_ctrl",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 295,
+   "lineEnd": 315,
+   "doc": "Hysteresis and refractory control. Combinational. fire = primed & enable & armed & (refr_cnt == 0) & above armed_next = fire ? 0 : (armed | below_rearm) refr_next = fire ? cfg_refractory : saturating decrement of refr_cnt",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "primed"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "armed"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "refr_cnt"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "above"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "below_rearm"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "cfg_refractory"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "fire"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "armed_next"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[REFR_W-1:0]",
+     "name": "refr_next"
+    }
+   ],
+   "params": [
+    {
+     "name": "REFR_W",
+     "default": "8"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_timestamp",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 321,
+   "lineEnd": 340,
+   "doc": "Timestamp: counts accepted samples. The event timestamp is the index of the sample that caused it (the counter value before that sample's increment).",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "tick"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "reject"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ts_now"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rejected"
+    }
+   ],
+   "params": [
+    {
+     "name": "TS_W",
+     "default": "32"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_event_packer",
+   "file": "rtl/hbci_event_core.v",
+   "lineStart": 346,
+   "lineEnd": 388,
+   "doc": "Event output register (one slot, valid/ready). New input is accepted only when the slot is free or being drained, so no event is ever dropped.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "push"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "in_timestamp"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "in_polarity"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "in_magnitude"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ev_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ev_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ev_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ev_timestamp"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ev_polarity"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "ev_magnitude"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "events"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "slot_free"
+    }
+   ],
+   "params": [
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "tb_hbci_event_core",
+    "tb_hbci_directed",
+    "random_vs_golden",
+    "gate_level_vs_golden",
+    "scenario_trace",
+    "mutation_sanity",
+    "yosys_equiv_v01_v02",
+    "v03_legacy_preserved",
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_onchip_mlp",
+   "file": "rtl/hbci_onchip_mlp.v",
+   "lineStart": 9,
+   "lineEnd": 246,
+   "doc": "",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "enable"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "feature_shift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "feat_ch"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "feat_energy"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "feat_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_saturated"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "model_we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "model_addr"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[31:0]",
+     "name": "model_data"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "pred_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_class"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[31:0]",
+     "name": "pred_margin"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "pred_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "pred_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_frames"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_skipped"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_saturated"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_pred_drop"
+    }
+   ],
+   "params": [],
+   "instances": [],
+   "inChipTop": false,
+   "suites": []
+  },
+  {
+   "name": "hbci_readout_core",
+   "file": "rtl/hbci_readout_core.v",
+   "lineStart": 43,
+   "lineEnd": 257,
+   "doc": "",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cfg_session_en"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "cfg_mode"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "cfg_threshold"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "cfg_hysteresis"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "cfg_refractory"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "cfg_alpha_shift"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_b0"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_b1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_b2"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_a1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_a2"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "cfg_win_log2"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "cfg_energy_shift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "feat_sync"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "in_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "in_sample"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SEQ_W-1:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_data"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "stat_samples"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "stat_rejected"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_drop_raw"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_drop_event"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_drop_feature"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_event_missed"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_fifo_hwm"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ai_feat_valid"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ai_feat_ch"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "ai_feat_energy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ai_feat_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ai_feat_saturated"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "ai_feat_win"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "FIFO_LOG2",
+     "default": "4"
+    },
+    {
+     "name": "WIN_W",
+     "default": "10"
+    },
+    {
+     "name": "ACC_W",
+     "default": "48"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    }
+   ],
+   "instances": [
+    {
+     "name": "u_ts",
+     "module": "hbci_timestamp",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 118,
+     "parameters": ".TS_W(TS_W)"
+    },
+    {
+     "name": "u_event",
+     "module": "hbci_event_core",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 145,
+     "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .FRAC_W(FRAC_W), .TS_W(TS_W), .REFR_W(REFR_W)"
+    },
+    {
+     "name": "u_fstate",
+     "module": "hbci_feature_state",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 199,
+     "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .ACC_W(ACC_W), .WIN_W(WIN_W), .WIN_IDX_W(WIN_IDX_W)"
+    },
+    {
+     "name": "u_biquad",
+     "module": "hbci_biquad",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 212,
+     "parameters": ".SAMPLE_W(SAMPLE_W), .COEF_W(16), .COEF_FRAC(14)"
+    },
+    {
+     "name": "u_energy",
+     "module": "hbci_band_energy",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 220,
+     "parameters": ".SAMPLE_W(SAMPLE_W), .ACC_W(ACC_W), .WIN_W(WIN_W)"
+    },
+    {
+     "name": "u_records",
+     "module": "hbci_record_mux",
+     "file": "rtl/hbci_readout_core.v",
+     "line": 244,
+     "parameters": ".CH_W(CH_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2)"
+    }
+   ],
+   "inChipTop": true,
+   "suites": [
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_feature_state",
+   "file": "rtl/hbci_readout_core.v",
+   "lineStart": 266,
+   "lineEnd": 348,
+   "doc": "Per-channel feature register file: one read/write port addressed by `ch`. Per channel: x1, x2, y1, y2 (filter history), acc (window energy), cnt (samples in the current window) and sat (saturation seen in the window). On a write the filter history shifts: x2 <= x1, x1 <= wr_x, y2 <= y1, y1 <= wr_y. Reads are combinational; out-of-range reads return zeros.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ch"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "rd_x1"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "rd_x2"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "rd_y1"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "rd_y2"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[ACC_W-1:0]",
+     "name": "rd_acc"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_W-1:0]",
+     "name": "rd_cnt"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rd_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "rd_win"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sync"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "wr_x"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "wr_y"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[ACC_W-1:0]",
+     "name": "wr_acc"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_W-1:0]",
+     "name": "wr_cnt"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "wr_sat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_IDX_W-1:0]",
+     "name": "wr_win"
+    }
+   ],
+   "params": [
+    {
+     "name": "NUM_CH",
+     "default": "8"
+    },
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "ACC_W",
+     "default": "48"
+    },
+    {
+     "name": "WIN_W",
+     "default": "10"
+    },
+    {
+     "name": "WIN_IDX_W",
+     "default": "16"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_biquad",
+   "file": "rtl/hbci_readout_core.v",
+   "lineStart": 358,
+   "lineEnd": 414,
+   "doc": "Direct-form-I biquad with rounding and saturation. Combinational, exact. p = b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2 (ACC_W = SAMPLE_W+COEF_W+3 bits: no intermediate overflow) y_full = (p + 2^(COEF_FRAC-1)) >>> COEF_FRAC (round half up) y = sat_SAMPLE_W(y_full), ysat = (y_full != y) The shipped core uses COEF_W = 16, COEF_FRAC = 14 (signed Q2.14).",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "x"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "x1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "x2"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "y1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "y2"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[COEF_W-1:0]",
+     "name": "b0"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[COEF_W-1:0]",
+     "name": "b1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[COEF_W-1:0]",
+     "name": "b2"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[COEF_W-1:0]",
+     "name": "a1"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[COEF_W-1:0]",
+     "name": "a2"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "y"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "ysat"
+    }
+   ],
+   "params": [
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "COEF_W",
+     "default": "16"
+    },
+    {
+     "name": "COEF_FRAC",
+     "default": "14"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_band_energy",
+   "file": "rtl/hbci_readout_core.v",
+   "lineStart": 430,
+   "lineEnd": 483,
+   "doc": "Band energy: square, accumulate, window-done and output saturation. Combinational. sq = y*y (2*SAMPLE_W-1 bits, unsigned) acc_next = acc + sq (ACC_W bits, exact) k = min(win_log2, WIN_W), win = 2^k done = (cnt >= win - 1) energy = sat32(acc_next >> energy_shift), esat = value did not fit 32 bits feat_sat = sat | ysat | esat (FEATURE record flags.sat) done: acc, cnt, sat <= 0 else: acc <= acc_next, cnt <= cnt + 1, sat <= sat | ysat `done` uses >= rather than == so that shrinking the window while a window is open ends it at the next sample (identical to == while cfg is constant).",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[SAMPLE_W-1:0]",
+     "name": "y"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ysat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[ACC_W-1:0]",
+     "name": "acc"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[WIN_W-1:0]",
+     "name": "cnt"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "sat"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "win_log2"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "energy_shift"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "done"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "energy"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "feat_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[ACC_W-1:0]",
+     "name": "acc_wr"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[WIN_W-1:0]",
+     "name": "cnt_wr"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "sat_wr"
+    }
+   ],
+   "params": [
+    {
+     "name": "SAMPLE_W",
+     "default": "16"
+    },
+    {
+     "name": "ACC_W",
+     "default": "48"
+    },
+    {
+     "name": "WIN_W",
+     "default": "10"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_record_mux",
+   "file": "rtl/hbci_readout_core.v",
+   "lineStart": 502,
+   "lineEnd": 678,
+   "doc": "Record multiplexer: pending registers, arbiter, FIFO, seq/gap/drop rules. * Three 1-deep pending registers (RAW, EVENT, FEATURE). A record generated while its pending register is full and not being emptied this cycle is DROPPED: drop_<type>++ and gap_pending[type] is set. * seq_<type> increments for every generated record (dropped or not); the first record of each type after reset has seq 0. * A record accepted into its pending register takes gap = gap_pending[type] and clears gap_pending[type]. So flags.gap is set on exactly the first emitted record GENERATED after a loss, i.e. the record whose seq jumps. * Each cycle at most one pending record moves into the FIFO if the FIFO is not full (registered occupancy): priority EVENT > FEATURE > RAW. * A record generated in the cycle its pending register empties into the FIFO is accepted (not dropped). * The FIFO head drives rec_*; a record leaves on rec_valid & rec_ready. FIFO entry: {type[1:0], channel, flags[3:0], seq, ts, data[31:0]}.",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rst_n"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "raw_gen"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "raw_ch"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "raw_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "raw_data"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ev_gen"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ev_ch"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ev_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "ev_data"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ft_gen"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "ft_ch"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "ft_ts"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "ft_data"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "ft_sat"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[CH_W-1:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[SEQ_W-1:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[TS_W-1:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_data"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "drop_raw"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "drop_event"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "drop_feature"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[FIFO_LOG2:0]",
+     "name": "fifo_hwm"
+    }
+   ],
+   "params": [
+    {
+     "name": "CH_W",
+     "default": "3"
+    },
+    {
+     "name": "TS_W",
+     "default": "32"
+    },
+    {
+     "name": "SEQ_W",
+     "default": "16"
+    },
+    {
+     "name": "FIFO_LOG2",
+     "default": "4"
+    }
+   ],
+   "instances": [],
+   "inChipTop": true,
+   "suites": [
+    "v03_raw_reconstruction",
+    "v03_feature_golden",
+    "v03_hybrid",
+    "v03_session_gating",
+    "v03_overload_gaps",
+    "v03_modes_reset_ts",
+    "v03_gate_level",
+    "v03_mutation",
+    "v03_scenario_trace",
+    "top_e2e",
+    "top_bist",
+    "top_adverse",
+    "top_gate_level",
+    "top_stream",
+    "v04_real_trace",
+    "v04_scenario_trace",
+    "chip_serial"
+   ]
+  },
+  {
+   "name": "hbci_v04_digital_top",
+   "file": "rtl/hbci_v04_digital_top.v",
+   "lineStart": 6,
+   "lineEnd": 80,
+   "doc": "",
+   "ports": [
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "clk"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "cfg_session_en"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "cfg_mode"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "cfg_threshold"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[7:0]",
+     "name": "cfg_refractory"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "cfg_alpha_shift"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "cfg_b0"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "cfg_win_log2"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "cfg_energy_shift"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "in_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "in_channel"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[15:0]",
+     "name": "in_sample"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "rec_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "rec_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[1:0]",
+     "name": "rec_type"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[2:0]",
+     "name": "rec_channel"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[3:0]",
+     "name": "rec_flags"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "rec_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "rec_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_samples"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_drop_event"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "stat_event_missed"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "model_we"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "model_addr"
+    },
+    {
+     "dir": "input",
+     "signed": true,
+     "range": "[31:0]",
+     "name": "model_data"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": "[5:0]",
+     "name": "model_feature_shift"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "model_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_valid"
+    },
+    {
+     "dir": "input",
+     "signed": false,
+     "range": null,
+     "name": "pred_ready"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": null,
+     "name": "pred_class"
+    },
+    {
+     "dir": "output",
+     "signed": true,
+     "range": "[31:0]",
+     "name": "pred_margin"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "pred_ts"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[15:0]",
+     "name": "pred_seq"
+    },
+    {
+     "dir": "output",
+     "signed": false,
+     "range": "[31:0]",
+     "name": "ai_frames"
+    }
+   ],
+   "params": [],
+   "instances": [
+    {
+     "name": "u_readout",
+     "module": "hbci_readout_core",
+     "file": "rtl/hbci_v04_digital_top.v",
+     "line": 47,
+     "parameters": null
+    },
+    {
+     "name": "u_local_ai",
+     "module": "hbci_onchip_mlp",
+     "file": "rtl/hbci_v04_digital_top.v",
+     "line": 65,
+     "parameters": null
+    }
+   ],
+   "inChipTop": false,
+   "suites": []
+  }
+ ],
+ "instances": [
+  {
+   "path": "hbci02_chip_top/u_rst",
+   "name": "u_rst",
+   "module": "hbci_reset_sync",
+   "parentModule": "hbci02_chip_top",
+   "depth": 1,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 300,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_spi",
+   "name": "u_spi",
+   "module": "hbci_spi_regbus",
+   "parentModule": "hbci02_chip_top",
+   "depth": 1,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 316,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_spi/u_sync",
+   "name": "u_sync",
+   "module": "hbci_spi_sync",
+   "parentModule": "hbci_spi_regbus",
+   "depth": 2,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 117,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_smp",
+   "name": "u_smp",
+   "module": "hbci_spi_samples",
+   "parentModule": "hbci02_chip_top",
+   "depth": 1,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 321,
+   "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_smp/u_sync",
+   "name": "u_sync",
+   "module": "hbci_spi_sync",
+   "parentModule": "hbci_spi_samples",
+   "depth": 2,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 182,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_core",
+   "name": "u_core",
+   "module": "hbci02_digital_top",
+   "parentModule": "hbci02_chip_top",
+   "depth": 1,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 331,
+   "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2), .WIN_W(WIN_W), .ACC_W(ACC_W), .WIN_IDX_W(WIN_IDX_W), .NH(NH), .NO(NO), .PRED_LOG2(PRED_LOG2)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout",
+   "name": "u_readout",
+   "module": "hbci_readout_core",
+   "parentModule": "hbci02_digital_top",
+   "depth": 2,
+   "file": "rtl/hbci02_digital_top.v",
+   "line": 155,
+   "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2), .WIN_W(WIN_W), .ACC_W(ACC_W), .WIN_IDX_W(WIN_IDX_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_ts",
+   "name": "u_ts",
+   "module": "hbci_timestamp",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 118,
+   "parameters": ".TS_W(TS_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event",
+   "name": "u_event",
+   "module": "hbci_event_core",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 145,
+   "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .FRAC_W(FRAC_W), .TS_W(TS_W), .REFR_W(REFR_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_state",
+   "name": "u_state",
+   "module": "hbci_channel_state",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 85,
+   "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .BASE_W(BASE_W), .REFR_W(REFR_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_baseline",
+   "name": "u_baseline",
+   "module": "hbci_baseline_ema",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 99,
+   "parameters": ".SAMPLE_W(SAMPLE_W), .FRAC_W(FRAC_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_threshold",
+   "name": "u_threshold",
+   "module": "hbci_threshold_detector",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 111,
+   "parameters": ".SAMPLE_W(SAMPLE_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_refractory",
+   "name": "u_refractory",
+   "module": "hbci_refractory_ctrl",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 123,
+   "parameters": ".REFR_W(REFR_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_timestamp",
+   "name": "u_timestamp",
+   "module": "hbci_timestamp",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 136,
+   "parameters": ".TS_W(TS_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_event/u_packer",
+   "name": "u_packer",
+   "module": "hbci_event_packer",
+   "parentModule": "hbci_event_core",
+   "depth": 4,
+   "file": "rtl/hbci_event_core.v",
+   "line": 148,
+   "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_fstate",
+   "name": "u_fstate",
+   "module": "hbci_feature_state",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 199,
+   "parameters": ".NUM_CH(NUM_CH), .CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .ACC_W(ACC_W), .WIN_W(WIN_W), .WIN_IDX_W(WIN_IDX_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_biquad",
+   "name": "u_biquad",
+   "module": "hbci_biquad",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 212,
+   "parameters": ".SAMPLE_W(SAMPLE_W), .COEF_W(16), .COEF_FRAC(14)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_energy",
+   "name": "u_energy",
+   "module": "hbci_band_energy",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 220,
+   "parameters": ".SAMPLE_W(SAMPLE_W), .ACC_W(ACC_W), .WIN_W(WIN_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_readout/u_records",
+   "name": "u_records",
+   "module": "hbci_record_mux",
+   "parentModule": "hbci_readout_core",
+   "depth": 3,
+   "file": "rtl/hbci_readout_core.v",
+   "line": 244,
+   "parameters": ".CH_W(CH_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .FIFO_LOG2(FIFO_LOG2)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai",
+   "name": "u_ai",
+   "module": "hbci_ai_decoder",
+   "parentModule": "hbci02_digital_top",
+   "depth": 2,
+   "file": "rtl/hbci02_digital_top.v",
+   "line": 204,
+   "parameters": ".NH(NH), .NO(NO), .TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W), .PRED_LOG2(PRED_LOG2)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai/u_model",
+   "name": "u_model",
+   "module": "hbci_model_store",
+   "parentModule": "hbci_ai_decoder",
+   "depth": 3,
+   "file": "rtl/hbci_ai_decoder.v",
+   "line": 616,
+   "parameters": ".NH(NH), .NO(NO)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai/u_quant",
+   "name": "u_quant",
+   "module": "hbci_feat_quant",
+   "parentModule": "hbci_ai_decoder",
+   "depth": 3,
+   "file": "rtl/hbci_ai_decoder.v",
+   "line": 634,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai/u_quant/u_log",
+   "name": "u_log",
+   "module": "hbci_log_energy",
+   "parentModule": "hbci_feat_quant",
+   "depth": 4,
+   "file": "rtl/hbci_ai_decoder.v",
+   "line": 70,
+   "parameters": null
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai/u_collect",
+   "name": "u_collect",
+   "module": "hbci_frame_collector",
+   "parentModule": "hbci_ai_decoder",
+   "depth": 3,
+   "file": "rtl/hbci_ai_decoder.v",
+   "line": 646,
+   "parameters": ".TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_ai/u_engine",
+   "name": "u_engine",
+   "module": "hbci_mlp_engine",
+   "parentModule": "hbci_ai_decoder",
+   "depth": 3,
+   "file": "rtl/hbci_ai_decoder.v",
+   "line": 704,
+   "parameters": ".NH(NH), .NO(NO), .TS_W(TS_W), .WIN_IDX_W(WIN_IDX_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_core/u_bist",
+   "name": "u_bist",
+   "module": "hbci_bist",
+   "parentModule": "hbci02_digital_top",
+   "depth": 2,
+   "file": "rtl/hbci02_digital_top.v",
+   "line": 231,
+   "parameters": ".CH_W(CH_W), .SAMPLE_W(SAMPLE_W), .TS_W(TS_W), .SEQ_W(SEQ_W), .WIN_IDX_W(WIN_IDX_W)"
+  },
+  {
+   "path": "hbci02_chip_top/u_rec",
+   "name": "u_rec",
+   "module": "hbci_rec_serial",
+   "parentModule": "hbci02_chip_top",
+   "depth": 1,
+   "file": "rtl/hbci02_chip_top.v",
+   "line": 339,
+   "parameters": ".CH_W(CH_W), .SEQ_W(SEQ_W), .TS_W(TS_W)"
+  }
+ ],
+ "suites": [
+  {
+   "name": "tb_hbci_event_core",
+   "status": "pass",
+   "checks": 15,
+   "errors": 0,
+   "tests": 15,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_event_core.v",
+   "method": null,
+   "linkBasis": "suite is named after its testbench",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "tb_hbci_directed",
+   "status": "pass",
+   "checks": 55,
+   "errors": 0,
+   "tests": 55,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_directed.v",
+   "method": null,
+   "linkBasis": "suite is named after its testbench",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "random_vs_golden",
+   "status": "pass",
+   "checks": 28,
+   "errors": 0,
+   "tests": 28,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_stream.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "gate_level_vs_golden",
+   "status": "pass",
+   "checks": 32,
+   "errors": 0,
+   "tests": 32,
+   "kind": "gate-level simulation of the synthesised netlist",
+   "testbench": "tb/tb_hbci_stream.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "scenario_trace",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": 8,
+   "kind": "RTL simulation producing a studio trace",
+   "testbench": "tb/tb_hbci_stream.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "mutation_sanity",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": 8,
+   "kind": "mutation sanity (the tests must catch injected faults)",
+   "testbench": "tb/tb_hbci_stream.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "yosys_equiv_v01_v02",
+   "status": "pass",
+   "checks": 1,
+   "errors": 0,
+   "tests": 1,
+   "kind": "equivalence check",
+   "testbench": null,
+   "method": "logic equivalence check (Yosys)",
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_legacy_preserved",
+   "status": "pass",
+   "checks": 3,
+   "errors": 0,
+   "tests": 3,
+   "kind": "RTL simulation",
+   "testbench": null,
+   "method": "legacy-equivalence script (scripts/legacy_check.py)",
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_event_core"
+   ],
+   "covers": [
+    "hbci_baseline_ema",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_raw_reconstruction",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": 22,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_feature_golden",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": 22,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_hybrid",
+   "status": "pass",
+   "checks": 13,
+   "errors": 0,
+   "tests": 13,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_session_gating",
+   "status": "pass",
+   "checks": 11,
+   "errors": 0,
+   "tests": 11,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_overload_gaps",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": 22,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_modes_reset_ts",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": 22,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_gate_level",
+   "status": "pass",
+   "checks": 29,
+   "errors": 0,
+   "tests": 29,
+   "kind": "gate-level simulation of the synthesised netlist",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_mutation",
+   "status": "pass",
+   "checks": 10,
+   "errors": 0,
+   "tests": 10,
+   "kind": "mutation sanity (the tests must catch injected faults)",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v03_scenario_trace",
+   "status": "pass",
+   "checks": 47,
+   "errors": 0,
+   "tests": 47,
+   "kind": "RTL simulation producing a studio trace",
+   "testbench": "tb/tb_hbci_readout.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_readout_core"
+   ],
+   "covers": [
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feature_state",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "ai_model",
+   "status": "pass",
+   "checks": 32,
+   "errors": 0,
+   "tests": 32,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_ai_decoder.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "ai_protocol",
+   "status": "pass",
+   "checks": 16,
+   "errors": 0,
+   "tests": 16,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_ai_decoder.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "ai_stress",
+   "status": "pass",
+   "checks": 24,
+   "errors": 0,
+   "tests": 24,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci_ai_decoder.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "ai_gate_level",
+   "status": "pass",
+   "checks": 16,
+   "errors": 0,
+   "tests": 16,
+   "kind": "gate-level simulation of the synthesised netlist",
+   "testbench": "tb/tb_hbci_ai_decoder.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "ai_mutation",
+   "status": "pass",
+   "checks": 13,
+   "errors": 0,
+   "tests": 13,
+   "kind": "mutation sanity (the tests must catch injected faults)",
+   "testbench": "tb/tb_hbci_ai_decoder.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "top_e2e",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": 21,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "top_bist",
+   "status": "pass",
+   "checks": 14,
+   "errors": 0,
+   "tests": 14,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "top_adverse",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": 21,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "top_gate_level",
+   "status": "pass",
+   "checks": 12,
+   "errors": 0,
+   "tests": 12,
+   "kind": "gate-level simulation of the synthesised netlist",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "top_stream",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": 8,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v04_real_trace",
+   "status": "pass",
+   "checks": 6,
+   "errors": 0,
+   "tests": 6,
+   "kind": "RTL simulation producing a studio trace",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "v04_scenario_trace",
+   "status": "pass",
+   "checks": 6,
+   "errors": 0,
+   "tests": 6,
+   "kind": "RTL simulation producing a studio trace",
+   "testbench": "tb/tb_hbci02_top.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_digital_top"
+   ],
+   "covers": [
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  },
+  {
+   "name": "ai_formal",
+   "status": "pass",
+   "checks": 10,
+   "errors": 0,
+   "tests": 10,
+   "kind": "formal proof",
+   "testbench": null,
+   "method": "formal proofs (SymbiYosys)",
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci_ai_decoder"
+   ],
+   "covers": [
+    "hbci_ai_decoder",
+    "hbci_feat_quant",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store"
+   ]
+  },
+  {
+   "name": "chip_serial",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": 21,
+   "kind": "RTL simulation",
+   "testbench": "tb/tb_hbci02_chip.v",
+   "method": null,
+   "linkBasis": "chip repository Makefile at the snapshot commit",
+   "duts": [
+    "hbci02_chip_top"
+   ],
+   "covers": [
+    "hbci02_chip_top",
+    "hbci02_digital_top",
+    "hbci_ai_decoder",
+    "hbci_band_energy",
+    "hbci_baseline_ema",
+    "hbci_biquad",
+    "hbci_bist",
+    "hbci_channel_state",
+    "hbci_event_core",
+    "hbci_event_packer",
+    "hbci_feat_quant",
+    "hbci_feature_state",
+    "hbci_frame_collector",
+    "hbci_log_energy",
+    "hbci_mlp_engine",
+    "hbci_model_store",
+    "hbci_readout_core",
+    "hbci_rec_serial",
+    "hbci_record_mux",
+    "hbci_refractory_ctrl",
+    "hbci_reset_sync",
+    "hbci_spi_regbus",
+    "hbci_spi_samples",
+    "hbci_spi_sync",
+    "hbci_threshold_detector",
+    "hbci_timestamp"
+   ]
+  }
+ ]
+}

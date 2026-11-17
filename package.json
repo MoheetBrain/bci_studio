@@ -14,7 +14,9 @@
     "atlas:build": "node tools/atlas/build-atlas.mjs",
     "check:sources": "node scripts/check-sources.mjs",
     "test": "node --test --disable-warning=ExperimentalWarning \"tests/*.test.ts\"",
-    "check": "npm run typecheck && npm test && npm run check:model && npm run check:v03 && npm run check:v04"
+    "check": "npm run typecheck && npm test && npm run check:model && npm run check:v03 && npm run check:v04",
+    "chip:extract": "node tools/chip/extract-hierarchy.mjs",
+    "corpus:abstracts": "node --disable-warning=ExperimentalWarning tools/corpus/fetch-abstracts.mjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.0",
