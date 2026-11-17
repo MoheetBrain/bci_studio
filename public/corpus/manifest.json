@@ -1,6 +1,6 @@
 {
  "generatedBy": "tools/corpus/build-index.mjs",
- "builtAt": "2026-11-17T11:38:14.233Z",
+ "builtAt": "2026-11-17T11:57:08.025Z",
  "chipCommit": "207285fcb7153f688751e5234e4b3d9d59025bf9",
  "retrieval": "SQLite FTS5 (porter stemming), BM25 ranking, heading weighted ×3. Keyword retrieval only: no embeddings and no language model.",
  "documents": [
@@ -195,7 +195,7 @@
    "bytes": 4935,
    "licence": "Hamiltonian Interface (project-internal)",
    "visibility": "public",
-   "reading": "fully-reviewed",
+   "reading": "excerpt-reviewed",
    "note": "chip repository snapshot 207285f",
    "chunks": 4
   },
@@ -406,6 +406,45 @@
    "reading": "authored in this build",
    "note": null,
    "chunks": 8
+  },
+  {
+   "id": "studio:ATLAS_PROVENANCE.md",
+   "title": "Atlas provenance, coverage and verification",
+   "kind": "studio document",
+   "path": "docs/ATLAS_PROVENANCE.md",
+   "sha256": "03431fa768719465f5c8e92e84f19472f08966045e72d58e95eea404fa16fe57",
+   "bytes": 8672,
+   "licence": null,
+   "visibility": "public",
+   "reading": "authored in this build",
+   "note": null,
+   "chunks": 11
+  },
+  {
+   "id": "studio:DECISION_ATLAS_FOUNDATION.md",
+   "title": "Decision note: foundation for the brain atlas",
+   "kind": "studio document",
+   "path": "docs/DECISION_ATLAS_FOUNDATION.md",
+   "sha256": "8784d14bc063cbd2549cadc939ef0905e8d23d1d0a74217f3c3e604b00bf2bf8",
+   "bytes": 4755,
+   "licence": null,
+   "visibility": "public",
+   "reading": "authored in this build",
+   "note": null,
+   "chunks": 7
+  },
+  {
+   "id": "studio:LICENCES.md",
+   "title": "Code and data licence manifest",
+   "kind": "studio document",
+   "path": "docs/LICENCES.md",
+   "sha256": "d3b9b2d431dc1c917d4a164f74b4cda0728ee0a013c7ed70e2829bd3d2cf5ccb",
+   "bytes": 6901,
+   "licence": null,
+   "visibility": "public",
+   "reading": "authored in this build",
+   "note": null,
+   "chunks": 7
   },
   {
    "id": "abs:buzsaki2012",
@@ -669,8 +708,8 @@
   }
  ],
  "totals": {
-  "documents": 51,
-  "chunks": 360,
+  "documents": 54,
+  "chunks": 385,
   "private": 20
  },
  "searchedLocations": [

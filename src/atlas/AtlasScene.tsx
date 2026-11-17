@@ -61,6 +61,8 @@ interface SceneApi {
   pick: (clientX: number, clientY: number) => Hit | null;
   /** Screen position (client px) of a visible surface point of a structure, or null when none is in view. */
   screenPointOf: (id: string) => { x: number; y: number } | null;
+  /** Camera pose and whether a programmatic transition is in progress (diagnostics / tests). */
+  cameraState: () => { transitioning: boolean; position: [number, number, number]; target: [number, number, number] };
 }
 
 function BrainScene({ onGizmo, apiRef }: { onGizmo: (g: GizmoAxes) => void; apiRef: React.MutableRefObject<SceneApi | null> }) {
@@ -172,6 +174,7 @@ function BrainScene({ onGizmo, apiRef }: { onGizmo: (g: GizmoAxes) => void; apiR
   }, [meshes, invalidate]);
 
   // ── camera ────────────────────────────────────────────────────────────────────────────────────────────────────
+  const cameraStateRef = useRef<null | (() => { transitioning: boolean; position: [number, number, number]; target: [number, number, number] })>(null);
   const tween = useRef<{ t0: number; ms: number; p0: Vector3; p1: Vector3; q0: Vector3; q1: Vector3 } | null>(null);
   const fov = (camera as PerspectiveCamera).fov;
   const fitDistance = (radius: number) => {
@@ -291,6 +294,7 @@ function BrainScene({ onGizmo, apiRef }: { onGizmo: (g: GizmoAxes) => void; apiR
       return resolvePick(hits, clip);
     };
     apiRef.current = {
+      cameraState: () => cameraStateRef.current?.() ?? { transitioning: false, position: [0, 0, 0], target: [0, 0, 0] },
       pick: (x, y) => {
         const t0 = performance.now();
         const hit = cast(x, y);
@@ -315,6 +319,14 @@ function BrainScene({ onGizmo, apiRef }: { onGizmo: (g: GizmoAxes) => void; apiR
     };
     return () => { apiRef.current = null; };
   }, [apiRef, byId, camera, gl, meshes]);
+  useEffect(() => {
+    cameraStateRef.current = () => ({
+      transitioning: tween.current !== null,
+      position: camera.position.toArray() as [number, number, number],
+      target: (controls.current?.target.toArray() ?? [0, 0, 0]) as [number, number, number],
+    });
+    return () => { cameraStateRef.current = null; };
+  }, [camera]);
 
   return (
     <>
@@ -417,7 +429,12 @@ export function AtlasViewport({ onGizmo }: { onGizmo: (g: GizmoAxes) => void }) 
   // Test / diagnostics hooks (no production behaviour depends on them).
   useEffect(() => {
     const w = window as unknown as Record<string, unknown>;
-    w.__atlas = { store: useAtlas, screenPointOf: (id: string) => api.current?.screenPointOf(id) ?? null, pickAt: (x: number, y: number) => api.current?.pick(x, y) ?? null };
+    w.__atlas = {
+      store: useAtlas,
+      screenPointOf: (id: string) => api.current?.screenPointOf(id) ?? null,
+      pickAt: (x: number, y: number) => api.current?.pick(x, y) ?? null,
+      cameraState: () => api.current?.cameraState() ?? null,
+    };
     w.__atlasPerf = atlasPerf;
     return () => { delete w.__atlas; delete w.__atlasPerf; };
   }, []);

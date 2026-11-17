@@ -121,7 +121,11 @@ export function AtlasTree() {
   const focusRow = (id: string) => {
     setFocusId(id);
     st.hover(id, 'tree');
-    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)?.focus());
+    // Move DOM focus at once when the row is already rendered, so a key pressed immediately afterwards acts on it;
+    // a row that only appears after expanding its parent is focused on the next frame.
+    const el = list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`);
+    if (el) el.focus();
+    else requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)?.focus());
   };
   const onKey = (e: React.KeyboardEvent, row: Row) => {
     const i = rows.findIndex((r) => r.id === row.id);

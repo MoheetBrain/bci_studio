@@ -27,12 +27,12 @@ button.region-chip-empty { cursor: pointer; }
 .shell-main { position: relative; min-height: 0; }
 .shell-pane { position: absolute; inset: 0; min-height: 0; overflow: hidden; }
 .shell-loading { display: grid; place-items: center; height: 100%; color: var(--fg-tertiary); }
-.shell-foot { display: flex; align-items: center; justify-content: center; padding: 0 12px; font-size: 11px; color: var(--fg-tertiary); background: var(--surface-panel); border-top: 1px solid var(--border-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shell-foot { display: flex; align-items: center; justify-content: center; padding: 0 12px; font-size: 11px; color: var(--fg-secondary); background: var(--surface-panel); border-top: 1px solid var(--border-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 @scope (.shell) to (.chip-studio-body) {
 /* generic page layout used by the lesson workspaces */
 .page { height: 100%; overflow: auto; }
-.page-inner { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: grid; gap: 18px; }
+.page-inner { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .page h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
 .page h2 { margin: 0 0 6px; font-size: 17px; }
 .page p { margin: 0; }

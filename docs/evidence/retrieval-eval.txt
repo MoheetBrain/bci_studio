@@ -1,11 +1,11 @@
-# Retrieval evaluation — 2026-11-17T11:38:24.336Z
-Index: 51 documents, 360 passages (built 2026-11-17T11:38:14.233Z). Private abstracts present: true.
+# Retrieval evaluation — 2026-11-17T12:00:08.919Z
+Index: 54 documents, 385 passages (built 2026-11-17T11:57:08.025Z). Private abstracts present: true.
 Method: SQLite FTS5 keyword retrieval (porter stemming, BM25, heading ×3), domain synonyms, and per-side retrieval for "A versus B" questions.
 No embeddings and no language model. Results are passages with locations, not answers.
 
 ## HELD-OUT set (tests/corpus-heldout.json)
 Written after the retrieval rules were frozen; never used to adjust them.
-Answerable: expected document in the top 3: 14/15  (top-1: 14/15; skipped for missing private material: 0)
+Answerable: expected document in the top 3: 14/15  (top-1: 13/15; skipped for missing private material: 0)
 Unanswerable correctly reported as unsupported: 5/5
 
 ✓ reset synchroniser
@@ -37,11 +37,11 @@ Unanswerable correctly reported as unsupported: 5/5
 ✓ aliasing above half the sample rate
     rank 1, mode all; top 3: card:stages
 ✓ hippocampus versus amygdala
-    rank 1, mode comparison; top 3: card:regions, card:regions, card:regions
+    rank 2, mode comparison; top 3: studio:ATLAS_PROVENANCE.md, card:regions, card:regions
 ✓ [unanswerable] optogenetics channelrhodopsin stimulation wavelength
     mode any, coverage 0.25; top 3: card:regions, chip:docs/AFE_ADC_DECISION.md, chip:docs/BIOHYBRID_INTERFACES.md
 ✓ [unanswerable] transformer attention heads language model fine-tuning
-    mode any, coverage 0.29; top 3: abs:gazzaniga2000, chip:docs/UI_V04_STATUS.md, chip:docs/ML_EVALUATION.md
+    mode any, coverage 0.43; top 3: abs:gazzaniga2000, studio:ATLAS_PROVENANCE.md, studio:ATLAS_PROVENANCE.md
 ✓ [unanswerable] MRI gradient coil slew rate
     mode any, coverage 0.40; top 3: chip:BUILD_STATUS.md, abs:desikan2006, card:regions
 ✓ [unanswerable] serotonin reuptake inhibitor dosage
@@ -57,7 +57,7 @@ Unanswerable correctly reported as unsupported: 5/5
 ✓ primary motor cortex
     rank 1, mode all; top 3: card:regions, card:regions, abs:geyer1996
 ✓ Is the precentral gyrus the same as M1?
-    rank 1, mode all; top 3: card:regions, abs:gordon2023
+    rank 1, mode all; top 3: card:regions, studio:ATLAS_PROVENANCE.md, studio:DECISION_ATLAS_FOUNDATION.md
 ✓ motor hand area knob landmark
     rank 1, mode all; top 3: abs:yousry1997
 ✓ AFE versus ADC
@@ -65,7 +65,7 @@ Unanswerable correctly reported as unsupported: 5/5
 ✓ Which external analogue front end is recommended for the first test chip?
     rank 2, mode any; top 3: card:stages, chip:docs/AFE_ADC_DECISION.md, chip:docs/AFE_ADC_DECISION.md
 ✓ What kinds of multiplexer are in the recording chain?
-    rank 3, mode any; top 3: rtl:hbci_readout_core.v, chip:docs/VERIFICATION.md, card:stages
+    rank 2, mode any; top 3: rtl:hbci_readout_core.v, card:stages, chip:docs/VERIFICATION.md
 ✓ record multiplexer arbiter FIFO drops
     rank 1, mode all; top 3: rtl:hbci_readout_core.v, rtl:hbci_readout_core.v, chip:docs/V03_READOUT_SPEC.md
 ✓ u_state versus u_fstate

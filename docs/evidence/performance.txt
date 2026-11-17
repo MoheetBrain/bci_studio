@@ -1,0 +1,35 @@
+# Atlas performance — measured 2026-11-17T11:51:28.785Z
+
+These are measurements on ONE machine in ONE run, with a visible Chrome window. They are not guarantees for other
+hardware, browsers, window sizes or system load. Targets from the brief: hover feedback within 100 ms; near 60 fps.
+
+## Conditions
+Machine: Apple M5 Ultra
+Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+WebGL renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+Window: 1440 × 893 CSS px; canvas 2880 × 1646 device px (devicePixelRatio 2, pixel ratio capped at 2)
+Scene: 251 structures, 760,155 triangles, one draw call per visible structure; production build
+
+## Results
+Ray-cast pick (600 casts, 209 hits):        p50 0 ms   p95 0.2 ms   max 1.1 ms
+Hover feedback, pointer event → highlighted frame presented (60 moves): p50 16.6 ms   p95 17.4 ms   max 17.6 ms   (target ≤ 100 ms)
+Frame time, continuous orbit, opaque cortex (600 frames):      p50 8.3 ms (120 fps)   p95 8.4 ms (119 fps)   max 9.3 ms
+Frame time, continuous orbit, cortex at 30 % (344 frames):  p50 8.3 ms (120 fps)   p95 8.6 ms (116 fps)   max 141.7 ms
+Idle, no input for 2 s: 0 frames rendered while the display ticked 242 times (demand rendering)
+Picking acceleration (BVH for all 251 structures) built in 227 ms, in idle slices after first paint
+Time from navigation to an interactive atlas (local server, warm disk): 597 ms
+
+## Payload (production build, uncompressed on disk; a server that gzips would send less)
+Atlas data (manifest + 4 mesh chunks): 4309 KB   — transferred in this run: 4073 KB
+Home-screen JavaScript (index chunk): 1148 KB   — all JavaScript transferred for the home screen: 330 KB
+The existing chip studio (1013 KB) and the lesson screens load only when opened.
+
+## Memory
+JavaScript heap after loading the atlas: 37.3 MB
+Vertex + index buffers handed to the GPU: about 10.6 MB (computed from the manifest; GPU memory itself is not observable from the page)
+
+## Limits of this measurement
+- One run, one machine, one window size. No low-end or integrated-GPU device and no phone was measured.
+- Frame time is the interval between animation frames, so it cannot be shorter than the display refresh interval.
+- "Hover feedback" is measured from a synthetic pointer event to two animation frames later, which bounds the time to a presented frame from above.
+- The headless end-to-end run (docs/evidence/e2e-report.txt) is functional evidence only and is not a performance figure.

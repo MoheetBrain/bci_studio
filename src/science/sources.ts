@@ -110,7 +110,8 @@ export const SOURCES: Record<string, Source> = Object.fromEntries([
     url: 'https://github.com/MoheetBrain/Hamiltonian-BCI-Chip', reading: 'section-reviewed',
     note: 'Instance names, module ports and test results quoted in the studio are extracted mechanically from the snapshot.' }),
   S({ id: 'hbci-afe-adc', kind: 'project-document', authors: 'Hamiltonian Interface', year: 2026,
-    title: 'AFE / ADC decision (docs/AFE_ADC_DECISION.md)', venue: 'Project document, chip repository commit 207285f', reading: 'fully-reviewed' }),
+    title: 'AFE / ADC decision (docs/AFE_ADC_DECISION.md)', venue: 'Project document, chip repository commit 207285f', reading: 'fully-reviewed',
+    url: 'https://github.com/MoheetBrain/Hamiltonian-BCI-Chip' }),
 ].map((s) => [s.id, s]));
 
 export function cite(id: string): Source {

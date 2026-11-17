@@ -34,7 +34,7 @@ const rel = (p) => relative(root, p);
 const READING = {
   'chip/README.md': 'fully-reviewed',
   'chip/docs/AFE_ADC_DECISION.md': 'fully-reviewed',
-  'chip/docs/RESEARCH_AUDIT.md': 'fully-reviewed',
+  'chip/docs/RESEARCH_AUDIT.md': 'excerpt-reviewed',
   'chip/docs/PHYSICAL.md': 'excerpt-reviewed',
   'chip/docs/UI_REFERENCE_NOTES.md': 'excerpt-reviewed',
 };
@@ -124,7 +124,9 @@ const cite = (ids) => (ids.length ? ` [${ids.map((id) => { const s = SOURCES[id]
 }
 
 // 4 · this repository's documents ───────────────────────────────────────────────────────────────────────────────
-for (const n of existsSync(join(root, 'docs')) ? readdirSync(join(root, 'docs')).filter((x) => x.endsWith('.md')).sort() : []) {
+// (SOURCE_AUDIT.md and HANDOVER.md describe the corpus and its evaluation themselves, so they are left out of it)
+const META_DOCS = new Set(['SOURCE_AUDIT.md', 'HANDOVER.md']);
+for (const n of existsSync(join(root, 'docs')) ? readdirSync(join(root, 'docs')).filter((x) => x.endsWith('.md') && !META_DOCS.has(x)).sort() : []) {
   const f = `docs/${n}`, text = readFileSync(join(root, f), 'utf8');
   const doc = addDoc({ id: `studio:${n}`, title: (/^#\s+(.*)$/m.exec(text)?.[1] ?? n).trim(), kind: 'studio document', path: f, sha256: sha(text), bytes: Buffer.byteLength(text), reading: 'authored in this build' });
   chunkText(doc, text, f);

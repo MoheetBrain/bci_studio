@@ -59,7 +59,7 @@ export interface AtlasManifest {
   format: string;
   dataset: {
     id: string; name: string; repository: string; commit: string; commitDate: string; landingPage: string;
-    citation: string; licence: string; licenceUrl: string; subject: string; acknowledgement: string;
+    citation: string; licence: string; licenceUrl: string; licenceFile: string; modified: string; intendedUse: string; subject: string; acknowledgement: string;
   };
   space: {
     name: string; units: string; orientation: string; notStandardised: string;

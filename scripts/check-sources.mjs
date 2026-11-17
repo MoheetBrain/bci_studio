@@ -17,8 +17,14 @@ for (const s of Object.values(SOURCES)) {
   if (!s.doi) { say(`-  ${s.id}: no DOI (${s.kind}); not checkable here`); continue; }
   let msg;
   try {
-    const res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(s.doi)}`, { headers: { 'User-Agent': 'bci-studio-source-check/1.0' } });
-    if (!res.ok) { say(`✗  ${s.id}: DOI ${s.doi} → HTTP ${res.status}`); bad++; continue; }
+    // be polite to the registry: pause between requests, and back off when it says "too many requests"
+    let res;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await new Promise((r) => setTimeout(r, attempt === 0 ? 250 : 3000 * attempt));
+      res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(s.doi)}`, { headers: { 'User-Agent': 'bci-studio-source-check/1.0' } });
+      if (res.status !== 429 && res.status < 500) break;
+    }
+    if (!res.ok) { say(`✗  ${s.id}: DOI ${s.doi} → HTTP ${res.status}${res.status === 429 ? ' (rate-limited by Crossref; not a statement about the citation — run again later)' : ''}`); bad++; continue; }
     msg = (await res.json()).message;
   } catch (e) {
     say(`✗  ${s.id}: request failed (${e.message})`); bad++; continue;

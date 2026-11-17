@@ -243,7 +243,7 @@ export function AtlasWorkspace() {
             </div>
             <div className="atlas-provenance">
               <EvidenceTag kind="measured" title="Surfaces from an MRI-derived, expert-segmented atlas of one volunteer. Simplified for display; see the atlas record of any structure." />
-              <span>{manifest?.dataset.name} · one volunteer · subject space (not MNI) · {manifest?.totals.structures} structures</span>
+              <span>{manifest?.dataset.name} · simplified for display (modified from the original) · one volunteer · subject space (not MNI) · {manifest?.totals.structures} structures</span>
             </div>
             <Toolbar />
           </>

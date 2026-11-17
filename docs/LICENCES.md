@@ -1,0 +1,75 @@
+# Code and data licence manifest
+
+Checked 2026-11-17. Code permissions and data permissions are separate, and "may be used commercially" is separate
+from "what must accompany a redistribution". This is an engineering record, not legal advice; have counsel confirm
+before a commercial release.
+
+## 1 · Adopted — shipped in this repository
+
+| What | Origin and version | Files here | Modified? | Licence | Obligations kept | Size | Update strategy |
+|---|---|---|---|---|---|---|---|
+| **Brain geometry and labels** | SPL/NAC Brain Atlas, `mhalle/spl-brain-atlas` @ `bec24db` | `public/atlas/spl-nac/` (manifest + 4 chunks) | Yes: decimated, quantised, re-encoded (details in `docs/ATLAS_PROVENANCE.md`) | 3D Slicer License (BSD-style with extra terms) | Full licence text shipped (`public/atlas/LICENSE-3D-Slicer.txt`); dataset, commit, citation and acknowledgement in the manifest and shown in the app; modifications documented | 4.2 MB | Re-run `npm run atlas:build` against a newer commit; tests pin the known source discrepancies |
+| **Conversion pipeline (parts)** | `glin23/brain-atlas` @ `65502a7` — `scripts/vtk.mjs`, and the structure of `convert.mjs` / `atlas-tree.mjs` | `tools/atlas/vtk.mjs`, `tools/atlas/build-atlas.mjs` | Yes: rewritten around the primary source; coordinates left in RAS mm; label-volume and left/right checks added | MIT © 2026 Lee Lin | Copyright and permission notice in `THIRD_PARTY_NOTICES.md`; origin noted in each file | ~300 lines | None needed (small, owned) |
+| **Existing studio** | `MoheetBrain/Hamiltonian-BCI-Chip` @ `207285f`, `studio/` | everything imported in commit `6975d11` | 7 files, 61 lines changed (see `docs/HANDOVER.md`) | Hamiltonian Interface (own work) | — | 1.5 MB source + 98 MB artifacts | `git archive <commit> studio` from the chip repository |
+| **Chip snapshot** | same repository and commit: `rtl/`, `tb/`, `system/`, `docs/` (no screenshots) | `chip/` + `chip/SNAPSHOT.json` (hashes) | No — a test fails if any file differs from its recorded hash | Hamiltonian Interface (own work) | — | 0.6 MB | Replace the folder from a newer commit and regenerate `SNAPSHOT.json` |
+
+### Packages (installed from npm, not vendored)
+
+| Package | Version | Licence | Used for |
+|---|---|---|---|
+| react, react-dom | 18.3.1 | MIT | UI (existing) |
+| three | 0.169.0 | MIT | 3D (existing) |
+| @react-three/fiber, @react-three/drei | 8.17.10, 9.114.0 | MIT | 3D scene (existing) |
+| three-mesh-bvh | 0.7.8 (already a dependency of drei) | MIT | picking acceleration |
+| @xyflow/react | 12.3.2 | MIT | circuit diagrams (existing) |
+| zustand | 4.5.5 | MIT | state (existing) |
+| **meshoptimizer** | 0.22.0 — *added* | MIT | mesh simplification (build) and decoding (browser) |
+| vite, @vitejs/plugin-react, typescript, esbuild | 5.4.9, 4.3.2, 5.6.3 | MIT / Apache-2.0 | build (existing) |
+| **@types/node** | 24.x — *added*, dev only | MIT | type-checking the local server code |
+| **playwright-core** | 1.56.1 — *added*, dev only | Apache-2.0 | browser tests, driving the installed Chrome (no browser download) |
+
+Three packages were added; nothing else from the brief's list was installed.
+
+## 2 · Evaluated, not adopted
+
+| Project | Commit seen | Licence | What we did | Why not adopted |
+|---|---|---|---|---|
+| `glin23/brain-atlas` (app and its packaged meshes) | `65502a7` | Code MIT; geometry 3D Slicer License | Cloned to the git-ignored `reference/`, read its licence, notices, attribution and scripts | Its chunks are re-centred, rotated and built from an archive we cannot pin; its lifestyle content and performance claims are not ours to inherit. Only the converter shape and VTK parser were adapted. |
+| `niivue/niivue` | `63f1dbc` (HEAD on 2026-11-17) | BSD-2-Clause (datasets separate) | Documentation only; not cloned | The surface view already meets the interaction requirement; a second renderer was not needed for this release |
+| `FZJ-INM1-BDA/siibra-explorer`, `siibra-api` | `a1b93e0`, `9aeb24a` | Apache-2.0 (atlas data separate; Julich-Brain maps are CC BY-NC-SA) | Documentation only; not cloned | A large application with remote data services, not a component; the cytoarchitectonic maps are non-commercial |
+| Neurotorium 3D Brain Atlas | — | Proprietary | Looked at as a visual benchmark only | No permission to copy software or assets, and none was copied |
+
+## 3 · Not imported — rights unresolved
+
+| Project | Commit seen | Licence state | Decision |
+|---|---|---|---|
+| `rnorlund/brainWhiz` | `51c01f3` | Custom licence (GitHub reports no standard licence); the brief notes a commercial-use restriction | Not cloned, not read, nothing used |
+| `StarKnightt/brain-explorer` | `d778b99` | No licence | Not cloned, not read, nothing used |
+
+## 4 · Private material (never committed, never bundled)
+
+| What | Where | Why private |
+|---|---|---|
+| PubMed abstracts of 20 cited papers | `corpus/private/abstracts/` | Publishers' text; used locally to check statements and for local search |
+| The local search index | `corpus/index.sqlite` | Contains the abstracts' text |
+| Anything placed in `corpus/private/inbox/` | — | The user's own books and papers |
+
+`.gitignore` excludes all three, and a test asserts nothing under `corpus/private` or the index is tracked.
+`public/corpus/manifest.json` (committed) lists titles, hashes and reading level only — no passage text.
+
+## 5 · Open licence questions for a commercial release
+
+1. **3D Slicer License, Part B** (read in full for this build). It grants a royalty-free licence to use, reproduce,
+   make derivative works of, display and distribute, including incorporation into proprietary programs, provided that:
+   (b) the licence terms appear in and apply to every copy, prefaced with the sentence "All or portions of this
+   licensed product … have been obtained under license from The Brigham and Women's Hospital, Inc. …" — done in
+   `public/atlas/LICENSE-3D-Slicer.txt` and `THIRD_PARTY_NOTICES.md`, and it must also appear in user documentation of
+   any product; (c) attributions are preserved — done; (d) modified versions are clearly marked as modified — done in
+   the licence file, the manifest, the atlas record of every structure and the provenance line on the home screen.
+   Clause 4: the software and data are "designed for research purposes only", "clinical applications are neither
+   recommended nor advised", and "any commercialization … is at the sole risk of the party" doing it. Clause 6: the
+   names of Brigham, its affiliates, contributors and funders may not be used to endorse or promote a product without
+   written permission. Counsel should confirm how clause 1(b) is to be met in a shipped product's documentation.
+2. **Abstracts**: stay local. Do not ship them.
+3. **A cytoarchitectonic M1** would need an atlas whose licence allows the intended use (Julich-Brain does not for
+   commercial use).

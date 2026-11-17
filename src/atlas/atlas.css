@@ -62,11 +62,11 @@
 .atlas-legend { display: grid; gap: 3px; padding: 8px 10px; max-width: 230px; border-radius: 8px; background: color-mix(in srgb, var(--surface-panel) 88%, transparent); border: 1px solid var(--border-soft); font-size: 12px; color: var(--fg-secondary); }
 .legend-row { display: flex; align-items: center; gap: 6px; }
 .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
-.legend-note { color: var(--fg-tertiary); }
+.legend-note { color: var(--fg-secondary); }
 .legend-state { color: var(--fg); }
 .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
 
-.atlas-provenance { position: absolute; top: 18px; right: 14px; left: 470px; z-index: 4; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 12px; color: var(--fg-tertiary); pointer-events: none; min-width: 0; }
+.atlas-provenance { position: absolute; top: 18px; right: 14px; left: 470px; z-index: 4; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 12px; color: var(--fg-secondary); pointer-events: none; min-width: 0; }
 .atlas-provenance > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .atlas-provenance .evtag { pointer-events: auto; }
 
@@ -93,6 +93,8 @@
 
 /* stage narrower than a desktop canvas: toolbar takes the full width, legend moves above it */
 @container stage (max-width: 1180px) {
+  /* an open toolbar panel says the same thing as the legend, and would cover it */
+  .atlas-stage:has(.tb-pop) .atlas-legend { visibility: hidden; }
   .atlas-toolbar { max-width: calc(100% - 24px); }
   .atlas-bottomleft { bottom: 100px; }
   .atlas-browser { bottom: 100px; }
@@ -147,6 +149,9 @@
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (max-width: 760px) {
+  /* long action labels wrap instead of pushing the page wider than the phone */
+  .btn { white-space: normal; height: auto; min-height: 34px; padding: 6px 11px; text-align: left; }
+  .btn-primary { min-height: 38px; }
   .atlas.has-selection { grid-template-columns: 1fr; grid-template-rows: minmax(0, 46%) minmax(0, 1fr); }
   .atlas-inspector { border-left: 0; border-top: 1px solid var(--border); }
   .atlas-toolbar { padding: 5px 6px; bottom: 8px; width: calc(100% - 16px); box-sizing: border-box; }

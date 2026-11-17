@@ -18,7 +18,8 @@
     "chip:extract": "node tools/chip/extract-hierarchy.mjs",
     "corpus:abstracts": "node --disable-warning=ExperimentalWarning tools/corpus/fetch-abstracts.mjs",
     "check:rtl": "node scripts/run-checks.mjs",
-    "corpus:build": "node --disable-warning=ExperimentalWarning tools/corpus/build-index.mjs"
+    "corpus:build": "node --disable-warning=ExperimentalWarning tools/corpus/build-index.mjs",
+    "test:e2e": "npm run build && node tests/e2e/walkthrough.mjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.0",
@@ -36,6 +37,7 @@
     "@types/react-dom": "18.3.1",
     "@types/three": "0.169.0",
     "@vitejs/plugin-react": "4.3.2",
+    "playwright-core": "1.56.1",
     "typescript": "5.6.3",
     "vite": "5.4.9"
   },

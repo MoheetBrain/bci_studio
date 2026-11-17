@@ -36,7 +36,7 @@ function Record({ s }: { s: AtlasStructure }) {
               {lc.flag && <span className="warn-text"> — exceeds the {manifest.totals.labelBboxToleranceMm} mm tolerance: the model and the label volume disagree in the source itself</span>}</>
           : <span className="warn-text">Not checkable: {lc.note}</span>}
       </dd>
-      <dt>Dataset</dt><dd>{manifest.dataset.name}, commit <span className="mono">{manifest.dataset.commit.slice(0, 7)}</span>. {manifest.dataset.licence}.</dd>
+      <dt>Dataset</dt><dd>{manifest.dataset.name}, commit <span className="mono">{manifest.dataset.commit.slice(0, 7)}</span>. {manifest.dataset.licence}. <a href={`${import.meta.env.BASE_URL}${manifest.dataset.licenceFile}`} target="_blank" rel="noreferrer">Licence text</a>. {manifest.dataset.modified} {manifest.dataset.intendedUse}</dd>
     </dl>
   );
 }
