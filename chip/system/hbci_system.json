@@ -1,0 +1,90 @@
+{
+  "$comment": "Single shared system/artifact model for HBCI-01. Read by scripts/ (golden model, artifact checks), the studio (src/model/system.ts) and docs. Change values here, not in copies.",
+  "version": "0.4.0",
+  "mission": {
+    "permanent": "Level 4 integrated biological and artificial cognition.",
+    "v0_3_deliverable": "A waveform-preserving, multichannel neural readout and representation processor, connected to an interactive 3D engineering-and-learning studio.",
+    "objective": "HBCI-01 exists to investigate how neural recordings can be processed and communicated efficiently without unnecessarily destroying information needed by downstream decoders.",
+    "not_in_scope": [
+      "neural stimulation or any tissue connection",
+      "automatic emotional monitoring",
+      "threshold-based 'mental password' or neural wake word",
+      "on-chip manifold alignment or language-model inference (a quantised linear/MLP decoder IS on chip since v0.4)",
+      "implant-safety verdicts from a universal power threshold"
+    ]
+  },
+  "evidence": {
+    "CONCEPT": "Illustrative geometry or a design idea. Not implemented.",
+    "DEMO": "Independent browser simulation. Educational, not the Verilog.",
+    "SCRIPTED": "A pre-written illustration of a future interaction. No neural data or model inference behind it.",
+    "RTL": "Actual simulated Verilog results (Icarus Verilog).",
+    "SYNTH": "Actual Yosys-synthesised logic (generic gates or SKY130 cells).",
+    "LAYOUT": "Genuine PDK physical-design output (GDSII). Not fabricated.",
+    "MEASURED": "Measured on real hardware. Nothing qualifies yet."
+  },
+  "profiles": {
+    "synthetic_teaching": {
+      "description": "Synthetic development profile used by the RTL tests, the trace and the DEMO model. Not a property of any real recording.",
+      "num_channels": 8,
+      "sample_rate_hz": 2000,
+      "sample_bits": 16,
+      "sample_signed": true,
+      "units": "ADC codes (dimensionless)"
+    }
+  },
+  "modes": {
+    "EVENT":   { "code": 0, "records": ["EVENT"], "summary": "Legacy threshold-event core (comparator). Lossy: waveform discarded." },
+    "RAW":     { "code": 1, "records": ["RAW"], "summary": "Every digital sample entering the core, with channel and sample index, while a capture session is enabled." },
+    "FEATURE": { "code": 2, "records": ["FEATURE"], "summary": "Causal band-pass (biquad) and per-window band energy. Lossy: the waveform cannot be reconstructed from energies." },
+    "HYBRID":  { "code": 3, "records": ["RAW", "FEATURE"], "summary": "RAW plus FEATURE for diagnostics. Increases payload compared with RAW alone." }
+  },
+  "record": {
+    "types": { "RAW": 0, "EVENT": 1, "FEATURE": 2 },
+    "fields": [
+      { "name": "type",    "bits": 2,  "meaning": "0 RAW, 1 EVENT, 2 FEATURE" },
+      { "name": "channel", "bits": 3,  "meaning": "channel index" },
+      { "name": "flags",   "bits": 4,  "meaning": "bit0 sat (FEATURE: filter or energy saturated in the window); bit1 gap (records of this type were dropped since the last emitted one)" },
+      { "name": "seq",     "bits": 16, "meaning": "per-type sequence number; increments for every generated record, including dropped ones" },
+      { "name": "ts",      "bits": 32, "meaning": "sample index (RAW: this sample; FEATURE: last sample of the window; EVENT: crossing sample)" },
+      { "name": "data",    "bits": 32, "meaning": "RAW: sign-extended sample; EVENT: {15'b0, polarity, magnitude[15:0]}; FEATURE: band energy (unsigned, saturated)" }
+    ],
+    "bits_per_record": 89,
+    "$comment_bits": "2+3+4+16+32+32 = 89 bits of fields. A link layer would add framing; payload calculations in the studio use these 89 bits unless stated."
+  },
+  "feature": {
+    "filter": "2nd-order IIR band-pass, direct form I, RBJ cookbook constant-peak-gain design via bilinear transform",
+    "band_hz": [70, 150],
+    "design_sample_rate_hz": 2000,
+    "coef_format": "signed Q2.14 (16-bit)",
+    "coefficients_q14": { "b0": 1801, "b1": 0, "b2": -1801, "a1": -27668, "a2": 12782 },
+    "measured_response_of_quantised_coefficients": {
+      "70_hz_db": -3.1, "102_5_hz_db": 0.0, "150_hz_db": -3.1, "300_hz_db": -11.5, "10_hz_db": -22.4,
+      "pole_radius": 0.8833,
+      "note": "Single biquad: a coarse band selector with gentle skirts, not a sharp high-gamma filter."
+    },
+    "arithmetic": "acc = b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2 (exact, 35-bit signed); y = sat16((acc + 8192) >>> 14)",
+    "energy": "per channel: E = sum over 2^win_log2 samples of y^2 (exact, 48-bit); output = sat32(E >> energy_shift)",
+    "defaults": { "win_log2": 5, "energy_shift": 8 }
+  },
+  "legacy_event_core": {
+    "module": "hbci_event_core",
+    "defaults": { "threshold": 600, "hysteresis": 150, "refractory": 8, "alpha_shift": 5 },
+    "status": "Unchanged from v0.2; kept as the EVENT comparator."
+  },
+  "scale_reference": {
+    "BISC_2025": {
+      "electrode_sites": 65536,
+      "simultaneous_recording_channels": 1024,
+      "source": "Nature Electronics 2025, doi:10.1038/s41928-025-01509-9 (title)",
+      "note": "External reference for scale literacy only. HBCI-01 implements 8 processing channels."
+    }
+  },
+  "loop": [
+    { "id": "loop.read",     "name": "Neural recordings",        "status": "CONCEPT",  "implemented": false, "note": "Electrodes, analog front end and ADC are not implemented." },
+    { "id": "loop.chip",     "name": "HBCI chip",                "status": "RTL",      "implemented": true,  "note": "Preserve samples, extract numerical features, organise output records." },
+    { "id": "loop.decoder",  "name": "On-chip neural decoder (v0.4)", "status": "RTL", "implemented": true, "note": "hbci_ai_decoder: quantised linear/MLP inference on the chip's FEATURE windows (docs/AI_DECODER.md). Predictions are a task-variable estimate, not automatically correct." },
+    { "id": "loop.ext_decoder", "name": "Larger external decoder", "status": "CONCEPT", "implemented": false, "note": "Bigger models consuming the chip's RAW/FEATURE records. Not implemented." },
+    { "id": "loop.llm",      "name": "External language model",  "status": "SCRIPTED", "implemented": false, "note": "Reasons over an authorised request. The studio shows a scripted example only." },
+    { "id": "loop.feedback", "name": "Feedback interface",       "status": "CONCEPT",  "implemented": false, "note": "Research branch. Software-only contract (ready / uncertain / request clarification). Not a neural sensation; no stimulation." }
+  ]
+}

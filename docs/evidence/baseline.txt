@@ -1,0 +1,43 @@
+# Baseline at import (chip repo 207285f) — 2026-11-17T10:42:55Z
+node v24.22.0, npm 11.19.1
+
+## npm run typecheck
+exit=0
+
+## npm run check:model
+DEMO model vs RTL trace: 3200/3200 samples agree on all 9 fields; demo events=66, rtl events=66
+PASS
+exit=0
+
+## npm run check:v03
+FEATURE internals: 4000/4000 samples agree on y, ysat, acc, cnt, done
+FEATURE records: rtl=120 demo=120 all match (ch, ts, energy, sat)
+RAW records: 4000 vs 4000 samples exact (value, channel, index)
+exit=0
+
+## npm run check:v04
+rtl_trace_v04.json: trained model · 3 frames
+  quantiser (L, x): 24/24 features agree
+  MLP (h, logits, class, margin): 3/3 inferences agree
+  CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+  engine latency = 18 cycles for every completed inference: yes
+  predictions matching an inference (frame, ts, class, margin): 3/3
+rtl_trace_v04_real.json: trained model · 32 frames
+  quantiser (L, x): 256/256 features agree
+  MLP (h, logits, class, margin): 32/32 inferences agree
+  CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+  engine latency = 18 cycles for every completed inference: yes
+  predictions matching an inference (frame, ts, class, margin): 32/32
+exit=0
+
+## npm run build
+vite v5.4.9 building for production...
+transforming...
+✓ 896 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.66 kB │ gzip:   0.42 kB
+dist/assets/index-y27t-w3x.css    119.58 kB │ gzip:  21.99 kB
+dist/assets/index-DzMTuU8V.js   2,029.32 kB │ gzip: 606.05 kB
+✓ built in 2.08s
+exit=

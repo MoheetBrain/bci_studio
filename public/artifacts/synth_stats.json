@@ -1,0 +1,362 @@
+{
+ "flow": "yosys -s synth/synth_hier.ys: read_verilog rtl/hbci_event_core.v; hierarchy -check -top hbci_event_core; synth -top hbci_event_core (hierarchical, generic gates incl. ABC; no PDK, no liberty, no timing) || v0.3: yosys -s synth/synth_v03.ys: read_verilog rtl/hbci_event_core.v rtl/hbci_readout_core.v; hierarchy -check -top hbci_readout_core; synth -top hbci_readout_core -booth (hierarchical, generic gates incl. ABC, Booth-encoded multipliers; no PDK, no liberty, no timing) || v0.4: yosys -s synth/synth_v04.ys: read_verilog rtl/hbci_event_core.v rtl/hbci_readout_core.v rtl/hbci_ai_decoder.v rtl/hbci02_digital_top.v; hierarchy -check -top hbci02_digital_top; synth -top hbci02_digital_top -booth (hierarchical, generic gates; no PDK, no liberty, no timing)",
+ "note": "Generic Yosys gate counts only (Yosys internal cell library: $_AND_, $_XOR_, $_MUX_, $_DFFE_PN0P_, ...). No PDK, liberty file, placement or routing was used, so these numbers are NOT silicon area, timing, power or fabrication readiness, and no timing closure is claimed. Hierarchical synthesis (no flatten): no optimisation across module boundaries. Cell counts include submodules; the top total (2003 cells, 421 flip-flops) is the sum of its leaf cells. Flip-flops by module: hbci_channel_state 272, hbci_event_packer 85, hbci_timestamp 64. Latches: 0. v0.3: hbci_readout_core (second, separate synthesis run) totals 19515 cells and 3442 flip-flops including the reused v0.2 modules hbci_baseline_ema (474 cells in the v0.3 run vs 492 listed: the ABC mapping differs between the two runs), hbci_channel_state (same counts), hbci_event_core (1991 cells in the v0.3 run vs 2003 listed: the ABC mapping differs between the two runs), hbci_event_packer (same counts), hbci_refractory_ctrl (same counts), hbci_threshold_detector (331 cells in the v0.3 run vs 325 listed: the ABC mapping differs between the two runs), hbci_timestamp (same counts) (the listed v0.2 numbers come from the v0.2 run and are unchanged); its new modules are listed after the v0.2 ones. Flip-flops by new module: hbci_band_energy 0, hbci_biquad 0, hbci_feature_state 1112, hbci_record_mux 1813. Latches: 0. v0.4 (HBCI-02): hbci02_digital_top (third, separate synthesis run) totals 35658 cells and 6206 flip-flops including the reused v0.2/v0.3 modules (listed once, above); its new modules follow. Flip-flops by new module: hbci_ai_decoder 2392, hbci_bist 154, hbci_feat_quant 0, hbci_frame_collector 418, hbci_log_energy 0, hbci_mlp_engine 440, hbci_model_store 826. Latches: 0. Tool: Yosys 0.70+157 (git sha1 af9f71e51, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8).",
+ "modules": [
+  {
+   "module": "hbci_event_core",
+   "cells": 2003,
+   "flops": 421,
+   "cell_types": {
+    "$_ANDNOT_": 84,
+    "$_AND_": 534,
+    "$_DFFE_PN0P_": 413,
+    "$_DFFE_PN1P_": 8,
+    "$_MUX_": 136,
+    "$_NAND_": 318,
+    "$_NOR_": 131,
+    "$_NOT_": 15,
+    "$_ORNOT_": 72,
+    "$_OR_": 93,
+    "$_XNOR_": 69,
+    "$_XOR_": 130
+   }
+  },
+  {
+   "module": "hbci_baseline_ema",
+   "cells": 492,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 23,
+    "$_AND_": 80,
+    "$_MUX_": 98,
+    "$_NAND_": 144,
+    "$_NOR_": 11,
+    "$_NOT_": 5,
+    "$_ORNOT_": 27,
+    "$_OR_": 39,
+    "$_XNOR_": 34,
+    "$_XOR_": 31
+   }
+  },
+  {
+   "module": "hbci_channel_state",
+   "cells": 803,
+   "flops": 272,
+   "cell_types": {
+    "$_ANDNOT_": 41,
+    "$_AND_": 281,
+    "$_DFFE_PN0P_": 264,
+    "$_DFFE_PN1P_": 8,
+    "$_MUX_": 38,
+    "$_NAND_": 53,
+    "$_NOR_": 106,
+    "$_NOT_": 3,
+    "$_ORNOT_": 4,
+    "$_OR_": 4,
+    "$_XNOR_": 1
+   }
+  },
+  {
+   "module": "hbci_event_packer",
+   "cells": 149,
+   "flops": 85,
+   "cell_types": {
+    "$_AND_": 29,
+    "$_DFFE_PN0P_": 85,
+    "$_NAND_": 1,
+    "$_NOT_": 1,
+    "$_ORNOT_": 1,
+    "$_OR_": 1,
+    "$_XNOR_": 1,
+    "$_XOR_": 30
+   }
+  },
+  {
+   "module": "hbci_refractory_ctrl",
+   "cells": 44,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 4,
+    "$_AND_": 5,
+    "$_NAND_": 18,
+    "$_NOR_": 4,
+    "$_ORNOT_": 2,
+    "$_OR_": 6,
+    "$_XNOR_": 4,
+    "$_XOR_": 1
+   }
+  },
+  {
+   "module": "hbci_threshold_detector",
+   "cells": 325,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 16,
+    "$_AND_": 79,
+    "$_NAND_": 100,
+    "$_NOR_": 10,
+    "$_NOT_": 4,
+    "$_ORNOT_": 38,
+    "$_OR_": 43,
+    "$_XNOR_": 27,
+    "$_XOR_": 8
+   }
+  },
+  {
+   "module": "hbci_timestamp",
+   "cells": 188,
+   "flops": 64,
+   "cell_types": {
+    "$_AND_": 58,
+    "$_DFFE_PN0P_": 64,
+    "$_NAND_": 2,
+    "$_NOT_": 2,
+    "$_XNOR_": 2,
+    "$_XOR_": 60
+   }
+  },
+  {
+   "module": "hbci_readout_core",
+   "cells": 19515,
+   "flops": 3442,
+   "cell_types": {
+    "$_ANDNOT_": 585,
+    "$_AND_": 5108,
+    "$_DFFE_PN0N_": 5,
+    "$_DFFE_PN0P_": 3424,
+    "$_DFFE_PN1P_": 8,
+    "$_DFF_PN0_": 5,
+    "$_MUX_": 893,
+    "$_NAND_": 4107,
+    "$_NOR_": 1291,
+    "$_NOT_": 51,
+    "$_ORNOT_": 440,
+    "$_OR_": 495,
+    "$_XNOR_": 1094,
+    "$_XOR_": 2009
+   }
+  },
+  {
+   "module": "hbci_band_energy",
+   "cells": 1914,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 88,
+    "$_AND_": 280,
+    "$_MUX_": 188,
+    "$_NAND_": 672,
+    "$_NOR_": 54,
+    "$_NOT_": 4,
+    "$_ORNOT_": 76,
+    "$_OR_": 106,
+    "$_XNOR_": 208,
+    "$_XOR_": 238
+   }
+  },
+  {
+   "module": "hbci_biquad",
+   "cells": 6907,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 58,
+    "$_AND_": 1043,
+    "$_MUX_": 219,
+    "$_NAND_": 2860,
+    "$_NOR_": 55,
+    "$_NOT_": 8,
+    "$_ORNOT_": 264,
+    "$_OR_": 198,
+    "$_XNOR_": 791,
+    "$_XOR_": 1411
+   }
+  },
+  {
+   "module": "hbci_feature_state",
+   "cells": 3352,
+   "flops": 1112,
+   "cell_types": {
+    "$_ANDNOT_": 236,
+    "$_AND_": 1248,
+    "$_DFFE_PN0P_": 1112,
+    "$_MUX_": 81,
+    "$_NAND_": 166,
+    "$_NOR_": 418,
+    "$_NOT_": 3,
+    "$_ORNOT_": 7,
+    "$_OR_": 80,
+    "$_XOR_": 1
+   }
+  },
+  {
+   "module": "hbci_record_mux",
+   "cells": 5027,
+   "flops": 1813,
+   "cell_types": {
+    "$_ANDNOT_": 119,
+    "$_AND_": 1891,
+    "$_DFFE_PN0N_": 5,
+    "$_DFFE_PN0P_": 1803,
+    "$_DFF_PN0_": 5,
+    "$_MUX_": 265,
+    "$_NAND_": 102,
+    "$_NOR_": 637,
+    "$_NOT_": 21,
+    "$_ORNOT_": 17,
+    "$_OR_": 12,
+    "$_XNOR_": 14,
+    "$_XOR_": 136
+   }
+  },
+  {
+   "module": "hbci02_digital_top",
+   "cells": 35658,
+   "flops": 6206,
+   "cell_types": {
+    "$_ANDNOT_": 1551,
+    "$_AND_": 8655,
+    "$_DFFE_PN0N_": 5,
+    "$_DFFE_PN0P_": 6084,
+    "$_DFFE_PN1P_": 94,
+    "$_DFF_PN0_": 23,
+    "$_MUX_": 2300,
+    "$_NAND_": 7491,
+    "$_NOR_": 1814,
+    "$_NOT_": 265,
+    "$_ORNOT_": 1598,
+    "$_OR_": 1497,
+    "$_XNOR_": 1618,
+    "$_XOR_": 2663
+   }
+  },
+  {
+   "module": "hbci_ai_decoder",
+   "cells": 11964,
+   "flops": 2392,
+   "cell_types": {
+    "$_ANDNOT_": 805,
+    "$_AND_": 2549,
+    "$_DFFE_PN0P_": 2350,
+    "$_DFFE_PN1P_": 32,
+    "$_DFF_PN0_": 10,
+    "$_MUX_": 1344,
+    "$_NAND_": 2455,
+    "$_NOR_": 205,
+    "$_NOT_": 192,
+    "$_ORNOT_": 452,
+    "$_OR_": 752,
+    "$_XNOR_": 268,
+    "$_XOR_": 550
+   }
+  },
+  {
+   "module": "hbci_bist",
+   "cells": 992,
+   "flops": 154,
+   "cell_types": {
+    "$_ANDNOT_": 31,
+    "$_AND_": 183,
+    "$_DFFE_PN0P_": 138,
+    "$_DFFE_PN1P_": 14,
+    "$_DFF_PN0_": 2,
+    "$_MUX_": 42,
+    "$_NAND_": 48,
+    "$_NOR_": 33,
+    "$_NOT_": 10,
+    "$_ORNOT_": 42,
+    "$_OR_": 89,
+    "$_XNOR_": 256,
+    "$_XOR_": 104
+   }
+  },
+  {
+   "module": "hbci_feat_quant",
+   "cells": 386,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 12,
+    "$_AND_": 89,
+    "$_MUX_": 82,
+    "$_NAND_": 109,
+    "$_NOR_": 22,
+    "$_NOT_": 9,
+    "$_ORNOT_": 23,
+    "$_OR_": 18,
+    "$_XNOR_": 16,
+    "$_XOR_": 6
+   }
+  },
+  {
+   "module": "hbci_frame_collector",
+   "cells": 1574,
+   "flops": 418,
+   "cell_types": {
+    "$_ANDNOT_": 29,
+    "$_AND_": 414,
+    "$_DFFE_PN0P_": 417,
+    "$_DFF_PN0_": 1,
+    "$_MUX_": 100,
+    "$_NAND_": 209,
+    "$_NOR_": 15,
+    "$_NOT_": 72,
+    "$_ORNOT_": 28,
+    "$_OR_": 65,
+    "$_XNOR_": 41,
+    "$_XOR_": 183
+   }
+  },
+  {
+   "module": "hbci_log_energy",
+   "cells": 244,
+   "flops": 0,
+   "cell_types": {
+    "$_ANDNOT_": 11,
+    "$_AND_": 70,
+    "$_MUX_": 53,
+    "$_NAND_": 74,
+    "$_NOR_": 16,
+    "$_NOT_": 3,
+    "$_ORNOT_": 5,
+    "$_OR_": 12
+   }
+  },
+  {
+   "module": "hbci_mlp_engine",
+   "cells": 4331,
+   "flops": 440,
+   "cell_types": {
+    "$_ANDNOT_": 232,
+    "$_AND_": 1144,
+    "$_DFFE_PN0P_": 439,
+    "$_DFF_PN0_": 1,
+    "$_MUX_": 335,
+    "$_NAND_": 1224,
+    "$_NOR_": 114,
+    "$_NOT_": 67,
+    "$_ORNOT_": 342,
+    "$_OR_": 202,
+    "$_XNOR_": 113,
+    "$_XOR_": 118
+   }
+  },
+  {
+   "module": "hbci_model_store",
+   "cells": 3858,
+   "flops": 826,
+   "cell_types": {
+    "$_ANDNOT_": 322,
+    "$_AND_": 633,
+    "$_DFFE_PN0P_": 791,
+    "$_DFFE_PN1P_": 32,
+    "$_DFF_PN0_": 3,
+    "$_MUX_": 615,
+    "$_NAND_": 904,
+    "$_NOR_": 49,
+    "$_NOT_": 32,
+    "$_ORNOT_": 54,
+    "$_OR_": 259,
+    "$_XNOR_": 89,
+    "$_XOR_": 75
+   }
+  }
+ ]
+}

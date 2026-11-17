@@ -1,0 +1,165 @@
+{
+ "experiment": "E01 representation test on public human ECoG",
+ "generated_at": "2026-10-20T08:45:42+00:00",
+ "dataset": {
+  "dandiset": "000019",
+  "asset_id": "4e4287f2-b557-4f30-a2d6-932f18c3e915",
+  "session": "EC9_B15",
+  "license": "CC-BY-4.0",
+  "description": "Human ECoG, 256-channel grid, reading consonant-vowel syllables aloud (Chang Lab, UCSF)",
+  "fs_hz": 3051.7578,
+  "duration_s": 195.0,
+  "channels_used": 60,
+  "channel_selection": "all 4-channel HDF5 chunks whose electrodes are all labelled precentral/postcentral (anatomical, label-free): 60 of 79 sensorimotor electrodes",
+  "units_note": "stored values: 99.99th pct |x| = 1.207e-03; NWB conversion attribute = 0.001 (to volts). Taken literally that is 1.207 uV (implausibly small for ECoG); interpreting stored values as volts gives 1207 uV (plausible). Ambiguous metadata: the analysis uses relative, label-free scaling so absolute units do not affect the comparison.",
+  "trials_total": 70,
+  "excluded": {
+   "no_vowel_class": 3,
+   "invalid_time_overlap": 16
+  }
+ },
+ "quantisation": {
+  "bits": 16,
+  "scale_rule": "16000 / 99.99th percentile |x| over the whole recording",
+  "clipped_fraction": 0.0
+ },
+ "chip_config": {
+  "biquad_q14": [
+   1238,
+   0,
+   -1238,
+   -29620,
+   13908
+  ],
+  "band_hz": [
+   70,
+   150
+  ],
+  "win_samples": 128,
+  "energy_shift": 8,
+  "event_threshold_codes": 5030,
+  "event_hysteresis": 1257,
+  "event_refractory": 15,
+  "alpha_shift": 5,
+  "event_threshold_rule": "5 x median over channels of the per-channel MAD in the 7 s rest epoch (single global threshold, as in hardware)",
+  "model": "numpy chip-equivalent of docs/V03_READOUT_SPEC.md (FEATURE) and hbci_event_core (EVENT); the TypeScript port of the same spec matches the RTL trace bit-exactly"
+ },
+ "analysis": {
+  "epoch_s": [
+   -0.2,
+   0.4
+  ],
+  "host_bins_s": 0.05,
+  "host_features": "log mean high-gamma (70-150 Hz FFT band-pass + Hilbert amplitude) and mean 0.5-20 Hz potential per 50 ms bin, from the int16 RAW samples",
+  "classifier": "standardise -> PCA(20) -> LDA with fixed shrinkage 0.5, fit inside each fold",
+  "validation": "stratified 5-fold x 20 repeats; label-permutation null with 200 shuffles",
+  "seed": 20261019
+ },
+ "results": {
+  "A_vowel": {
+   "RAW": {
+    "balanced_accuracy_mean": 0.4547,
+    "balanced_accuracy_sd": 0.0489,
+    "null_mean": 0.3338,
+    "null_95pct": 0.4534,
+    "p_permutation": 0.0547,
+    "chance": 0.3333,
+    "n_trials": 51,
+    "n_features": 1440
+   },
+   "FEATURE": {
+    "balanced_accuracy_mean": 0.4095,
+    "balanced_accuracy_sd": 0.0518,
+    "null_mean": 0.3382,
+    "null_95pct": 0.4838,
+    "p_permutation": 0.2289,
+    "chance": 0.3333,
+    "n_trials": 51,
+    "n_features": 780
+   },
+   "EVENT": {
+    "balanced_accuracy_mean": 0.3355,
+    "balanced_accuracy_sd": 0.006,
+    "null_mean": 0.3339,
+    "null_95pct": 0.3451,
+    "p_permutation": 0.4229,
+    "chance": 0.3333,
+    "n_trials": 51,
+    "n_features": 720
+   },
+   "HYBRID": {
+    "balanced_accuracy_mean": 0.4961,
+    "balanced_accuracy_sd": 0.044,
+    "null_mean": 0.3374,
+    "null_95pct": 0.4665,
+    "p_permutation": 0.0299,
+    "chance": 0.3333,
+    "n_trials": 51,
+    "n_features": 2220
+   },
+   "class_counts": {
+    "a": 17,
+    "i": 19,
+    "u": 15
+   }
+  },
+  "B_speech_vs_silence": {
+   "RAW": {
+    "balanced_accuracy_mean": 0.8412,
+    "balanced_accuracy_sd": 0.0374,
+    "null_mean": 0.4967,
+    "null_95pct": 0.6324,
+    "p_permutation": 0.005,
+    "chance": 0.5,
+    "n_trials": 68,
+    "n_features": 1440
+   },
+   "FEATURE": {
+    "balanced_accuracy_mean": 0.8912,
+    "balanced_accuracy_sd": 0.023,
+    "null_mean": 0.5027,
+    "null_95pct": 0.6176,
+    "p_permutation": 0.005,
+    "chance": 0.5,
+    "n_trials": 68,
+    "n_features": 780
+   },
+   "EVENT": {
+    "balanced_accuracy_mean": 0.5,
+    "balanced_accuracy_sd": 0.0,
+    "null_mean": 0.5,
+    "null_95pct": 0.5,
+    "p_permutation": 1.0,
+    "chance": 0.5,
+    "n_trials": 68,
+    "n_features": 720
+   },
+   "HYBRID": {
+    "balanced_accuracy_mean": 0.9022,
+    "balanced_accuracy_sd": 0.0309,
+    "null_mean": 0.5062,
+    "null_95pct": 0.6176,
+    "p_permutation": 0.005,
+    "chance": 0.5,
+    "n_trials": 68,
+    "n_features": 2220
+   }
+  }
+ },
+ "payload_bps": {
+  "sample_values_only_bps": 2929687.488,
+  "RAW_bps": 16296386.651999999,
+  "FEATURE_bps": 127315.52071874999,
+  "EVENT_bps": 70.74356252047998,
+  "HYBRID_bps": 16423702.172718748
+ },
+ "limitations": [
+  "single subject, single session, 67 vowel trials: not evidence about people in general",
+  "offline analysis of a published recording; no HBCI-01 hardware recorded anything",
+  "the RAW representation is evaluated with one host feature recipe; better decoders could extract more",
+  "FEATURE uses one 2nd-order band-pass at 70-150 Hz; other bands or windows would give different numbers",
+  "EVENT uses one global threshold rule fixed in advance",
+  "units in the NWB file are ambiguous (see units_note)"
+ ],
+ "runtime_s": 69.7
+}

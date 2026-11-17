@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <title>HBCI-01 event core architecture (v0.1, reconstructed)</title>
+  <rect width="960" height="420" fill="#0b1630"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#d8894a"/></marker>
+  </defs>
+  <g fill="none" stroke="#d8894a" stroke-width="1.6" marker-end="url(#a)">
+    <path d="M60 210H120"/><path d="M270 210H330"/><path d="M480 210H540"/><path d="M690 210H750"/>
+    <path d="M195 160V110H405V160"/><path d="M405 260V320H195V262"/><path d="M615 160V110H825V160"/>
+  </g>
+  <g fill="#13264d" stroke="#5b8bd9" stroke-width="1.4">
+    <rect x="120" y="160" width="150" height="100" rx="8"/><rect x="330" y="160" width="150" height="100" rx="8"/>
+    <rect x="540" y="160" width="150" height="100" rx="8"/><rect x="750" y="160" width="150" height="100" rx="8"/>
+    <rect x="330" y="300" width="150" height="50" rx="8"/><rect x="540" y="60" width="150" height="50" rx="8"/>
+  </g>
+  <g fill="#e8eefc" text-anchor="middle">
+    <text x="195" y="200">channel_state</text><text x="195" y="220" fill="#9fb4dd" font-size="11">8 × baseline/refr/armed</text>
+    <text x="405" y="200">baseline_ema</text><text x="405" y="220" fill="#9fb4dd" font-size="11">residual = x − ⌊b⌋</text>
+    <text x="615" y="200">threshold_detector</text><text x="615" y="220" fill="#9fb4dd" font-size="11">|r| ≥ thr, re-arm level</text>
+    <text x="825" y="200">event_packer</text><text x="825" y="220" fill="#9fb4dd" font-size="11">valid/ready slot</text>
+    <text x="405" y="330">timestamp</text><text x="615" y="90">refractory_ctrl</text>
+    <text x="30" y="205" font-size="11">in</text><text x="930" y="205" font-size="11">ev</text>
+    <text x="480" y="395" fill="#9fb4dd" font-size="11">Digital event core only. Electrodes, AFE, ADC, power and telemetry are not implemented.</text>
+  </g>
+</svg>

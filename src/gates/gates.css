@@ -1,0 +1,36 @@
+.gates { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 380px; }
+.gates-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.gates-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); background: var(--surface-panel); flex-wrap: wrap; }
+.gates-bar select, .gates-search { background: var(--bg-3); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); }
+.gates-search { width: 200px; }
+.gates-note { margin: 6px 12px 0; font-size: 11px; }
+.gates-canvas { flex: 1; position: relative; overflow: hidden; cursor: grab; background: var(--surface-workspace); }
+.gates-canvas:active { cursor: grabbing; }
+.gates-svg { transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+.gates-svg svg { display: block; background: #f4f6fb; border-radius: 8px; box-shadow: var(--shadow-2); border: 1px solid var(--border); }
+.gates-svg [id^="cell_"] { cursor: pointer; pointer-events: bounding-box; }
+.gates-svg [id^="cell_"] * { pointer-events: all; }
+.gates-svg [id^="cell_"]:hover { filter: drop-shadow(0 0 2px var(--accent)); }
+.gates-svg .gv-hl { filter: drop-shadow(0 0 3px var(--accent)); }
+.gates-svg .gv-hl * { stroke: var(--accent) !important; }
+.gates-svg .gv-dim { opacity: .25; }
+.gates-side { border-left: 1px solid var(--border); background: var(--surface-panel); overflow: auto; }
+.gv-cell h3 { margin: 2px 0 4px; font-size: 15px; }
+.gv-lines { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }
+.gv-line { display: flex; justify-content: space-between; border: 1px solid var(--line-soft); background: var(--bg-1); border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px; color: var(--text-dim); }
+.gv-line.on { border-color: var(--cyan); color: var(--cyan); }
+
+/* Level 3 header: which block these gates belong to, and where to go next */
+.gates-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface-panel); }
+.gates-name { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.gates-name b { font-size: 17px; }
+.gates-name code { font-size: 13px; color: var(--fg-secondary); }
+.gates-nt { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border: 1px dashed var(--ev-concept); color: var(--ev-concept); border-radius: 4px; }
+.gv-explain { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface-raised); font-size: 14.5px; display: flex; flex-direction: column; gap: 6px; }
+.gv-explain p { margin: 0; line-height: 1.5; }
+.gv-tt { border-collapse: collapse; font-family: var(--mono); font-size: 14px; align-self: flex-start; }
+.gv-tt th, .gv-tt td { padding: 2px 10px; border: 1px solid var(--border-soft); text-align: center; }
+.gv-tt th { color: var(--fg-secondary); font-weight: 600; }
+.gv-tt td.out { font-weight: 700; color: var(--accent); }
+details.gates-note summary { cursor: pointer; font-weight: 600; }
+details.gates-note[open] summary { margin-bottom: 4px; }
