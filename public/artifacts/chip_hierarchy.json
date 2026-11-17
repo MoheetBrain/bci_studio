@@ -35,6 +35,7 @@
    "lineStart": 44,
    "lineEnd": 59,
    "doc": "Reset synchroniser: asynchronous assertion, release two clock edges after the pin rises, so every flop in the core sees a synchronous release (recovery/ removal timing is then internal to the chip).",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -68,6 +69,7 @@
    "lineStart": 65,
    "lineEnd": 95,
    "doc": "SPI mode-0 slave front end: synchronised inputs, sampled bits on SCLK rising edges, output bit changes on SCLK falling edges. Generic: delivers bit events.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -149,6 +151,7 @@
    "lineStart": 103,
    "lineEnd": 162,
    "doc": "Register-bus SPI slave: command byte {wr, addr[6:0]} then 32 data bits. Write: the register write pulses after the 40th bit. Read: the register is read (combinational reg_rdata) when the command byte completes and shifted out MSB first on the following falling edges.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -238,6 +241,7 @@
    "lineStart": 167,
    "lineEnd": 219,
    "doc": "Sample-stream SPI slave: 24-bit frames {ch[2:0], 4'b0, parity, sample[15:0]}.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -324,6 +328,7 @@
    "lineStart": 225,
    "lineEnd": 265,
    "doc": "Record serialiser: pops one record, shifts 96 bits MSB first at one bit per clk with rec_sfrm high, then pops the next.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -423,7 +428,8 @@
    "file": "rtl/hbci02_chip_top.v",
    "lineStart": 270,
    "lineEnd": 344,
-   "doc": "Chip top",
+   "doc": "Chip top. HBCI-02 — chip-level top (hbci02_chip_top), v0.4 Wraps hbci02_digital_top with the serial interfaces a packaged test chip needs, so the whole device works with 14 signal pins plus power: clk, rst_n core clock and asynchronous active-low reset (asserted asynchronously, released synchronously by a 2-flop synchroniser inside the chip: hbci_reset_sync) spi_sclk, spi_cs_n, spi_mosi, spi_miso register bus: SPI mode 0 slave, MSB first, one transaction per CS assertion: 8-bit command {1 write / 0 read, addr[6:0]} then 32 data bits. The 7-bit address covers the whole register map (0x00..0x6D plus the two chip status words 0x70/0x71). smp_sclk, smp_cs_n, smp_mosi sample stream: SPI mode 0 slave, 24-bit frames {ch[2:0], 4'b0, parity, sample[15:0]} MSB first, one in_valid pulse per complete frame while CS is low (parity = even parity over the other 23 bits; a bad frame is dropped and counted) rec_sdo, rec_sfrm record output: 96-bit frames {7'b0, type, ch, flags, seq, ts, data} MSB first at one bit per clk; rec_sfrm is high for the 96 bits; the receiver samples on clk pred_strobe, pred_class direct prediction pins (CTRL.pred_direct_en) pred_irq prediction FIFO not empty All SPI inputs are synchronised with two flip-flops and edge-detected in the core clock domain: SCLK must be <= clk / 6. The record serialiser pops the record FIFO only between frames, so back-pressure is intrinsic (a record is never corrupted; drops are counted by the DSP as in v0.3). Verilog-2005, lint-clean under verilator -Wall. This is the netlist that the physical-design flow implements and the padframe proposal pins out (docs/TEST_PLAN.md).",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -607,7 +613,8 @@
    "file": "rtl/hbci02_digital_top.v",
    "lineStart": 22,
    "lineEnd": 315,
-   "doc": "",
+   "doc": "HBCI-02 — integrated digital top (hbci02_digital_top), v0.4 ADC-style sample input -> hbci_readout_core (v0.3 DSP: RAW / EVENT / FEATURE / HYBRID records) -> FEATURE tap -> hbci_ai_decoder (on-chip inference) -> predictions, with a synchronous 8-bit-address / 32-bit-data register bus for configuration, model loading, status, counters, diagnostics and the prediction FIFO, plus a built-in self-test (hbci_bist) that drives the whole path from an on-chip LFSR and folds every record and prediction into a signature register (known-answer test for silicon bring-up). Register map: docs/AI_DECODER.md section 4. The chip-level wrapper (rtl/hbci02_chip_top.v) serialises this bus and the sample/record streams. Verilog-2005, single clock, asynchronous active-low reset, every register reset. Lint-clean under verilator -Wall. Supersedes rtl/hbci_v04_digital_top.v.",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -821,6 +828,7 @@
    "lineStart": 328,
    "lineEnd": 429,
    "doc": "Built-in self-test: deterministic xorshift32 sample source (one sample every 4 cycles, channels round-robin, len samples) and a MISR over every record and prediction. The expected signature for a configuration comes from the Python golden models (scripts/check_top.py --bist), so this is a known-answer test of the whole DSP + AI path that needs no external stimulus. fold(sig, w) = rotl(sig, 5) ^ w record: sig = fold(fold(fold(sig, data), ts), {type, ch, flags, seq}) prediction: sig = fold(fold(fold(fold(sig, margin), ts), {frame_id, seq}), {class, flags}) A record and a prediction in the same cycle fold the record first.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1026,6 +1034,7 @@
    "lineStart": 34,
    "lineEnd": 56,
    "doc": "64*log2(e) with a 6-bit linear mantissa (Mitchell): l = 64*n + m, n = index of the leading one, m = the six bits below it. l = 0 for e = 0. Combinational.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1066,6 +1075,7 @@
    "lineStart": 62,
    "lineEnd": 75,
    "doc": "Feature quantiser (docs/AI_DECODER.md 3.1): x = sat_int8((l - centre) >>> qshift), 0 when the channel is not required. Combinational.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1138,6 +1148,7 @@
    "lineStart": 82,
    "lineEnd": 190,
    "doc": "Frame collector (docs/AI_DECODER.md section 2). One feature per cycle at most. A frame = one quantised feature from every channel in ch_mask, all with the same window index. Every abandoned frame and discarded feature is counted.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1331,6 +1342,7 @@
    "lineStart": 199,
    "lineEnd": 345,
    "doc": "Model store: 46 x 32-bit parameter words (docs/AI_DECODER.md 3.3), bus read and write, CRC-32 verification FSM, and the valid/error/busy/rejected status. Rows beyond NH/NO are not stored and read back as 0, so a model that does not fit this configuration fails its CRC check. Parameters are kept as flat vectors; word w of the W1 region is bits [32w +: 32] of w1_flat, etc.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1524,6 +1536,7 @@
    "lineStart": 351,
    "lineEnd": 522,
    "doc": "MLP engine (docs/AI_DECODER.md 3.2): one 8x8 signed multiplier, 34-bit accumulator, NH*8 + NO*N2 + 2 cycles from start to done.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -1712,7 +1725,8 @@
    "file": "rtl/hbci_ai_decoder.v",
    "lineStart": 528,
    "lineEnd": 768,
-   "doc": "Decoder top: quantiser, collector, pending register, model store, engine, prediction FIFO, counters and last-frame diagnostics.",
+   "doc": "Decoder top: quantiser, collector, pending register, model store, engine, prediction FIFO, counters and last-frame diagnostics.. HBCI-02 — on-chip AI decoder (hbci_ai_decoder), v0.4 Specification: docs/AI_DECODER.md (binding). Bit-exact software reference: scripts/golden_ai.py. Replaces the experimental rtl/hbci_onchip_mlp.v (kept for history; see docs/HBCI02_AUDIT.md for its defects). Pipeline: feature (ch, energy, ts, sat, win_idx) -> hbci_feat_quant 64*log2 compression, per-channel centre/shift, int8 -> hbci_frame_collector one observation = one feature per required channel, all from the same per-channel window index -> pending register one completed frame waiting for the engine -> hbci_mlp_engine 8 -> NH -> NO quantised MLP, or 8 -> NO linear model, one time-shared 8x8 multiplier, 34-bit accumulator -> prediction FIFO class, margin, timestamp, frame id, seq, flags Model parameters: hbci_model_store (46 x 32-bit words, CRC-32 verified; no prediction is produced until the loaded model has been verified). Genuine inference logic: the prediction is computed here, in synthesizable RTL. Training happens outside the chip. This is a bench research device, not a medical device, and nothing here is validated on an implant. Verilog-2005, single clock, asynchronous active-low reset, every register reset. Lint-clean under verilator -Wall.",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -2162,7 +2176,8 @@
    "file": "rtl/hbci_event_core.v",
    "lineStart": 27,
    "lineEnd": 158,
-   "doc": "",
+   "doc": "HBCI-01 — Hamiltonian BCI event core (v0.2) Converts a time-multiplexed stream of signed neural samples (one sample per accepted handshake, tagged with a channel number) into a sparse stream of threshold-crossing events. Per channel it keeps: * an exponential-moving-average baseline (Q16.8 fixed point) * an \"armed\" flag (hysteresis: must fall below threshold-hysteresis to re-arm) * a refractory down-counter (counted in that channel's own samples) * a \"primed\" flag (the first sample initialises the baseline, no detection) Event-only output is LOSSY: the raw waveform cannot be reconstructed from it. This is a digital event core only. It is NOT a complete BCI: electrodes, analog front end, ADC, power, telemetry and packaging are outside this RTL. Verilog-2005. Single clock, asynchronous active-low reset. v0.2: lint-clean under `verilator --lint-only -Wall` (explicit sign extension and sizing, named ev_push wire; logic proven equivalent to v0.1).",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -2384,6 +2399,7 @@
    "lineStart": 163,
    "lineEnd": 211,
    "doc": "Per-channel state register file: one read/write port addressed by `ch`.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -2506,6 +2522,7 @@
    "lineStart": 220,
    "lineEnd": 255,
    "doc": "Baseline estimator (EMA) and residual. Combinational. residual = sample - floor(baseline) (SAMPLE_W+1 bits, signed) baseline_next = baseline + ((sample - baseline) >>> alpha_shift) The first sample of a channel (primed = 0) initialises the baseline to the sample and produces a zero residual.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -2590,6 +2607,7 @@
    "lineStart": 263,
    "lineEnd": 287,
    "doc": "Threshold detector. Combinational. magnitude = |residual| above = enable && magnitude >= threshold below_rearm = magnitude < max(threshold - hysteresis, 1)",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -2682,6 +2700,7 @@
    "lineStart": 295,
    "lineEnd": 315,
    "doc": "Hysteresis and refractory control. Combinational. fire = primed & enable & armed & (refr_cnt == 0) & above armed_next = fire ? 0 : (armed | below_rearm) refr_next = fire ? cfg_refractory : saturating decrement of refr_cnt",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -2786,6 +2805,7 @@
    "lineStart": 321,
    "lineEnd": 340,
    "doc": "Timestamp: counts accepted samples. The event timestamp is the index of the sample that caused it (the counter value before that sample's increment).",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -2866,6 +2886,7 @@
    "lineStart": 346,
    "lineEnd": 388,
    "doc": "Event output register (one slot, valid/ready). New input is accepted only when the slot is free or being drained, so no event is ever dropped.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -3007,7 +3028,8 @@
    "file": "rtl/hbci_onchip_mlp.v",
    "lineStart": 9,
    "lineEnd": 246,
-   "doc": "",
+   "doc": "HBCI v0.4 research block: eight-input, four-hidden, two-output quantised MLP. Real synthesizable inference logic, NOT an implant-ready device or a trained speech/thought decoder. Weights/centres must be learned and provisioned offline. 1 MAC is time-shared: 32 hidden products + 8 output products per inference. Verilog-2005. Models are writable ONLY while enable=0 to avoid torn weights.",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -3158,7 +3180,8 @@
    "file": "rtl/hbci_readout_core.v",
    "lineStart": 43,
    "lineEnd": 257,
-   "doc": "",
+   "doc": "HBCI-01 — v0.3 readout core (hbci_readout_core) Specification: docs/V03_READOUT_SPEC.md. Shared constants (modes, record format, default filter coefficients): system/hbci_system.json. Wraps the UNCHANGED v0.2 event core (rtl/hbci_event_core.v, instance u_event) and adds, for a time-multiplexed stream of signed digital samples: * RAW every accepted sample (channel, value, sample index) * FEATURE a causal per-channel band-pass biquad (DF-I, Q2.14) and the energy sum(y^2) over windows of 2^k samples of that channel * EVENT the legacy threshold events, re-packed as records * HYBRID RAW + FEATURE and a record multiplexer (pending registers, priority arbiter, FIFO) with explicit per-type sequence numbers, gap flags and drop counters. Capture is gated by the explicit control input cfg_session_en (no neural \"wake word\"). Channel state keeps updating while the session is off. RAW preserves only the digital values that ENTER this block. Nothing lost earlier (sensing, analog filtering, digitisation) can be recovered here. This is digital readout logic only: no electrodes, analog front end, ADC, power, telemetry or packaging, and no timing closure is claimed. v0.4 (HBCI-02): a feature tap for the on-chip AI decoder (ai_feat_*), taken BEFORE the record multiplexer and FIFO so output back-pressure never starves inference, carrying a per-channel 16-bit window index (frame identifier, see docs/AI_DECODER.md section 2), and a feat_sync input that re-synchronises the window counters of every channel. Record behaviour is unchanged from v0.3. Verilog-2005. Single clock, asynchronous active-low reset. Every register is reset (including the FIFO storage), so outputs are never X after reset. Parameter limits: 4 <= SAMPLE_W <= 30, 1 <= CH_W, NUM_CH <= 2^CH_W, 1 <= WIN_W <= 15, ACC_W >= 2*SAMPLE_W-1+WIN_W (no accumulator overflow), 1 <= FIFO_LOG2.",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",
@@ -3510,6 +3533,7 @@
    "lineStart": 266,
    "lineEnd": 348,
    "doc": "Per-channel feature register file: one read/write port addressed by `ch`. Per channel: x1, x2, y1, y2 (filter history), acc (window energy), cnt (samples in the current window) and sat (saturation seen in the window). On a write the filter history shifts: x2 <= x1, x1 <= wr_x, y2 <= y1, y1 <= wr_y. Reads are combinational; out-of-range reads return zeros.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -3680,6 +3704,7 @@
    "lineStart": 358,
    "lineEnd": 414,
    "doc": "Direct-form-I biquad with rounding and saturation. Combinational, exact. p = b0*x + b1*x1 + b2*x2 - a1*y1 - a2*y2 (ACC_W = SAMPLE_W+COEF_W+3 bits: no intermediate overflow) y_full = (p + 2^(COEF_FRAC-1)) >>> COEF_FRAC (round half up) y = sat_SAMPLE_W(y_full), ysat = (y_full != y) The shipped core uses COEF_W = 16, COEF_FRAC = 14 (signed Q2.14).",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -3796,6 +3821,7 @@
    "lineStart": 430,
    "lineEnd": 483,
    "doc": "Band energy: square, accumulate, window-done and output saturation. Combinational. sq = y*y (2*SAMPLE_W-1 bits, unsigned) acc_next = acc + sq (ACC_W bits, exact) k = min(win_log2, WIN_W), win = 2^k done = (cnt >= win - 1) energy = sat32(acc_next >> energy_shift), esat = value did not fit 32 bits feat_sat = sat | ysat | esat (FEATURE record flags.sat) done: acc, cnt, sat <= 0 else: acc <= acc_next, cnt <= cnt + 1, sat <= sat | ysat `done` uses >= rather than == so that shrinking the window while a window is open ends it at the next sample (identical to == while cfg is constant).",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -3918,6 +3944,7 @@
    "lineStart": 502,
    "lineEnd": 678,
    "doc": "Record multiplexer: pending registers, arbiter, FIFO, seq/gap/drop rules. * Three 1-deep pending registers (RAW, EVENT, FEATURE). A record generated while its pending register is full and not being emptied this cycle is DROPPED: drop_<type>++ and gap_pending[type] is set. * seq_<type> increments for every generated record (dropped or not); the first record of each type after reset has seq 0. * A record accepted into its pending register takes gap = gap_pending[type] and clears gap_pending[type]. So flags.gap is set on exactly the first emitted record GENERATED after a loss, i.e. the record whose seq jumps. * Each cycle at most one pending record moves into the FIFO if the FIFO is not full (registered occupancy): priority EVENT > FEATURE > RAW. * A record generated in the cycle its pending register empties into the FIFO is accepted (not dropped). * The FIFO head drives rec_*; a record leaves on rec_valid & rec_ready. FIFO entry: {type[1:0], channel, flags[3:0], seq, ts, data[31:0]}.",
+   "docFrom": "comment above the module",
    "ports": [
     {
      "dir": "input",
@@ -4127,7 +4154,8 @@
    "file": "rtl/hbci_v04_digital_top.v",
    "lineStart": 6,
    "lineEnd": 80,
-   "doc": "",
+   "doc": "Experimental HBCI v0.4 integrated DIGITAL top. Entire v0.3 readout remains intact; feature windows tap directly into hardware MLP before the record FIFO. No electrode/AFE/ADC or implant exists.",
+   "docFrom": "file header comment",
    "ports": [
     {
      "dir": "input",

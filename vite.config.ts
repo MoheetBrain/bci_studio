@@ -23,5 +23,7 @@ export default defineConfig({
   define: { __RTL_SHA256__: JSON.stringify(rtlSha256()) },
   // the shared system model is imported from ./chip/system (snapshot of the chip repository)
   server: { host: '127.0.0.1' },
+  preview: { host: '127.0.0.1' },
+  resolve: { dedupe: ['three'] },
   build: { chunkSizeWarningLimit: 2500 },
 });

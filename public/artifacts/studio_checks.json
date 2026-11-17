@@ -1,0 +1,62 @@
+{
+ "generatedBy": "scripts/run-checks.mjs",
+ "ranAt": "2026-11-17T11:27:25.650Z",
+ "node": "v24.22.0",
+ "chipCommit": "207285fcb7153f688751e5234e4b3d9d59025bf9",
+ "note": "These compare the studio's TypeScript models with recorded RTL simulation traces (fixtures). They do not re-run the Verilog.",
+ "results": [
+  {
+   "id": "check:model",
+   "script": "scripts/check-demo-vs-rtl.mjs",
+   "what": "EVENT path: studio model vs the RTL trace of the synthetic 8-channel scenario (rtl_trace.json)",
+   "covers": [
+    "hbci_event_core"
+   ],
+   "exitCode": 0,
+   "passed": true,
+   "output": [
+    "DEMO model vs RTL trace: 3200/3200 samples agree on all 9 fields; demo events=66, rtl events=66",
+    "PASS"
+   ]
+  },
+  {
+   "id": "check:v03",
+   "script": "scripts/check-v03-vs-rtl.mjs",
+   "what": "FEATURE and RAW paths: studio model vs the RTL trace of the v0.3 readout core (rtl_trace_v03.json)",
+   "covers": [
+    "hbci_readout_core"
+   ],
+   "exitCode": 0,
+   "passed": true,
+   "output": [
+    "FEATURE internals: 4000/4000 samples agree on y, ysat, acc, cnt, done",
+    "FEATURE records: rtl=120 demo=120 all match (ch, ts, energy, sat)",
+    "RAW records: 4000 vs 4000 samples exact (value, channel, index)"
+   ]
+  },
+  {
+   "id": "check:v04",
+   "script": "scripts/check-v04-vs-rtl.mjs",
+   "what": "On-chip decoder: quantiser, MLP, CRC and latency vs the RTL traces (rtl_trace_v04.json, rtl_trace_v04_real.json)",
+   "covers": [
+    "hbci_ai_decoder"
+   ],
+   "exitCode": 0,
+   "passed": true,
+   "output": [
+    "rtl_trace_v04.json: trained model · 3 frames",
+    "  quantiser (L, x): 24/24 features agree",
+    "  MLP (h, logits, class, margin): 3/3 inferences agree",
+    "  CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match",
+    "  engine latency = 18 cycles for every completed inference: yes",
+    "  predictions matching an inference (frame, ts, class, margin): 3/3",
+    "rtl_trace_v04_real.json: trained model · 32 frames",
+    "  quantiser (L, x): 256/256 features agree",
+    "  MLP (h, logits, class, margin): 32/32 inferences agree",
+    "  CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match",
+    "  engine latency = 18 cycles for every completed inference: yes",
+    "  predictions matching an inference (frame, ts, class, margin): 32/32"
+   ]
+  }
+ ]
+}

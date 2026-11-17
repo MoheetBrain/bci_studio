@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 export interface ChipPort { dir: 'input' | 'output' | 'inout'; signed: boolean; range: string | null; name: string }
 export interface ChipModule {
-  name: string; file: string; lineStart: number; lineEnd: number; doc: string;
+  name: string; file: string; lineStart: number; lineEnd: number; doc: string; docFrom: string;
   ports: ChipPort[]; params: Array<{ name: string; default: string }>;
   instances: Array<{ name: string; module: string; file: string; line: number; parameters: string | null }>;
   inChipTop: boolean;

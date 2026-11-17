@@ -45,6 +45,21 @@ function parseFile(rel) {
     const params = [...header.matchAll(/\bparameter\s+(?:integer\s+|signed\s+|\[[^\]]+\]\s*)*([A-Za-z_]\w*)\s*=\s*([^,\n)]+)/g)].map((p) => ({ name: p[1], default: p[2].trim() }));
     modules.push({ name: m[1], file: rel, lineStart, lineEnd, doc: doc.join(' ').replace(/\s+/g, ' ').trim(), ports, params, bodyOffset: m.index, body });
   }
+  // The file's leading comment block describes the module the file is named after.
+  const header = [];
+  for (const l of rawLines) {
+    const t = l.trim();
+    if (!t.startsWith('//')) break;
+    const c = t.replace(/^\/\/\s?/, '');
+    if (!/^[=\-─]{4,}$/.test(c)) header.push(c);
+  }
+  const primary = modules.find((mod) => mod.name === rel.replace(/^.*\//, '').replace(/\.v$/, ''));
+  if (primary && header.length) {
+    const text = header.join(' ').replace(/\s+/g, ' ').trim();
+    primary.doc = primary.doc && !text.includes(primary.doc) ? `${primary.doc}. ${text}` : text;
+    primary.docFrom = 'file header comment';
+  }
+  for (const mod of modules) mod.docFrom ??= mod.doc ? 'comment above the module' : 'none';
   return { rel, src, modules };
 }
 
@@ -132,7 +147,7 @@ const out = {
   verification: { simulator: verification.simulator, ranAt: verification.ran_at, lint: verification.lint, suites: suites.length, passing: suites.filter((s) => s.status === 'pass').length },
   top: TOP,
   modules: modules.map((mod) => ({
-    name: mod.name, file: mod.file, lineStart: mod.lineStart, lineEnd: mod.lineEnd, doc: mod.doc,
+    name: mod.name, file: mod.file, lineStart: mod.lineStart, lineEnd: mod.lineEnd, doc: mod.doc, docFrom: mod.docFrom,
     ports: mod.ports, params: mod.params, instances: mod.instances,
     inChipTop: reachable.has(mod.name),
     suites: suitesOf(mod.name),
