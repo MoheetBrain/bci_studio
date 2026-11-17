@@ -1,7 +1,7 @@
 {
-  "name": "hbci-studio",
+  "name": "bci-studio",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5180 --strictPort",
@@ -10,12 +10,17 @@
     "preview": "vite preview --host 127.0.0.1 --port 5181",
     "check:model": "node scripts/check-demo-vs-rtl.mjs",
     "check:v03": "node scripts/check-v03-vs-rtl.mjs",
-    "check:v04": "node scripts/check-v04-vs-rtl.mjs"
+    "check:v04": "node scripts/check-v04-vs-rtl.mjs",
+    "atlas:build": "node tools/atlas/build-atlas.mjs",
+    "check:sources": "node scripts/check-sources.mjs",
+    "test": "node --test --disable-warning=ExperimentalWarning \"tests/*.test.ts\"",
+    "check": "npm run typecheck && npm test && npm run check:model && npm run check:v03 && npm run check:v04"
   },
   "dependencies": {
     "@react-three/drei": "9.114.0",
     "@react-three/fiber": "8.17.10",
     "@xyflow/react": "12.3.2",
+    "meshoptimizer": "0.22.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "three": "0.169.0",
