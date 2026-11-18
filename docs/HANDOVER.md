@@ -1,7 +1,8 @@
 # Handover — BCI Studio first integrated release
 
-Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio` (local commits only; **nothing was pushed,
-published or deployed**). The owner confirmed on 2026-11-18 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
+Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed to `MoheetBrain/bci_studio` on 2026-11-18 at the
+owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
+that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
 ## 1 · What exists now
 
@@ -144,8 +145,8 @@ Evidence-based schematic (cortical layers, routing, analogue MUX) · Conceptual 
 
 ## 8 · Resumable progress note
 
-- State: all six gates implemented; working tree committed on `feature/brain-atlas-studio`; not pushed.
+- State: all six gates implemented; committed on `feature/brain-atlas-studio` and pushed to GitHub; not merged.
 - To resume: `cd ~/bci_studio && npm install && npm run corpus:build && npm run dev`.
 - Reference clones live in the git-ignored `reference/` (needed only to rebuild the atlas).
 - **Next concrete task:** have the precentral-gyrus card and the signal-journey stage text reviewed by a domain
-  expert. Still open for the owner: whether to push `feature/brain-atlas-studio` to GitHub (not pushed so far).
+  expert. Still open for the owner: whether to open a pull request into `main`.
