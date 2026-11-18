@@ -1,7 +1,7 @@
 # Handover — BCI Studio first integrated release
 
 Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio` (local commits only; **nothing was pushed,
-published or deployed**). One engineering agent; no sub-agents or second model were used.
+published or deployed**). The owner confirmed on 2026-11-18 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
 ## 1 · What exists now
 
@@ -21,16 +21,17 @@ ADC conversion** → inspect the **real implemented digital blocks** (file:line)
 | 4 · Local source search, cited cards, provenance labels, corpus evaluation | Done (keyword retrieval; no generated answers) | `src/research/`, `server/`, `tools/corpus/`, `docs/SOURCE_AUDIT.md` |
 | 5 · Desktop/mobile checks, performance, accessibility, launch instructions | Done, with the limits in §6 | `tests/e2e/`, `docs/evidence/`, `README.md` |
 
-## 2 · Two decisions made for you — please confirm or reverse
+## 2 · Decisions on location and revision
 
-1. **Where the work lives.** You gave `MoheetBrain/bci_studio` (an empty repository) together with a brief that says
-   "prefer adding to `studio/`" in the chip repository. I built in a clone of `bci_studio` at `~/bci_studio`: the
-   existing studio was imported unchanged at the repository root, with a read-only snapshot of the chip's `rtl/`,
-   `tb/`, `system/` and `docs/` under `chip/`. `~/Hamiltonian-BCI-Chip` was only read. To move it back, copy the
-   app folders into `Hamiltonian-BCI-Chip/studio/` and point two paths back at `../rtl` and `../system`.
+1. **Where the work lives — confirmed by the owner on 2026-11-18: keep it in `bci_studio`.** The studio is developed
+   in `MoheetBrain/bci_studio` (local clone `~/bci_studio`), with the existing studio imported at the repository root
+   and a read-only snapshot of the chip's `rtl/`, `tb/`, `system/` and `docs/` under `chip/`. The chip repository
+   `~/Hamiltonian-BCI-Chip` stays the home of the RTL and is only read from here. To pick up newer chip work,
+   replace `chip/` from a later commit, regenerate `chip/SNAPSHOT.json`, then run `npm run chip:extract` and
+   `npm run check:rtl` (the snapshot-integrity test fails until both are refreshed).
 2. **Which revision.** The chip repository's `main` is at `1448535`; the newest work is `feature/hbci-02-onchip-ai`
-   at `207285f` (HBCI-02, on-chip decoder), a strict descendant of `main` and already on GitHub. I based on
-   `207285f`.
+   at `207285f` (HBCI-02, on-chip decoder), a strict descendant of `main` and already on GitHub. The snapshot is
+   based on `207285f`.
 
 ## 3 · Changed files and reused components
 
@@ -147,4 +148,4 @@ Evidence-based schematic (cortical layers, routing, analogue MUX) · Conceptual 
 - To resume: `cd ~/bci_studio && npm install && npm run corpus:build && npm run dev`.
 - Reference clones live in the git-ignored `reference/` (needed only to rebuild the atlas).
 - **Next concrete task:** have the precentral-gyrus card and the signal-journey stage text reviewed by a domain
-  expert, then decide where the repository should live (§2) and whether to push the branch.
+  expert. Still open for the owner: whether to push `feature/brain-atlas-studio` to GitHub (not pushed so far).
