@@ -1,4 +1,4 @@
-# Bibliography check against Crossref — 2026-11-19T08:41:00.325Z
+# Bibliography check against Crossref — 2026-11-19T12:33:40.702Z
 -  spl-atlas: no DOI (dataset); not checkable here
 ✓  desikan2006: 10.1016/j.neuroimage.2006.01.021
 ✓  penfield1937: 10.1093/brain/60.4.389
@@ -23,6 +23,28 @@
 ✓  shannon1949: 10.1109/JRPROC.1949.232969
 ✓  quiroga2004: 10.1162/089976604774201631
 ✓  crone1998: 10.1093/brain/121.12.2301
+✓  georgopoulos1982: 10.1523/JNEUROSCI.02-11-01527.1982
+✓  moran1999: 10.1152/jn.1999.82.5.2676
+✓  wu2006: 10.1162/089976606774841585
+✓  gilja2012: 10.1038/nn.3265
+✓  christie2015: 10.1088/1741-2560/12/1/016009
+✓  ludwig2009: 10.1152/jn.90989.2008
+✓  perge2013: 10.1088/1741-2560/10/3/036004
+✓  glaser2020: 10.1523/ENEURO.0506-19.2020
+✓  musk2019: 10.2196/16194
+✓  malach1995: 10.1073/pnas.92.18.8135
+✓  grillspector2001: 10.1016/S0042-6989(01)00073-6
+✓  larsson2006: 10.1523/JNEUROSCI.1657-06.2006
+✓  wandell2007: 10.1016/j.neuron.2007.10.012
+✓  malikovic2016: 10.1007/s00429-015-1009-8
+✓  amunts2020: 10.1126/science.abb4588
+✓  kay2008: 10.1038/nature06713
+✓  miller2016: 10.1371/journal.pcbi.1004660
+✓  manning2009: 10.1523/JNEUROSCI.2041-09.2009
+✓  ray2011: 10.1371/journal.pbio.1000610
+✓  brindley1968: 10.1113/jphysiol.1968.sp008519
+✓  beauchamp2020: 10.1016/j.cell.2020.04.033
+✓  fernandez2021: 10.1172/JCI151331
 ✓  scoville1957: 10.1136/jnnp.20.1.11
 ✓  alexander1986: 10.1146/annurev.ne.09.030186.002041
 ✓  gazzaniga2000: 10.1093/brain/123.7.1293
@@ -31,4 +53,4 @@
 -  hbci-rtl: no DOI (repository); not checkable here
 -  hbci-afe-adc: no DOI (project-document); not checkable here
 
-27 DOIs checked, 0 problem(s).
+49 DOIs checked, 0 problem(s).

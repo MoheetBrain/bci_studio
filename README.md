@@ -25,8 +25,9 @@ npm run preview      # http://127.0.0.1:5181  (also serves the search service)
 ## Test it
 
 ```sh
-npm run check        # typecheck + 92 unit tests + the three model-versus-RTL checks
+npm run check        # typecheck + 111 unit tests + the three model-versus-RTL checks
 npm run test:e2e     # production build, then the 27-step walkthrough in headless Chrome (also captures the screens)
+npm run test:e2e:experiment   # production build, then the 17-step acceptance test of the BCI experiment
 node tests/e2e/perf.mjs      # opens a visible Chrome window for ~40 s; writes docs/evidence/performance.txt
 node tests/e2e/capture-looks.mjs && node tests/e2e/compare.mjs   # same-camera look captures + before/after sheets (dev server running)
 node tests/e2e/record.mjs    # 30 s screen recording of real interaction (needs ffmpeg on the PATH)
@@ -35,7 +36,7 @@ npm run check:sources        # verifies every cited DOI against Crossref (needs 
 
 The browser tests drive the Chrome already installed on the machine (`playwright-core`, no browser download).
 
-## The six scenes
+## The seven scenes
 
 Ordered by physical scale in the dock; the selected brain region is carried through all of them, each scene links to
 the previous and next one, and one click returns to the region.
@@ -43,11 +44,12 @@ the previous and next one, and one click returns to the region.
 | | Scene | What it is | Evidence label |
 |---|---|---|---|
 | 1 | **Brain** (home, 15 cm) | One continuous surface from the atlas subject’s own T1 MRI; every point carries its region from the label volume. Hover names a region, click reframes and opens one card. Solid / X-ray (the atlas’s 251 bodies inside a glass shell) / Regions / Slice (the MRI on the cut face). Finder: ⌘K or `/`. | Measured dataset; the tissue look is rendering |
-| 2 | **Neurons** (≈ 1 mm) | A 3D schematic patch of cortex. One neuron runs the Hodgkin–Huxley equations; an electrode contact at an adjustable distance records a faint, inverted echo. Play / pause / scrub in stated slow motion; three detail levels. | Schematic + synthetic example |
-| 3 | **Signal** (µV → bits) | Neural source → electrode → (routing) → AFE → (analogue MUX) → ADC → our chip → decoder/host, with computed traces and consequences. | Synthetic example; digital stage checked against RTL |
-| 4 | **Chip** (RTL) | What the digital design actually contains, read from the RTL (file:line), which executed suites cover it, what is *not* implemented. The original full chip studio is one click away, unchanged. | Read from source; “not fabricated” stated |
-| 5 | **Decoder** (8 → 2) | Eight inputs, sixteen multiply-accumulates, two totals, one answer — stepped by engine clock cycle over 32 frames of the RTL trace on recorded ECoG samples. Totals are re-added in the page and checked against the RTL. | RTL simulation trace; what-if is a labelled software re-run |
-| 6 | **Research** (sources) | Local full-text search over the project documents, RTL and curated cards, with exact locations. Passages, not generated answers. | — |
+| 2 | **Experiment** (BCI · live) | Attach a virtual BCI to the cortex in the Brain scene (**Add BCI**), then follow what it records through eight stages — tissue, neuron, electrode, front end, ADC, DSP, decoder, output — on one timeline, in three synchronised representations. Two experiments: movement → cursor on the precentral gyrus, picture → report on the lateral occipital gyrus. A decoder lab compares five decoders under constraints. | **Simulated** throughout; device and cell geometry illustrative; placement atlas-derived |
+| 3 | **Neurons** (≈ 1 mm) | A 3D schematic patch of cortex. One neuron runs the Hodgkin–Huxley equations; an electrode contact at an adjustable distance records a faint, inverted echo. Play / pause / scrub in stated slow motion; three detail levels. | Schematic + synthetic example |
+| 4 | **Signal** (µV → bits) | Neural source → electrode → (routing) → AFE → (analogue MUX) → ADC → our chip → decoder/host, with computed traces and consequences. | Synthetic example; digital stage checked against RTL |
+| 5 | **Chip** (RTL) | What the digital design actually contains, read from the RTL (file:line), which executed suites cover it, what is *not* implemented. The original full chip studio is one click away, unchanged. | Read from source; “not fabricated” stated |
+| 6 | **Decoder** (8 → 2) | Eight inputs, sixteen multiply-accumulates, two totals, one answer — stepped by engine clock cycle over 32 frames of the RTL trace on recorded ECoG samples. Totals are re-added in the page and checked against the RTL. | RTL simulation trace; what-if is a labelled software re-run |
+| 7 | **Research** (sources) | Local full-text search over the project documents, RTL and curated cards, with exact locations. Passages, not generated answers. | — |
 
 Three predict-then-check tasks (spikes are all-or-nothing; aliasing; one dominant decoder channel) ask for an answer
 before the scene shows the model’s result. Answers stay in the browser.
@@ -82,6 +84,7 @@ public/atlas/   atlas + specimen assets + licence                            doc
 ## Read next
 
 - `docs/HANDOVER.md` — what was built, what was reused, test results, limitations, next task.
+- `docs/BCI_EXPERIMENT.md` — the interactive BCI experiment: models, sources, assumptions, acceptance results, limits; `docs/evidence/experiment/` holds its test report and screenshots.
 - `docs/CINEMATIC_REBUILD.md` — the cinematic rebuild: what was decided and why; `docs/evidence/cinematic/README.md` indexes its evidence.
 - `docs/DECISION_ATLAS_FOUNDATION.md` — why this atlas and this architecture.
 - `docs/ATLAS_PROVENANCE.md` — dataset, transforms, coverage, verification, known source problems.

@@ -4,7 +4,37 @@ Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed 
 owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
-## 0 · Cinematic rebuild — 2026-11-19 (read this first)
+## 0 · Interactive BCI experiment — 2026-11-19 (read this first)
+
+Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. **Local commits only: not pushed, no
+pull request, nothing merged, published or deployed.** One engineering agent; no sub-agents, no second model, no paid or
+generative service. Decision record, models, sources and limits: `docs/BCI_EXPERIMENT.md`.
+
+What changed, in one paragraph: the Brain scene has an **Add BCI** control — a virtual device follows the pointer over
+the real surface, attaches to the atlas region under it, can be dragged, moved and removed, and survives a reload. Every
+surface region now has a five-part brief (anatomy, function, BCI, signals, unknowns); two are fully written and sourced
+(precentral gyrus, lateral occipital gyrus), the rest show atlas-derived anatomy and say what is not written. A new
+**Experiment** scene simulates what the device records and follows it through eight inspectable stages to a decoded
+output on one timeline, in three synchronised representations, with a trace from any prediction back to the neuron (or
+the noise) that caused it. A **Decoder lab** compares five decoders on held-out synthetic data under constraints.
+
+Verified on this branch: typecheck clean · 111 unit tests · model-versus-RTL checks pass · production build ·
+`tests/e2e/experiment.mjs` 17 of 17 · `tests/e2e/walkthrough.mjs` (the earlier 27 steps) · 49 DOIs against Crossref.
+
+Things to know before touching it:
+- New code lives in `src/experiment/` (models in `src/experiment/model/`, pure and unit-tested; they run in a Web Worker
+  via `sim.worker.ts`). The brain scene gained the device and three hooks in `src/atlas/AtlasScene.tsx`; the insight
+  card gained the brief and the BCI controls. The original chip studio (`src/ui`, `src/lab`, `src/model`,
+  `src/artifacts`, `src/state`, `src/App.tsx`, `chip/`) is untouched.
+- The opening shot's framing was corrected (it had divided by the free width twice). The older walkthrough's bound on
+  the brain's size still holds.
+- **Everything in the Experiment scene is simulated.** The only measured data in the studio remain the atlas and the RTL
+  trace on recorded ECoG in the Decoder scene.
+- Open decisions for the owner: push this branch or not; whether it stacks on or replaces the two earlier branches;
+  whether to download a public electrophysiology dataset for a real-data decoder benchmark (not done — needs your
+  go-ahead and a licence review).
+
+## 0b · Cinematic rebuild — 2026-11-19
 
 Branch `feature/cinematic-rebuild`, cut from `feature/brain-atlas-studio` @ `df9ba12`. **Pushed to GitHub on 2026-11-19
 at the owner’s request (plain push, no force); no pull request, nothing merged, published or deployed.** PR #1
