@@ -21,7 +21,7 @@ for (const s of Object.values(SOURCES)) {
     let res;
     for (let attempt = 0; attempt < 5; attempt++) {
       await new Promise((r) => setTimeout(r, attempt === 0 ? 250 : 3000 * attempt));
-      res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(s.doi)}`, { headers: { 'User-Agent': 'bci-studio-source-check/1.0' } });
+      res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(s.doi)}`, { headers: { 'User-Agent': 'source-check/1.0' } });
       if (res.status !== 429 && res.status < 500) break;
     }
     if (!res.ok) { say(`✗  ${s.id}: DOI ${s.doi} → HTTP ${res.status}${res.status === 429 ? ' (rate-limited by Crossref; not a statement about the citation — run again later)' : ''}`); bad++; continue; }

@@ -54,7 +54,7 @@ function DecoderScene({ trace }: { trace: RtlTraceV04 }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const frameIdx = Math.min(nFrames - 1, Math.floor(tl.t / S));
+  const frameIdx = Math.max(0, Math.min(nFrames - 1, Math.floor(tl.t / S) || 0));
   const frame = trace.frames[frameIdx];
   const inf = trace.inferences.find((i) => i.frame_id === frame.frame_id && i.ts === frame.ts_last) ?? trace.inferences[frameIdx];
   const active = whatIf && whatIf.frame === frameIdx ? whatIf : null;

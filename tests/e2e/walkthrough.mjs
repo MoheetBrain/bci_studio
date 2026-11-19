@@ -1,13 +1,10 @@
-// End-to-end acceptance walkthrough against the PRODUCTION build, in a real Chrome driven by playwright-core:
-//   open → brain → hover a motor-region parcel → select + cited explanation → electrode → signal chain + ADC →
-//   implemented digital blocks → pause / scrub computed traces → supporting research → back to the same region.
-// Plus: no hidden-object picking, isolate / restore, camera interruption, keyboard and touch equivalents, load-failure
-// states, phone viewport, and basic accessibility checks.
+// End-to-end walkthrough of the studio in a real Chrome, against the production build.
 //
-//   npm run build && node tests/e2e/walkthrough.mjs            (headless; functional evidence only)
-//   HEADED=1 node tests/e2e/walkthrough.mjs                    (visible window on the real GPU)
+//   npm run build && node tests/e2e/walkthrough.mjs            (HEADED=1 to watch)
 //
-// Writes docs/evidence/e2e-report.txt and docs/evidence/screenshots/*.png. Exit code 1 if any step fails.
+// Every step drives the running application the way a visitor would (pointer, keyboard) and asserts on what the
+// application reports — real atlas ids from ray casts, store state, text on screen. It writes
+// docs/evidence/e2e-report.txt and captures docs/evidence/cinematic/screens/*.png as it goes.
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -15,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const PORT = 5199, BASE = `http://127.0.0.1:${PORT}`;
-const shots = join(root, 'docs/evidence/screenshots');
+const PORT = 5197, BASE = `http://127.0.0.1:${PORT}`;
+const shots = join(root, 'docs/evidence/cinematic/screens');
 mkdirSync(shots, { recursive: true });
 if (!existsSync(join(root, 'dist/index.html'))) { console.error('dist/ not found — run npm run build first'); process.exit(2); }
 
@@ -41,381 +38,405 @@ const step = async (name, fn) => {
 };
 const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 const eq = (a, b, msg) => { if (a !== b) throw new Error(`${msg}: expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); };
+const near = (a, b, tol, msg) => { if (!(Math.abs(a - b) <= tol)) throw new Error(`${msg}: expected ${b} ± ${tol}, got ${a}`); };
 
-const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-angle=metal'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
 const page = await ctx.newPage();
 page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`));
+page.on('pageerror', (e) => consoleErrors.push(String(e)));
 const shot = (name, p = page) => p.screenshot({ path: join(shots, `${name}.png`) });
 const T = (id) => `[data-testid="${id}"]`;
-const store = (expr) => page.evaluate(`(() => { const s = window.__atlas.store.getState(); return ${expr}; })()`);
-const settle = (ms = 250) => page.waitForTimeout(ms);
+const store = (expr, p = page) => p.evaluate(`(() => { const s = window.__atlas.store.getState(); return ${expr}; })()`);
+const settle = (ms = 900) => page.waitForTimeout(ms);
+const num = (s) => parseFloat(String(s).replace(/[^\d.eE+-]/g, ''));
 let env = {};
 
-// ── 1 · the brain is the home screen ────────────────────────────────────────────────────────────────────────────
-await step('open the studio: the first screen is the 3D brain atlas', async () => {
+// ── the brain ───────────────────────────────────────────────────────────────────────────────────────────────────
+await step('open the studio: the first screen is a large, continuous 3D brain', async () => {
   await page.goto(BASE);
   await page.waitForSelector(`${T('atlas-workspace')}[data-status="ready"]`, { timeout: 30000 });
   await page.waitForSelector(`${T('atlas-viewport')} canvas`);
-  await page.waitForFunction(() => window.__atlasPerf && window.__atlasPerf.bvhCount >= 251, null, { timeout: 30000 });
-  const s = await store('({ n: s.structures.size, groups: s.groups.size, sel: s.selectedId, ws: location.hash })');
-  eq(s.n, 251, 'structures loaded');
+  await settle(1200);
+  const s = await store('({ n: s.structures.size, tri: s.specimen.meta.mesh.triangles, onSurface: s.specimen.surfaceIds.size, sel: s.selectedId, mode: s.viewMode })');
+  eq(s.n, 251, 'atlas structures'); eq(s.sel, null, 'nothing selected at start'); eq(s.mode, 'solid', 'solid view');
   env = await page.evaluate(() => {
     const c = document.querySelector('[data-testid="atlas-viewport"] canvas');
-    const gl = c.getContext('webgl2') ?? c.getContext('webgl');
+    const gl = c.getContext('webgl2');
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     return { ua: navigator.userAgent, renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown', canvas: [c.width, c.height], dpr: devicePixelRatio };
   });
-  // the canvas actually contains a rendered brain (not a blank frame): sample pixels through a screenshot
-  const png = await page.locator(T('atlas-viewport')).screenshot();
-  assert(png.length > 40000, `viewport screenshot is suspiciously small (${png.length} bytes)`);
-  await shot('01-home-brain');
-  return `${s.n} structures, ${s.groups} groups; renderer: ${env.renderer}`;
+  const cov = await page.evaluate(() => window.__atlas.coverage());
+  assert(cov.h >= 0.6 && cov.h <= 0.85, `brain fills ${(cov.h * 100).toFixed(0)} % of the stage height (wanted 60–85 %)`);
+  eq(await page.locator(T('region-inspector')).count(), 0, 'no card before a selection');
+  eq(await page.locator(T('nav-brain')).getAttribute('aria-current'), 'page', 'Brain is the current scene');
+  await shot('01-home');
+  return `${s.n} structures behind one surface of ${s.tri.toLocaleString()} triangles; ${s.onSurface} regions reach it; fills ${(cov.h * 100).toFixed(0)} % of the height; ${env.renderer}`;
 });
 
-await step('no permanent label cloud; hint invites hovering', async () => {
-  assert(await page.locator(T('atlas-hint')).isVisible(), 'hint missing');
-  eq(await page.locator(T('atlas-hover-tag')).isVisible(), false, 'hover tag visible before hovering');
-  eq(await page.locator(T('region-inspector')).count(), 0, 'inspector open with no selection');
-});
-
-// ── 2 · hover and select the motor-region parcel ────────────────────────────────────────────────────────────────
-let pt;
-await step('hover the left precentral gyrus: the tag names exactly that structure', async () => {
-  pt = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
-  assert(pt, 'left precentral gyrus has no visible point in the home view');
-  await page.mouse.move(pt.x - 40, pt.y - 40); await page.mouse.move(pt.x, pt.y, { steps: 4 });
-  await page.waitForFunction(() => window.__atlas.store.getState().hoverId === 'left_precentral_gyrus', null, { timeout: 3000 });
-  const tag = await page.locator(`${T('atlas-hover-tag')} .atlas-tag-name`).innerText();
-  eq(tag.toLowerCase(), 'left precentral gyrus', 'hover tag');
-  await shot('02-hover-precentral');
-  return `at (${Math.round(pt.x)}, ${Math.round(pt.y)})`;
-});
-
-await step('picking resolves real ids: five other structures hover as themselves', async () => {
-  const ids = ['left_postcentral_gyrus', 'left_superior_frontal_gyrus', 'left_superior_temporal_gyrus', 'left_frontal_pole', 'left_lateral_occipital_gyrus'];
+await step('hover names the exact atlas region under the pointer; nothing is labelled until then', async () => {
+  eq(await page.locator(T('atlas-hover-tag')).isVisible(), false, 'no tag before hovering');
+  const ids = ['left_precentral_gyrus', 'left_postcentral_gyrus', 'left_superior_temporal_gyrus', 'left_superior_frontal_gyrus'];
   const seen = [];
   for (const id of ids) {
     const p = await page.evaluate((i) => window.__atlas.screenPointOf(i), id);
-    if (!p) continue; // not visible from this view
-    await page.mouse.move(p.x, p.y, { steps: 3 });
+    assert(p, `${id} has no visible point from the opening view`);
+    await page.mouse.move(p.x, p.y);
     await page.waitForFunction((i) => window.__atlas.store.getState().hoverId === i, id, { timeout: 3000 });
-    const name = (await page.locator(`${T('atlas-hover-tag')} .atlas-tag-name`).innerText()).toLowerCase();
-    eq(name, id.replace(/_/g, ' '), `hover over ${id}`);
+    const tag = (await page.locator(T('atlas-hover-tag')).innerText()).toLowerCase();
+    assert(tag.includes(id.replace(/_/g, ' ').replace(/^left /, '')), `tag "${tag}" does not name ${id}`);
     seen.push(id);
+    if (id === ids[0]) await shot('02-hover');
   }
-  assert(seen.length >= 4, `only ${seen.length} of ${ids.length} test structures were visible`);
-  return `${seen.length} structures`;
+  return `${seen.length} regions hovered as themselves`;
 });
 
-await step('click selects it and opens a concise, cited explanation with the gyrus ≠ M1 caution', async () => {
-  await page.mouse.move(pt.x, pt.y, { steps: 3 });
-  await page.mouse.click(pt.x, pt.y);
-  await page.waitForSelector(T('region-inspector'));
-  eq((await page.locator(T('region-title')).innerText()).toLowerCase(), 'left precentral gyrus', 'inspector title');
-  const caution = await page.locator(T('region-caution')).innerText();
-  assert(/≠/.test(caution) && /cell architecture/.test(caution) && /bounded approximation/.test(caution), 'caution text incomplete');
-  const cites = await page.locator(`${T('region-inspector')} .cite`).count();
-  assert(cites >= 6, `only ${cites} citations in the inspector`);
-  eq((await page.locator(T('region-chip')).innerText()).toLowerCase().includes('left precentral gyrus'), true, 'region chip');
-  await shot('03-selected-precentral-inspector');
-  return `${cites} citation chips`;
-});
-
-await step('"M1" search finds the gyrus and carries the caveat; nothing is named M1', async () => {
-  await page.fill(T('atlas-search'), 'M1');
-  await page.waitForSelector(`${T('atlas-search-results')} .atlas-hit`);
-  const txt = await page.locator(T('atlas-search-results')).innerText();
-  assert(/left precentral gyrus/i.test(txt) && /not identical/i.test(txt), `results: ${txt.slice(0, 120)}`);
-  await shot('04-search-m1');
-  await page.keyboard.press('Escape');
-});
-
-// ── 3 · display rules ───────────────────────────────────────────────────────────────────────────────────────────
-await step('hidden structures are never picked: hiding the gyrus exposes what lies behind it', async () => {
-  // the inspector has opened and the viewport is narrower now: find the gyrus again
-  await settle(400);
-  pt = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
-  assert(pt, 'gyrus not visible after the inspector opened');
-  eq((await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), pt)).id, 'left_precentral_gyrus', 'before hiding');
-  await page.locator(`${T('region-inspector')} button:has-text("Hide")`).first().click();
-  await settle();
-  const hit = await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), pt);
-  assert(!hit || hit.id !== 'left_precentral_gyrus', 'picked a hidden structure');
-  await page.mouse.move(pt.x + 2, pt.y + 2); await page.mouse.move(pt.x, pt.y, { steps: 2 });
-  await settle();
-  const hov = await store('s.hoverId');
-  assert(hov !== 'left_precentral_gyrus', 'hovered a hidden structure');
-  await page.locator(T('tb-restore')).click();
-  await settle();
-  eq((await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), pt)).id, 'left_precentral_gyrus', 'after restore');
-  return `behind it: ${hit ? hit.id : 'nothing'}`;
-});
-
-await step('see-through cortex does not steal the pointer; the selection stays opaque', async () => {
-  await page.evaluate(() => { const s = window.__atlas.store.getState(); s.setCortexOpacity(0.2); });
-  await settle();
-  // the selected gyrus stays opaque and pickable while the rest of the cortex is see-through
-  eq((await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), pt)).id, 'left_precentral_gyrus', 'selected structure under a transparent cortex');
-  const other = await page.evaluate(() => window.__atlas.screenPointOf('left_superior_frontal_gyrus'));
-  eq(other, null, 'a see-through gyrus must not be pickable anywhere');
-  await page.evaluate(() => window.__atlas.store.getState().select(null));
-  await settle(400);
-  const hit = await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), pt);
-  const tissue = hit ? await page.evaluate((id) => window.__atlas.store.getState().structures.get(id).tissue, hit.id) : null;
-  assert(tissue !== 'cortex' && tissue !== 'sulcus', `picked ${hit?.id} (${tissue}) through a 20 % cortex`);
-  await shot('05-cortex-transparent');
-  const legend = await page.locator(T('atlas-legend')).innerText();
-  assert(/Cortex at 20% opacity/.test(legend) && /passes through/.test(legend), 'legend does not explain the transparency');
-  await page.evaluate(() => { const s = window.__atlas.store.getState(); s.setCortexOpacity(1); s.select('left_precentral_gyrus'); });
-  return `through the cortex: ${hit ? `${hit.id} (${tissue})` : 'nothing'}`;
-});
-
-await step('isolate, show in context, restore', async () => {
-  await page.locator(`${T('region-inspector')} button:has-text("Isolate")`).click();
-  await settle();
-  let v = await store('({ hidden: Object.values(s.vis).filter((x) => x === "hidden").length })');
-  eq(v.hidden, 250, 'isolate hides the other 250 structures');
-  await shot('06-isolated');
-  await page.locator(`${T('region-inspector')} button:has-text("Show in context")`).click();
-  await settle();
-  v = await store('({ faded: Object.values(s.vis).filter((x) => x === "faded").length })');
-  eq(v.faded, 250, 'context fades the other 250 structures');
-  const through = await page.evaluate(() => { const p = window.__atlas.screenPointOf('left_precentral_gyrus'); return p ? window.__atlas.pickAt(p.x, p.y)?.id : null; });
-  eq(through, 'left_precentral_gyrus', 'the selection is still pickable among faded context');
-  await shot('07-context');
-  await page.locator(`${T('region-inspector')} button:has-text("Restore all")`).click();
-  await settle();
-  eq(await store('Object.keys(s.vis).length'), 0, 'restore');
-});
-
-await step('hemisphere toggle and cutaway with a legend entry; picks respect the cut', async () => {
-  await page.locator(T('tb-hemi-right')).click();
-  await settle();
-  eq(await store('s.hemi.right'), false, 'right hemisphere hidden');
-  await page.locator(T('tb-hemi-right')).click();
-  await page.locator(T('tb-cut')).click();
-  await page.locator(T('cut-x')).click();
-  await settle(400);
-  const clip = await store('s.clip');
-  eq(clip.axis, 'x', 'sagittal cut active');
-  // every pick must lie on the kept side of the plane
-  const bad = await page.evaluate(() => {
-    const r = document.querySelector('[data-testid="atlas-viewport"]').getBoundingClientRect();
-    const c = window.__atlas.store.getState().clip; let n = 0, wrong = 0;
-    for (let i = 0; i < 400; i++) {
-      const h = window.__atlas.pickAt(r.left + r.width * (0.2 + 0.6 * ((i * 37) % 100) / 100), r.top + r.height * (0.2 + 0.6 * ((i * 61) % 100) / 100));
-      if (!h) continue; n++;
-      if (c.keep === '-' ? h.pointRasMm[0] > c.posMm + 1e-6 : h.pointRasMm[0] < c.posMm - 1e-6) wrong++;
+await step('left is the subject’s left: mirrored structures are picked on opposite sides of the mid-plane', async () => {
+  await page.locator(T('view-menu')).click();
+  await page.locator(T('view-superior')).click();
+  await settle(1100);
+  const l = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus')), r = await page.evaluate(() => window.__atlas.screenPointOf('right_precentral_gyrus'));
+  assert(l && r, 'both precentral gyri visible from above');
+  const hl = await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), l), hr = await page.evaluate((p) => window.__atlas.pickAt(p.x, p.y), r);
+  eq(hl.id, 'left_precentral_gyrus', 'pick on the left'); eq(hr.id, 'right_precentral_gyrus', 'pick on the right');
+  // every pick across the top of the brain: a structure named left_… lies on the −x side of the atlas's fitted
+  // mid-sagittal plane and one named right_… on the +x side (2 mm of slack at the fissure)
+  const sweep = await page.evaluate(() => {
+    const A = window.__atlas, st = A.store.getState(), pl = st.manifest.space.midSagittalPlane;
+    const rect = document.querySelector('[data-testid="atlas-viewport"] canvas').getBoundingClientRect();
+    let left = 0, right = 0; const wrong = [];
+    for (let i = 0; i < 900; i++) {
+      const h = A.pickAt(rect.left + rect.width * (0.2 + 0.6 * ((i * 37) % 101) / 101), rect.top + rect.height * (0.12 + 0.76 * ((i * 61) % 97) / 97));
+      if (!h) continue;
+      const side = /^left_|_left_/.test(h.id) ? -1 : /^right_|_right_/.test(h.id) ? 1 : 0;
+      if (!side) continue;
+      const d = h.pointRasMm[0] - (pl.a + pl.b * h.pointRasMm[1] + pl.c * h.pointRasMm[2]);
+      if (side < 0) left++; else right++;
+      if (d * side < -2) wrong.push(`${h.id} at ${d.toFixed(1)} mm`);
     }
-    return { n, wrong };
+    return { left, right, wrong };
   });
-  assert(bad.n > 50, `only ${bad.n} picks landed on the cut brain`);
-  eq(bad.wrong, 0, 'picks on the removed side of the cut');
-  await shot('08-cutaway-panel');
-  // close the panel: the legend (hidden while the panel says the same thing) now carries the cut description
-  await page.locator(T('tb-cut')).click();
-  await settle();
-  assert(/cut at R =/.test(await page.locator(T('atlas-legend')).innerText()), 'legend does not describe the cut');
-  await page.evaluate(() => window.__atlas.store.getState().camera({ kind: 'view', view: 'right' }));
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
-  await settle(200);
-  await shot('08-cutaway');
-  await page.locator(T('tb-cut')).click();
-  await page.locator(T('cut-none')).click();
-  await page.locator(T('tb-cut')).click();
-  await page.locator(T('tb-reset')).click();
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
-  return `${bad.n} picks, all on the kept side`;
+  assert(sweep.left > 100 && sweep.right > 100, `too few sided picks: ${sweep.left} left, ${sweep.right} right`);
+  eq(sweep.wrong.length, 0, `structures picked on the wrong side: ${sweep.wrong.slice(0, 3).join('; ')}`);
+  // on screen, seen from above with the front of the brain up, the subject's left is the viewer's left
+  assert(l.x < r.x, 'left gyrus is drawn to the left of the right one from above');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('0');
+  await settle(1100);
+  return `${sweep.left} left-named and ${sweep.right} right-named picks, all on their own side of the mid-plane`;
 });
 
-await step('camera: a programmatic transition is interrupted by user input', async () => {
-  await page.evaluate(() => { const s = window.__atlas.store.getState(); s.camera({ kind: 'view', view: 'posterior' }); });
-  await page.waitForTimeout(80);
-  const during = await page.evaluate(() => window.__atlas.cameraState());
-  eq(during.transitioning, true, 'transition should be running');
-  const box = await page.locator(T('atlas-viewport')).boundingBox();
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.3);
-  await page.mouse.down(); await page.mouse.move(box.x + box.width * 0.5 + 30, box.y + box.height * 0.3 + 10, { steps: 3 });
+await step('click selects: the camera reframes, the rest recedes, and one card opens with one invitation', async () => {
+  const before = await page.evaluate(() => window.__atlas.cameraState());
+  const p = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
+  await page.mouse.click(p.x, p.y);
+  await page.waitForSelector(T('region-inspector'));
+  await settle(1300);
+  eq(await store('s.selectedId'), 'left_precentral_gyrus', 'selected id');
   const after = await page.evaluate(() => window.__atlas.cameraState());
-  await page.mouse.up();
-  eq(after.transitioning, false, 'the drag did not cancel the transition');
-  await page.locator(T('tb-reset')).click();
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
+  assert(Math.hypot(...after.position.map((v, i) => v - before.position[i])) > 0.03, 'camera did not move');
+  assert(/precentral gyrus/i.test(await page.locator(T('region-title')).innerText()), 'card title');
+  assert((await page.locator(T('region-summary')).innerText()).length > 40, 'summary text');
+  assert(/not the same as|M1|primary motor/i.test(await page.locator(T('region-caution')).innerText()), 'gyrus ≠ M1 caution');
+  eq(await page.locator(`${T('region-inspector')} .btn-primary`).count(), 1, 'exactly one primary invitation');
+  eq(await page.locator(T('atlas-hover-tag')).isVisible(), false, 'hover tag hidden on the selected region');
+  assert(/precentral gyrus/i.test(await page.locator(T('region-chip')).innerText()), 'region chip');
+  // the smoothed selection mask on the surface is non-empty and partial (a border exists)
+  const mask = await page.evaluate(() => { const a = window.__atlas.store.getState().specimen.geometry.getAttribute('aSelW').array; let on = 0, mid = 0; for (const v of a) { if (v > 250) on++; else if (v > 5) mid++; } return { on, mid, n: a.length }; });
+  assert(mask.on > 2000 && mask.mid > 200, `selection mask: ${JSON.stringify(mask)}`);
+  await shot('03-selected');
+  await page.locator(T('insight-more')).click();
+  assert(/Label value/i.test(await page.locator(T('insight-details')).innerText()), 'atlas record in details');
+  await page.locator(T('insight-more')).click();
+  return `${mask.on} surface vertices inside the selection, ${mask.mid} on its border`;
 });
 
-await step('keyboard equivalents: rotate, zoom, step through structures, fit, clear', async () => {
+await step('view modes: X-ray shows the atlas bodies inside a glass shell; Regions draws borders; Solid restores', async () => {
+  await page.locator(T('mode-xray')).click(); await settle(700);
+  eq(await store('s.shell()'), 'ghost', 'shell in X-ray');
+  const inner = await page.evaluate(() => { const p = window.__atlas.screenPointOf('left_thalamus') ?? window.__atlas.screenPointOf('left_putamen'); return p ? window.__atlas.pickAt(p.x, p.y)?.id : null; });
+  assert(inner && !/gyrus/.test(inner), `expected an inner body under the pointer in X-ray, got ${inner}`);
+  await shot('04-xray');
+  await page.locator(T('mode-parcels')).click(); await settle(900);
+  eq(await store('s.viewMode'), 'parcels', 'regions mode');
+  const classes = await page.evaluate(() => { const a = window.__atlas.store.getState().specimen.geometry.getAttribute('aParcelA').array; let n = 0; for (let i = 0; i < a.length; i += 97) if (a[i] > 0) n++; return n; });
+  assert(classes > 50, 'region-class fields were not computed');
+  assert(/tints only tell neighbours apart/i.test(await page.locator(T('atlas-legend')).innerText()), 'note that the tints carry no meaning');
+  await shot('05-regions');
+  await page.locator(T('mode-solid')).click(); await settle(500);
+  eq(await store('s.shell()'), 'solid', 'solid again');
+  return `X-ray pick: ${inner}`;
+});
+
+await step('slice: the cut face shows the subject’s MRI, faces the viewer, and names what is under the pointer', async () => {
+  await page.locator(T('mode-slice')).click();
+  await page.waitForFunction(() => window.__atlas.store.getState().slices.status === 'ready', null, { timeout: 15000 });
+  await settle(900);
+  const c = await store('s.clip');
+  eq(c.axis, 'x', 'opens on a sagittal cut');
+  eq(c.keep, '+', 'the camera is on the left, so the right half is kept and the cut faces the viewer');
+  assert(/T1 MRI \(measured\)/.test(await page.locator(T('slice-state')).innerText()), 'slice state text');
+  // a point on the cut face: the pick comes from the label volume
+  const hit = await page.evaluate(() => {
+    const A = window.__atlas, r = document.querySelector('[data-testid="atlas-viewport"] canvas').getBoundingClientRect();
+    const seen = new Set();
+    for (let i = 0; i < 400; i++) { const h = A.pickAt(r.left + r.width * (0.25 + 0.5 * ((i * 37) % 101) / 101), r.top + r.height * (0.2 + 0.6 * ((i * 61) % 97) / 97)); if (h && Math.abs(h.pointRasMm[0] - A.store.getState().clip.posMm) < 0.6) seen.add(h.id); }
+    return [...seen];
+  });
+  assert(hit.length >= 5, `only ${hit.length} structures were picked on the cut face`);
+  assert(hit.some((id) => /corpus_callosum|thalam|ventricle|pons|cerebell|brainstem|midbrain/.test(id)), `no midline structure among ${hit.slice(0, 6)}`);
+  await shot('06-slice');
+  await page.locator(T('cut-y')).click(); await settle(500);
+  eq(await store('s.clip.axis'), 'y', 'coronal');
+  await page.locator(T('cut-flip')).click();
+  const flipped = await store('s.clip.keep');
+  await page.locator(T('cut-pos')).fill('-20'); await settle(300);
+  eq(await store('s.clip.posMm'), -20, 'slice position');
+  await page.locator(T('mode-solid')).click(); await settle(400);
+  eq(await store('s.clip.axis'), 'none', 'leaving the slice view removes the cut');
+  return `${hit.length} structures named on the cut face (e.g. ${hit.slice(0, 3).join(', ')}); flip → keep ${flipped}`;
+});
+
+await step('finder (⌘K): a deep structure is found by name and revealed inside the glass shell; its invitation is a real MRI slice', async () => {
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Meta+k');
+  await page.waitForSelector(T('finder'));
+  await page.keyboard.type('hippocampus');
+  await page.waitForTimeout(300);
+  await shot('07-finder');
+  await page.keyboard.press('Enter');
+  await settle(1300);
+  eq(await page.locator(T('finder')).count(), 0, 'finder closed');
+  eq(await store('s.selectedId'), 'left_hippocampus', 'selected by search');
+  eq(await store('s.shell()'), 'ghost', 'surface turns see-through for a structure beneath it');
+  await shot('08-deep-structure');
+  await page.locator(T('to-slice')).click();
+  await page.waitForFunction(() => window.__atlas.store.getState().viewMode === 'slice', null, { timeout: 5000 });
+  await settle(900);
+  const c = await store('({ axis: s.clip.axis, pos: s.clip.posMm, b: s.structures.get("left_hippocampus").boundsMm })');
+  eq(c.axis, 'y', 'coronal cut');
+  assert(c.pos > c.b[0][1] && c.pos < c.b[1][1], `cut at A ${c.pos} is outside the structure (${c.b[0][1]} … ${c.b[1][1]})`);
+  await shot('09-slice-through');
+  await page.locator(T('to-slice')).click(); await settle(500);
+  eq(await store('s.viewMode'), 'solid', 'back to the whole brain');
+  // "/" also opens the finder; Escape closes it without changing the selection
+  await page.keyboard.press('/'); await page.waitForSelector(T('finder')); await page.keyboard.press('Escape');
+  eq(await store('s.selectedId'), 'left_hippocampus', 'selection kept');
+  return `coronal cut at A ${c.pos} mm through the hippocampus`;
+});
+
+await step('isolate, hide, hemisphere and restore keep picking honest', async () => {
+  await store('(s.select("left_precentral_gyrus"), 1)'); await settle(300);
+  await page.locator(`${T('region-inspector')} button:has-text("Isolate")`).click(); await settle(500);
+  eq(await store('s.shell()'), 'hidden', 'isolated: no shell');
+  await page.locator(`${T('region-inspector')} button:has-text("Isolate")`).click();
+  await page.locator(`${T('region-inspector')} button:has-text("Hide")`).click(); await settle(500);
+  const p = await page.evaluate(() => window.__atlas.screenPointOf('left_postcentral_gyrus'));
+  const picked = await page.evaluate(() => { const A = window.__atlas, r = document.querySelector('[data-testid="atlas-viewport"] canvas').getBoundingClientRect(); const ids = new Set(); for (let i = 0; i < 500; i++) { const h = A.pickAt(r.left + r.width * (0.2 + 0.6 * ((i * 37) % 101) / 101), r.top + r.height * (0.15 + 0.7 * ((i * 61) % 97) / 97)); if (h) ids.add(h.id); } return [...ids]; });
+  assert(!picked.includes('left_precentral_gyrus'), 'a hidden region was picked');
+  assert(p && picked.length > 10, 'other regions are still pickable');
+  await page.locator(T('view-menu')).click();
+  await page.locator(T('tb-hemi-left')).click(); await settle(400);
+  const afterHemi = await page.evaluate(() => { const A = window.__atlas, r = document.querySelector('[data-testid="atlas-viewport"] canvas').getBoundingClientRect(); const ids = new Set(); for (let i = 0; i < 500; i++) { const h = A.pickAt(r.left + r.width * (0.2 + 0.6 * ((i * 37) % 101) / 101), r.top + r.height * (0.15 + 0.7 * ((i * 61) % 97) / 97)); if (h) ids.add(h.id); } return [...ids]; });
+  assert(afterHemi.length > 5 && afterHemi.every((id) => !/^left_/.test(id)), `left structures picked with the left hemisphere off: ${afterHemi.filter((id) => /^left_/.test(id)).slice(0, 3)}`);
+  await page.locator(T('tb-restore')).click(); await settle(400);
+  await page.keyboard.press('Escape');
+  eq(await store('Object.keys(s.hidden).length'), 0, 'nothing hidden after restore');
+  eq(await store('s.hemi.left && s.hemi.right'), true, 'both hemispheres back');
+  return `${picked.length} regions pickable with one hidden; ${afterHemi.length} with the left hemisphere off (none of them left)`;
+});
+
+await step('keyboard: orbit, zoom, step, frame, clear — and user input interrupts a camera move', async () => {
   await page.locator(T('atlas-viewport')).focus();
-  const p0 = (await page.evaluate(() => window.__atlas.cameraState())).position;
-  await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowUp'); await page.keyboard.press('+');
-  const p1 = (await page.evaluate(() => window.__atlas.cameraState())).position;
-  assert(Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]) > 0.01, 'arrow keys did not move the camera');
-  const before = await store('s.selectedId');
-  await page.keyboard.press(']');
+  const c0 = await page.evaluate(() => window.__atlas.cameraState());
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowUp'); await page.keyboard.press('+');
+  const c1 = await page.evaluate(() => window.__atlas.cameraState());
+  assert(Math.hypot(...c1.position.map((v, i) => v - c0.position[i])) > 0.005, 'arrow keys / + did not move the camera');
+  await store('(s.select("left_precentral_gyrus"), 1)');
+  await page.keyboard.press('n');
   const next = await store('s.selectedId');
-  assert(next && next !== before, 'stepping with ] did not change the selection');
-  await page.keyboard.press('[');
-  eq(await store('s.selectedId'), before, 'stepping back with [');
-  await page.keyboard.press('f');
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
+  assert(next && next !== 'left_precentral_gyrus', 'n did not step to another structure');
+  await page.keyboard.press('f'); await page.waitForTimeout(120);
+  eq((await page.evaluate(() => window.__atlas.cameraState())).transitioning, true, 'f starts a camera move');
+  await page.keyboard.press('ArrowRight');
+  eq((await page.evaluate(() => window.__atlas.cameraState())).transitioning, false, 'a key press interrupts it');
   await page.keyboard.press('Escape');
   eq(await store('s.selectedId'), null, 'Escape clears the selection');
-  await page.keyboard.press('0');
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
+  await page.keyboard.press('0'); await settle(1000);
+  return `n stepped to ${next}`;
 });
 
-await step('tree: keyboard navigation selects a structure; focus highlights it in 3D', async () => {
-  await page.locator(T('browse-toggle')).click();
-  await page.waitForSelector(T('atlas-tree'));
-  await page.fill(T('atlas-search'), 'left central sulcus');
-  await page.keyboard.press('Enter');
-  await settle(700);
-  eq(await store('s.selectedId'), 'left_central_sulcus', 'search + Enter selects');
-  const row = page.locator(`${T('atlas-tree')} [data-id="left_central_sulcus"]`);
-  eq(await row.getAttribute('aria-selected'), 'true', 'tree row selected');
-  await row.focus();
-  await page.keyboard.press('ArrowDown');
-  const hov = await store('s.hoverId');
-  assert(hov && hov !== 'left_central_sulcus', 'arrow key did not move the tree focus / 3D highlight');
-  await page.keyboard.press('Enter');
-  eq(await store('s.selectedId'), hov, 'Enter selects the focused row');
-  await shot('09-tree');
-  await page.locator(T('browse-toggle')).click();
-  await page.evaluate(() => { const s = window.__atlas.store.getState(); s.select('left_precentral_gyrus'); s.camera({ kind: 'reset' }); });
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 3000 });
+await step('About this brain states what is measured, what is rendering, the limits and the licence', async () => {
+  await page.locator(T('about-open')).click();
+  const txt = await page.locator(T('about-sheet')).innerText();
+  for (const re of [/not a validated pial surface/, /no registration is involved/i, /visual treatment/i, /Nothing on this stage shows neural activity/, /not a medical device/, /3D Slicer License/, /not MNI space/]) assert(re.test(txt), `About sheet lacks ${re}`);
+  await shot('10-about');
+  await page.keyboard.press('Escape');
+  eq(await page.locator(T('about-sheet')).count(), 0, 'closed with Escape');
 });
 
-await step('a structure without curated text says so instead of inventing an explanation', async () => {
-  const id = await store('[...s.structures.values()].find((x) => x.name === "left cuneus").id');
-  await page.evaluate((i) => window.__atlas.store.getState().select(i), id);
-  eq(await store('s.selectedId'), id, 'selected the test structure');
-  await page.waitForSelector(T('region-no-card'), { timeout: 5000 });
-  assert(/No curated explanation yet/.test(await page.locator(T('region-no-card')).innerText()), 'missing-content state');
-  await page.evaluate(() => window.__atlas.store.getState().select('left_precentral_gyrus'));
-});
-
-// ── 4 · electrode, signal chain, ADC ────────────────────────────────────────────────────────────────────────────
-await step('expose the illustrative electrode: neural interface keeps the region and separates mV from µV', async () => {
+// ── the walkthrough: brain → neurons → signal → chip → decoder ────────────────────────────────────────────────
+await step('dive: the invitation flies into the region and hands over to the Neurons scene', async () => {
+  const p = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
+  await page.mouse.click(p.x, p.y);
+  await page.waitForSelector(T('to-interface'));
+  await settle(900);
+  const d0 = await page.evaluate(() => { const c = window.__atlas.cameraState(); return Math.hypot(...c.position.map((v, i) => v - c.target[i])); });
   await page.locator(T('to-interface')).click();
-  await page.waitForSelector(T('interface-workspace'));
-  eq((await page.locator(T('iface-region')).innerText()).toLowerCase(), 'left precentral gyrus', 'region carried over');
-  const cmp = await page.locator(T('iface-compare')).innerText();
-  assert(/mV/.test(cmp) && /µV/.test(cmp) && /smaller/.test(cmp), cmp);
-  const before = cmp;
-  await page.locator(T('iface-distance')).fill('100');
-  await settle();
-  const after = await page.locator(T('iface-compare')).innerText();
-  assert(after !== before && /100 µm/.test(after), 'moving the contact did not change the computed amplitude');
-  await page.locator(T('iface-distance')).fill('35');
-  await shot('10-neural-interface');
-  return after.replace(/\s+/g, ' ').slice(0, 90);
+  await page.waitForTimeout(450);
+  const d1 = await page.evaluate(() => { const c = window.__atlas.cameraState(); return Math.hypot(...c.position.map((v, i) => v - c.target[i])); });
+  assert(d1 < d0 * 0.8, `camera did not fly in (${d0.toFixed(3)} → ${d1.toFixed(3)} m)`);
+  await page.waitForSelector(T('interface-workspace'), { timeout: 5000 });
+  assert(/Beneath the left precentral gyrus/i.test(await page.locator(T('interface-title')).innerText()), 'the region is carried into the scene');
+  await page.waitForSelector(`${T('interface-workspace')} canvas`);
+  eq(await page.locator(T('nav-interface')).getAttribute('aria-current'), 'page', 'dock shows Neurons');
+  return `camera ${d0.toFixed(2)} m → ${d1.toFixed(2)} m, then the Neurons scene`;
 });
 
-await step('signal journey: stages, external-vs-implemented labels, three kinds of multiplexer', async () => {
-  await page.locator(T('to-signal')).click();
+await step('neurons: the timeline plays in stated slow motion, pauses, and scrubbing reproduces the same numbers', async () => {
+  eq(await page.locator(T('tp-play')).getAttribute('data-playing'), 'true', 'plays on arrival');
+  await page.waitForTimeout(700);
+  await page.locator(T('tp-play')).click();
+  eq(await page.locator(T('tp-play')).getAttribute('data-playing'), 'false', 'paused');
+  const clock = await page.locator(T('tp-clock')).innerText();
+  assert(num(clock) > 0.5, `clock did not advance: ${clock}`);
+  // seek to the first spike: the membrane is positive there, and the contact dips
+  await page.locator(T('tp-scrub')).fill('12.3'); await page.waitForTimeout(200);
+  const a = [await page.locator(T('wave-vm-now')).innerText(), await page.locator(T('wave-ve-now')).innerText()];
+  await page.locator(T('tp-scrub')).fill('60'); await page.waitForTimeout(150);
+  await page.locator(T('tp-scrub')).fill('12.3'); await page.waitForTimeout(200);
+  const b = [await page.locator(T('wave-vm-now')).innerText(), await page.locator(T('wave-ve-now')).innerText()];
+  eq(b.join('|'), a.join('|'), 'the same time gives the same values');
+  await page.locator(T('tp-reset')).click();
+  near(num(await page.locator(T('wave-vm-now')).innerText()), -65, 0.2, 'rest potential at t = 0');
+  await shot('11-neurons');
+  return `clock ${clock}; at 12.30 ms: membrane ${a[0]}, contact ${a[1]}`;
+});
+
+await step('neurons: changing a variable changes the 3D scene and the plots — distance scales the contact’s spike, not the neuron', async () => {
+  const amp = async () => num(await page.locator(T('amp-out')).innerText());
+  await page.locator(T('knob-distance')).fill('30'); await page.waitForTimeout(250);
+  near(await amp(), 120, 0.5, 'spike at 30 µm');
+  eq((await page.locator(T('distance-tag')).innerText()).trim(), '30 µm', 'the 3D distance label follows');
+  await page.locator(T('knob-distance')).fill('120'); await page.waitForTimeout(250);
+  near(await amp(), 30, 0.5, 'spike at 120 µm');
+  await page.locator(T('knob-current')).fill('0'); await page.waitForTimeout(250);
+  assert(/no spikes/i.test(await page.locator(`${T('interface-workspace')} .knob`).first().innerText()), 'no current → no spikes');
+  await page.locator(T('knob-current')).fill('10'); await page.locator(T('knob-distance')).fill('60'); await page.waitForTimeout(250);
+  assert(/Fires 6\d times a second/.test(await page.locator(`${T('interface-workspace')} .knob`).first().innerText()), 'about 68 spikes a second at 10 µA/cm²');
+  return '30 µm → 120 µV, 120 µm → 30 µV; 0 current → silence; 10 µA/cm² → about 68 spikes a second';
+});
+
+await step('detail levels: Mathematical shows the equations and gates; Engineering shows the numbers the electronics get', async () => {
+  eq(await page.locator(T('hh-equations')).count(), 0, 'no equations at the intuitive level');
+  await page.locator(T('level-math')).click();
+  assert(/gNa·m³h/.test(await page.locator(T('hh-equations')).innerText()), 'Hodgkin–Huxley equation');
+  for (const w of ['wave-m', 'wave-h', 'wave-n']) await page.waitForSelector(T(w));
+  await shot('12-neurons-math');
+  await page.locator(T('level-engineering')).click();
+  assert(/Noise \(stated\)/i.test(await page.locator(T('neuron-readouts')).innerText()), 'engineering readouts');
+  await page.locator(T('level-intuitive')).click();
+  await page.locator(`${T('interface-evidence')} summary`).click();
+  const ev = await page.locator(T('interface-evidence')).innerText();
+  assert(/squid giant axon/.test(ev) && /not a model of a human cortical neuron/.test(ev) && /atlas contains no cellular data/.test(ev), 'what is real / what is a drawing');
+});
+
+await step('prediction 1 (all-or-nothing): commit to an answer, get feedback, then the scene shows the model’s result', async () => {
+  const t = 'predict-all-or-nothing';
+  await page.locator(T(t)).scrollIntoViewIfNeeded();
+  eq(await page.locator(T(t)).getAttribute('data-answered'), 'no', 'unanswered at first');
+  eq(await page.locator(T(`${t}-feedback`)).count(), 0, 'no feedback before a prediction');
+  await page.locator(T(`${t}-taller`)).click();
+  eq(await page.locator(T(t)).getAttribute('data-answered'), 'wrong', 'a wrong answer is marked as such');
+  assert(/Not in this model/.test(await page.locator(T(`${t}-feedback`)).innerText()), 'feedback for the wrong answer');
+  await page.locator(T(`${t}-try`)).click(); await page.waitForTimeout(300);
+  eq((await page.locator(T('current-out')).innerText()).trim(), '20.0 µA/cm²', 'the scene applied the change');
+  const res = await page.locator(T(`${t}-result`)).innerText();
+  const m = /rate (\d+) → (\d+) spikes a second\. The first spike peaks at (-?\d+) → (-?\d+) mV; later ones at (-?\d+) → (-?\d+) mV/.exec(res);
+  assert(m && +m[2] > +m[1] * 1.15 && Math.abs(+m[4] - +m[3]) <= 3 && +m[6] <= +m[5], `model result does not show "more often, not taller": ${res}`);
+  await shot('13-neurons-predict');
+  await page.locator(T('tp-play')).click().catch(() => {});
+  return res;
+});
+
+await step('signal: the rail leads on; stages are labelled by who implements them; prediction 2 (aliasing) runs the model', async () => {
+  await page.locator(T('rail-next')).click();
   await page.waitForSelector(T('signal-workspace'));
   eq(await page.locator(`${T('chain')} button`).count(), 8, 'eight stages');
-  for (const [id, label] of [['afe', 'External hardware'], ['adc', 'External hardware'], ['digital', 'Implemented in our RTL']]) {
-    await page.locator(T(`stage-${id}`)).click();
-    assert((await page.locator(T('stage-realisation')).innerText()).includes(label), `${id} should be labelled "${label}"`);
-  }
-  for (const id of ['routing', 'amux', 'digital']) {
-    await page.locator(T(`stage-${id}`)).click();
-    assert(/Not to be confused/.test(await page.locator(T('stage-inspector')).innerText()), `${id}: no disambiguation note`);
-  }
-  await page.locator(T('stage-source')).click();
-  for (let i = 0; i < 3; i++) await page.locator(T('next-stage')).click();
-  eq(await page.locator(T('stage-title')).innerText(), 'Analogue front end', 'next-stage ×3 from the source');
-  await page.locator(T('prev-stage')).click();
-  assert((await page.locator(T('stage-title')).innerText()).startsWith('Electrode routing'), 'previous stage');
-  await shot('11-signal-journey');
+  assert(/Our chip/.test(await page.locator(T('stage-digital')).innerText()), 'the digital stage is ours');
+  await shot('14-signal');
+  const t = 'predict-aliasing';
+  await page.locator(T(t)).scrollIntoViewIfNeeded();
+  await page.locator(T(`${t}-folded`)).click();
+  eq(await page.locator(T(t)).getAttribute('data-answered'), 'right', 'correct answer recognised');
+  await page.locator(T(`${t}-try`)).click(); await page.waitForTimeout(500);
+  eq(await page.locator(T('preset-aliasing')).getAttribute('aria-pressed'), 'true', 'the aliasing example was loaded');
+  await page.locator(T(t)).scrollIntoViewIfNeeded();
+  const res = await page.locator(T(`${t}-result`)).innerText();
+  assert(/7 kHz tone sampled at 10 kS\/s appears at 3\.0 kHz/.test(res), `model result: ${res}`);
+  return res;
 });
 
-await step('ADC consequences are computed: bit depth and gain change the LSB; saturation is reported', async () => {
-  const lsb = async () => (await page.locator(`${T('consequences')} tr:nth-child(2) td.mono`).innerText()).trim();
-  const a = await lsb();
-  await page.locator(T('prm-bits')).fill('8');
-  await settle();
-  const b = await lsb();
-  assert(a !== b, 'changing the resolution did not change the input-referred LSB');
-  eq(a, '0.046 µV', 'LSB at 16 bits, gain 400, ±0.6 V');
-  eq(b, '11.72 µV', 'LSB at 8 bits');
-  await page.locator(T('prm-bits')).fill('16');
-  await page.locator(T('preset-saturation')).click();
-  await page.waitForSelector(T('alert-afe-clip'));
-  assert(/saturated for 100\.0 %/.test(await page.locator(T('alert-afe-clip')).innerText()), 'saturation not reported');
-  await shot('12-saturation');
-  await page.locator(T('preset-aliasing')).click();
-  const alias = await page.locator(T('alias-note')).innerText();
-  assert(/7\.0 kHz/.test(alias) && /3\.0 kHz/.test(alias), `alias note: ${alias}`);
-  await shot('13-aliasing');
-  await page.locator(T('preset-spikes')).click();
-  assert(/11 detected, 0 missed, 0 false events/.test(await page.locator(T('detection')).innerText()), 'default detection summary changed');
-  return `${a} → ${b}; alias 7 kHz → 3 kHz`;
-});
-
-await step('play, pause, scrub: the numbers at an instant are reproduced exactly', async () => {
-  const read = async () => ({ t: await page.locator(T('clock-t')).innerText(), n: await page.locator(T('clock-n')).innerText(), code: await page.locator(T('now-code')).innerText(), ev: await page.locator(T('now-events')).innerText() });
-  const seek = async (v) => { await page.locator(T('scrub')).fill(String(v)); await settle(80); };
-  await seek(61.37);
-  const a = await read();
-  eq(a.n, 'n = 1841', 'sample index at 61.37 ms and 30 kS/s');
-  await seek(180); const far = await read();
-  assert(far.n !== a.n, 'scrubbing did not move');
-  await seek(61.37);
-  const again = await read();
-  eq(JSON.stringify(again), JSON.stringify(a), 'state after scrubbing away and back');
-  await page.locator(T('restart')).click();
-  await page.locator(T('speed')).selectOption('100');
-  await page.locator(T('play')).click();
-  await page.waitForTimeout(700);
-  await page.locator(T('play')).click();
-  const t1 = parseFloat(await page.locator(T('clock-t')).innerText());
-  assert(t1 > 20 && t1 < 150, `after ~0.7 s at 100 ms/s the playhead is at ${t1} ms`);
-  await page.waitForTimeout(300);
-  eq(parseFloat(await page.locator(T('clock-t')).innerText()), t1, 'playhead moved while paused');
-  await page.locator(T('zoom-8')).click();
-  await shot('14-scrub-zoom');
-  await page.locator(T('zoom-all')).click();
-  return `n = 1841, code ${a.code}, ${a.ev} events so far`;
-});
-
-// ── 5 · real implemented digital blocks ─────────────────────────────────────────────────────────────────────────
-await step('our chip: real instances with source lines, executed suites, and what is not implemented', async () => {
-  await page.locator(T('nav-chip')).click();
+await step('chip: source-traced map, honest milestones, and the original chip studio still runs inside the new shell', async () => {
+  await page.locator(T('rail-next')).scrollIntoViewIfNeeded();
+  await page.locator(T('rail-next')).click();
   await page.waitForSelector(T('chip-map'));
-  await page.waitForSelector(T('chip-insp-title'));
-  eq(await page.locator(T('chip-insp-title')).innerText(), 'u_state', 'default selection');
-  eq(await page.locator(T('chip-insp-src')).innerText(), 'rtl/hbci_event_core.v:85', 'source reference');
-  await page.waitForSelector(`${T('src-excerpt')} .hit`);
-  assert(/u_state/.test(await page.locator(`${T('src-excerpt')} .hit`).innerText()), 'excerpt does not show the instantiation line');
-  await page.locator(T('inst-u_core.u_readout.u_fstate')).click();
-  eq(await page.locator(T('chip-insp-src')).innerText(), 'rtl/hbci_readout_core.v:199', 'u_fstate source reference');
-  const miles = await page.locator(`${T('milestones')} li`).evaluateAll((els) => els.map((e) => `${e.querySelector('.mile-label').textContent}=${e.dataset.reached}`));
-  eq(miles.join(','), 'Written as RTL=true,Simulated and checked=true,Synthesised to gates=true,Placed and routed=true,Fabricated=false,Measured on silicon=false,Tested with tissue=false', 'milestones');
-  for (const id of ['electrodes', 'afe', 'adc']) assert(/Not implemented/.test(await page.locator(T(`concept-${id}`)).innerText()), `${id} not marked as not implemented`);
-  await page.locator(T('path-event')).click();
-  assert((await page.locator('.inst.on-path').count()) >= 9, 'EVENT path highlight');
-  await page.locator(T('orphan-hbci_onchip_mlp')).click();
-  assert(await page.locator(T('chip-not-in-top')).isVisible() && await page.locator(T('chip-no-suite')).isVisible(), 'orphan module warnings');
-  const checks = await page.locator(`${T('checks')} li.pass`).count();
-  eq(checks, 3, 'three executed model-vs-RTL checks shown as passing');
-  await shot('15-our-chip');
-  return miles.filter((m) => m.endsWith('true')).length + ' milestones reached, 3 not';
-});
-
-await step('the existing full chip studio still runs inside the new shell', async () => {
+  const miles = await page.locator(`${T('milestones')} li`).allInnerTexts();
+  assert(miles.some((m) => /Fabricated/.test(m)) && miles.length >= 6, 'milestones');
+  await shot('15-chip');
   await page.locator(T('open-studio')).click();
-  await page.waitForSelector('.chip-studio-body .app', { timeout: 30000 });
-  await page.waitForSelector('.chip-studio-body canvas', { timeout: 30000 });
-  await settle(1500);
-  await shot('16-existing-chip-studio');
+  await page.waitForSelector(`${T('chip-studio')} .app`, { timeout: 20000 });
+  await page.waitForTimeout(1200);
+  const studio = await page.evaluate(() => { const a = document.querySelector('[data-testid="chip-studio"] .app'); const r = a.getBoundingClientRect(); return { w: r.width, h: r.height, top: r.top, buttons: a.querySelectorAll('button').length, bg: getComputedStyle(a).backgroundColor }; });
+  assert(studio.w > 1000 && studio.h > 500 && studio.buttons > 10, `studio not laid out: ${JSON.stringify(studio)}`);
+  assert(studio.top >= 64, 'the studio starts below the floating bar');
+  await shot('16-chip-studio');
   await page.locator(T('back-to-map')).click();
   await page.waitForSelector(T('chip-map'));
+  return `${miles.length} milestones; original studio ${Math.round(studio.w)}×${Math.round(studio.h)} px with ${studio.buttons} controls`;
 });
 
-// ── 6 · supporting research, then back to the same region ───────────────────────────────────────────────────────
+await step('decoder: every frame’s totals are re-added in the page and match the RTL trace', async () => {
+  await page.locator(T('rail-next')).scrollIntoViewIfNeeded();
+  await page.locator(T('rail-next')).click();
+  await page.waitForSelector(T('decoder-diagram'), { timeout: 15000 });
+  await page.locator(T('tp-play')).click().catch(() => {});
+  eq(await page.locator(`${T('frame-strip')} button`).count(), 32, '32 frames');
+  const seen = [];
+  for (const f of [0, 1, 11, 31]) {
+    await page.locator(T(`frame-${f}`)).click();
+    await page.locator(T('tp-scrub')).fill(String(f * 20 + 19)); await page.waitForTimeout(150);
+    eq((await page.locator(T('dec-check')).innerText()).trim(), 'matches RTL ✓', `frame ${f}`);
+    seen.push(`${f}: ${(await page.locator(T('dec-verdict')).textContent()).trim()}`);
+  }
+  // one product per clock cycle
+  await page.locator(T('tp-scrub')).fill('1'); await page.waitForTimeout(120);
+  assert(/^34 × 114 = 3,876$/.test((await page.locator(T('dec-product')).textContent()).trim()), `first product: ${await page.locator(T('dec-product')).textContent()}`);
+  assert(/frame 0 · cycle 1\/18/.test(await page.locator(T('tp-clock')).innerText()), 'the clock counts engine cycles');
+  await page.locator(T('tp-scrub')).fill('9'); await page.waitForTimeout(120);
+  await shot('17-decoder');
+  const limits = await page.locator(T('decoder-limits')).innerText();
+  for (const re of [/has not been fabricated/, /DANDI 000019/, /does not say which class index means speech/, /Single subject, single session/]) assert(re.test(limits), `limits text lacks ${re}`);
+  return seen.join('; ');
+});
+
+await step('prediction 3 (one dominant channel) and the what-if control, clearly marked as a software re-run', async () => {
+  const t = 'predict-one-channel';
+  await page.locator(T(t)).scrollIntoViewIfNeeded();
+  await page.locator(T(`${t}-flips`)).click();
+  eq(await page.locator(T(t)).getAttribute('data-answered'), 'right', 'correct answer recognised');
+  await page.locator(T(`${t}-try`)).click(); await page.waitForTimeout(300);
+  const out = await page.locator(T('whatif-out')).innerText();
+  assert(/Channel 7: 127 → 0/.test(out) && /flipped/.test(out), `what-if output: ${out}`);
+  eq((await page.locator(T('dec-check')).innerText()).trim(), 'what-if', 'the check no longer claims to be the RTL');
+  eq((await page.locator(T('dec-rtl-cls')).innerText()).trim(), 'class 1', 'the RTL’s own answer stays visible');
+  await page.locator(T('decoder-diagram')).scrollIntoViewIfNeeded();
+  await shot('18-decoder-whatif');
+  await page.locator(T('whatif-clear')).click();
+  eq((await page.locator(T('dec-check')).innerText()).trim(), 'matches RTL ✓', 'back to the RTL values');
+  return out.replace(/\s+/g, ' ');
+});
+
 await step('research: cited passages with exact locations; unsupported questions are refused', async () => {
   await page.locator(T('nav-research')).click();
   await page.waitForSelector(`${T('svc')}[data-state="ready"]`, { timeout: 10000 });
@@ -425,149 +446,133 @@ await step('research: cited passages with exact locations; unsupported questions
   await page.waitForSelector(T('hit'));
   const locs = await page.locator(T('hit-loc')).allInnerTexts();
   assert(locs.some((l) => /^chip\/docs\/AFE_ADC_DECISION\.md:\d+-\d+/.test(l)), `no AFE_ADC_DECISION passage in ${locs.slice(0, 4)}`);
-  eq(await page.locator(T('results')).getAttribute('data-unsupported'), 'false', 'supported');
-  await page.locator(`${T('hit')} button:has-text("Show the whole passage")`).first().click();
-  await page.waitForSelector(T('passage'));
-  await shot('17-research');
+  await shot('19-research');
   await page.fill(T('research-q'), 'serotonin reuptake inhibitor dosage');
   await page.locator(T('research-go')).click();
   await page.waitForSelector(T('unsupported'));
   assert(/does not support this query/.test(await page.locator(T('unsupported')).innerText()), 'unsupported banner');
-  await shot('18-research-unsupported');
-  assert((await page.locator(`${T('missing')} li`).count()) >= 4, 'missing-sources list');
-  assert(/left precentral gyrus/i.test(await page.locator(T('region-sources')).innerText()), 'region sources');
   return `${locs.length} passages; first: ${locs[0]}`;
 });
 
-await step('return to the same brain region: selection and view survived the whole journey', async () => {
+await step('return to the brain: the region and the view survived the whole journey, and a reload keeps the region', async () => {
   await page.locator(T('region-chip')).click();
-  await page.waitForSelector(`${T('atlas-viewport')} canvas`);
-  await page.waitForFunction(() => !window.__atlas.cameraState().transitioning, null, { timeout: 4000 });
-  eq(await store('s.selectedId'), 'left_precentral_gyrus', 'selection');
-  eq((await page.locator(T('region-title')).innerText()).toLowerCase(), 'left precentral gyrus', 'inspector');
-  const p = await page.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
-  assert(p, 'the region is not in view after returning');
-  await shot('19-back-to-region');
-});
-
-await step('reload keeps the selected region', async () => {
+  await page.waitForSelector(`${T('atlas-workspace')}[data-status="ready"]`);
+  await settle(1000);
+  eq(await store('s.selectedId'), 'left_precentral_gyrus', 'selection after the journey');
+  await page.waitForSelector(T('region-inspector'));
   await page.reload();
   await page.waitForSelector(`${T('atlas-workspace')}[data-status="ready"]`, { timeout: 30000 });
   eq(await store('s.selectedId'), 'left_precentral_gyrus', 'selection after reload');
 });
 
-// ── 7 · accessibility basics ────────────────────────────────────────────────────────────────────────────────────
-await step('accessibility: every control has a name; landmarks, live region and focus are in place', async () => {
-  const report = {};
-  for (const ws of ['brain', 'interface', 'signal', 'chip', 'research']) {
-    await page.locator(T(`nav-${ws}`)).click();
-    await settle(500);
-    report[ws] = await page.evaluate(() => {
-      const visible = (e) => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
-      const name = (e) => (e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent || (e.labels?.[0]?.textContent ?? '')).trim();
-      const unnamed = [...document.querySelectorAll('button, a[href], input, select, [role="button"], [role="treeitem"], [role="option"]')].filter(visible).filter((e) => !name(e)).map((e) => e.outerHTML.slice(0, 80));
-      const imgs = [...document.querySelectorAll('svg[role="img"], canvas[role="img"], img')].filter(visible).filter((e) => !(e.getAttribute('aria-label') || e.getAttribute('alt'))).length;
-      return { unnamed, imgs, main: document.querySelectorAll('main').length, nav: document.querySelectorAll('nav[aria-label]').length, h1: document.querySelectorAll('h1').length };
-    });
-    assert(report[ws].unnamed.length === 0, `${ws}: unnamed controls: ${report[ws].unnamed.join(' | ')}`);
-    eq(report[ws].imgs, 0, `${ws}: images without a text alternative`);
-    eq(report[ws].main, 1, `${ws}: <main> landmark`);
-  }
-  await page.locator(T('nav-brain')).click();
-  await settle(300);
-  const vp = page.locator(T('atlas-viewport'));
-  eq(await vp.getAttribute('role'), 'application', 'viewport role');
-  assert(/Arrow keys rotate/.test(await vp.getAttribute('aria-label')), 'viewport instructions');
-  assert(/Selected: left precentral gyrus/i.test(await page.locator('#atlas-live').innerText()), 'live region announces the selection');
-  // keyboard reachability: Tab from the top reaches the journey bar and the search field
-  // start from the first control of the journey bar and walk forward with Tab
+// ── accessibility and failure states ────────────────────────────────────────────────────────────────────────────
+await step('accessibility: named controls, landmarks, visible focus, and text contrast on the dark stage', async () => {
+  const a = await page.evaluate(() => {
+    const unnamed = [...document.querySelectorAll('button, [role="button"], input, select')].filter((el) => {
+      if (el.closest('[aria-hidden="true"]')) return false;
+      const r = el.getBoundingClientRect(); if (r.width === 0 && r.height === 0) return false;
+      const name = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || (el.id && document.querySelector(`label[for="${el.id}"]`)?.textContent) || el.closest('label')?.textContent || '').trim();
+      return !name;
+    }).map((el) => el.outerHTML.slice(0, 90));
+    const lum = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); const [r, g, b] = m[1].split(',').map((v) => parseFloat(v) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const ratio = (fg, bg) => { const a = lum(fg), b = lum(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
+    const stage = 'rgb(6, 10, 20)';
+    const pairs = [['.dock-label', stage], ['.dock-scale', stage], ['.insight-summary', 'rgb(11, 17, 32)'], ['.insight-kicker', 'rgb(11, 17, 32)'], ['.region-chip-name', stage], ['.stage-hint', stage], ['.seg-btn', 'rgb(10, 15, 29)']]
+      .map(([sel, bg]) => { const el = document.querySelector(sel); return el ? { sel, ratio: +ratio(getComputedStyle(el).color, bg).toFixed(2) } : { sel, ratio: null }; });
+    return { unnamed, pairs, main: document.querySelectorAll('main').length, nav: document.querySelectorAll('nav[aria-label]').length, live: !!document.querySelector('#atlas-live[aria-live]') };
+  });
+  eq(a.unnamed.length, 0, `controls without an accessible name: ${a.unnamed.slice(0, 2).join(' | ')}`);
+  eq(a.main, 1, 'one main landmark'); assert(a.nav >= 1 && a.live, 'navigation landmark and live region');
+  for (const p of a.pairs) assert(p.ratio === null || p.ratio >= 4.5, `${p.sel} contrast ${p.ratio} : 1 is below 4.5 : 1`);
+  // keyboard focus is visible on the dock
   await page.locator(T('nav-brain')).focus();
-  eq(await page.evaluate(() => document.activeElement?.getAttribute('data-testid')), 'nav-brain', 'the first journey step is focusable');
-  const order = ['nav-brain'];
-  for (let i = 0; i < 9; i++) { await page.keyboard.press('Tab'); order.push(await page.evaluate(() => document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.tagName)); }
-  assert(order.includes('nav-research') && order.includes('atlas-viewport') && order.includes('atlas-search'), `tab order: ${order.join(' → ')}`);
-  const focusRing = await page.evaluate(() => { const b = document.querySelector('[data-testid="nav-signal"]'); b.focus(); return getComputedStyle(b).outlineStyle; });
-  return `tab order starts ${order.slice(0, 6).join(' → ')}; focus outline "${focusRing}"`;
+  const ring = await page.evaluate(() => { const el = document.activeElement; el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' })); return getComputedStyle(el).outlineStyle; });
+  await page.keyboard.press('Tab');
+  const ring2 = await page.evaluate(() => { const s = getComputedStyle(document.activeElement); return { style: s.outlineStyle, width: s.outlineWidth, who: document.activeElement.getAttribute('data-testid') }; });
+  void ring;
+  assert(ring2.style !== 'none' && parseFloat(ring2.width) >= 2, `no visible focus ring on ${ring2.who}: ${JSON.stringify(ring2)}`);
+  return `contrast: ${a.pairs.filter((p) => p.ratio).map((p) => `${p.sel} ${p.ratio}`).join(', ')}; focus ring on ${ring2.who}`;
 });
 
-// ── 8 · failure states ──────────────────────────────────────────────────────────────────────────────────────────
-await step('load failure: when the atlas cannot be fetched the app says so and shows no substitute', async () => {
-  const p2 = await ctx.newPage();
-  await p2.route('**/atlas/spl-nac/chunk-cortex.bin', (r) => r.abort());
+await step('reduced motion: nothing plays by itself and camera moves are instant', async () => {
+  const c2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+  const p2 = await c2.newPage();
   await p2.goto(BASE);
-  await p2.waitForSelector(T('atlas-error'), { timeout: 15000 });
-  const txt = await p2.locator(T('atlas-error')).innerText();
-  assert(/could not be loaded/.test(txt) && /No substitute brain/.test(txt), txt);
-  eq(await p2.locator(`${T('atlas-viewport')} canvas`).count(), 0, 'a canvas was shown despite the failure');
-  await shot('20-atlas-load-failure', p2);
-  await p2.close();
+  await p2.waitForSelector(`${T('atlas-workspace')}[data-status="ready"]`, { timeout: 30000 });
+  await p2.waitForTimeout(800);
+  const pt = await p2.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
+  await p2.mouse.click(pt.x, pt.y);
+  await p2.waitForTimeout(120);
+  eq((await p2.evaluate(() => window.__atlas.cameraState())).transitioning, false, 'no camera tween');
+  await p2.locator(T('to-interface')).click();
+  await p2.waitForSelector(T('interface-workspace'), { timeout: 3000 });
+  await p2.waitForTimeout(600);
+  eq(await p2.locator(T('tp-play')).getAttribute('data-playing'), 'false', 'the neuron timeline does not autoplay');
+  eq((await p2.locator(T('tp-clock')).innerText()).trim(), '0.00 ms', 'time stands still until Play is pressed');
+  await p2.goto(`${BASE}/#/decoder`); await p2.waitForSelector(T('decoder-diagram'));
+  eq(await p2.locator(T('tp-play')).getAttribute('data-playing'), 'false', 'the decoder timeline does not autoplay');
+  await c2.close();
 });
 
-await step('load failure: search service down → explicit state, inventory still shown', async () => {
-  const p2 = await ctx.newPage();
-  await p2.route('**/api/corpus/**', (r) => r.abort());
-  await p2.goto(`${BASE}/#/research`);
-  await p2.waitForSelector(`${T('svc')}[data-state="unavailable"]`, { timeout: 15000 });
-  assert(/Search is unavailable/.test(await p2.locator(T('svc')).innerText()), 'unavailable message');
-  await p2.waitForSelector(`${T('missing')} li`);
-  await shot('21-search-unavailable', p2);
-  await p2.close();
+await step('load failure: when the atlas cannot be fetched the app says so and shows no substitute', async () => {
+  const c2 = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+  await c2.route('**/atlas/spl-nac/specimen.bin', (r) => r.abort());
+  const p2 = await c2.newPage();
+  await p2.goto(BASE);
+  await p2.waitForSelector(`${T('atlas-workspace')}[data-status="error"]`, { timeout: 20000 });
+  eq(await p2.locator(`${T('atlas-viewport')} canvas`).count(), 0, 'no canvas, no placeholder brain');
+  assert(/could not be loaded|failed/i.test(await p2.locator(T('atlas-workspace')).innerText()), 'explicit error text');
+  await c2.close();
 });
 
-await step('WebGL unavailable: explicit message, no fake brain', async () => {
+await step('WebGL unavailable: an explicit message and working non-3D scenes, no fake brain', async () => {
   const c2 = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   await c2.addInitScript(() => { const orig = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return /webgl/.test(t) ? null : orig.call(this, t, ...a); }; });
   const p2 = await c2.newPage();
   await p2.goto(BASE);
   await p2.waitForSelector(T('atlas-webgl-fallback'), { timeout: 20000 });
-  assert(/no substitute picture/.test(await p2.locator(T('atlas-webgl-fallback')).innerText()), 'fallback text');
-  assert(await p2.locator(T('atlas-search')).isVisible(), 'search should remain usable without WebGL');
-  await shot('22-webgl-unavailable', p2);
+  assert(/WebGL/.test(await p2.locator(T('atlas-webgl-fallback')).innerText()), 'fallback names WebGL');
+  await shot('20-no-webgl', p2);
+  // the finder still lists and selects real structures; the decoder scene needs no WebGL at all
+  await p2.keyboard.press('Meta+k'); await p2.keyboard.type('thalamus'); await p2.waitForTimeout(250); await p2.keyboard.press('Enter');
+  assert(/thalam/i.test(await store('s.selectedId', p2)), 'selection without WebGL');
+  await p2.goto(`${BASE}/#/decoder`); await p2.waitForSelector(T('decoder-diagram'));
   await c2.close();
 });
 
-// ── 9 · phone viewport and touch ────────────────────────────────────────────────────────────────────────────────
-await step('phone viewport (390 × 844, touch): tap selects, layout fits, journey reachable', async () => {
+await step('phone viewport (390 × 844, touch): the brain fills the screen, a tap selects, every scene fits the width', async () => {
   const c2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
   const p2 = await c2.newPage();
   const errs = [];
-  p2.on('pageerror', (e) => errs.push(e.message));
+  p2.on('pageerror', (e) => errs.push(String(e)));
   await p2.goto(BASE);
   await p2.waitForSelector(`${T('atlas-workspace')}[data-status="ready"]`, { timeout: 30000 });
-  await p2.evaluate(() => { try { localStorage.clear(); } catch { /* ignore */ } window.__atlas.store.getState().select(null); });
-  await p2.waitForTimeout(400);
-  await p2.screenshot({ path: join(shots, '23-phone-home.png') });
-  const p = await p2.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
-  assert(p, 'gyrus not visible on the phone layout');
-  await p2.touchscreen.tap(p.x, p.y);
+  await p2.waitForTimeout(1200);
+  const cov = await p2.evaluate(() => window.__atlas.coverage());
+  assert(cov.w > 0.6, `brain fills only ${(cov.w * 100).toFixed(0)} % of the phone width`);
+  await shot('21-phone-home', p2);
+  const pt = await p2.evaluate(() => window.__atlas.screenPointOf('left_precentral_gyrus'));
+  await p2.touchscreen.tap(pt.x, pt.y);
   await p2.waitForSelector(T('region-inspector'));
-  eq((await p2.locator(T('region-title')).innerText()).toLowerCase(), 'left precentral gyrus', 'tap selects');
-  const overflow = await p2.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  assert(overflow <= 1, `horizontal overflow of ${overflow}px`);
-  await p2.screenshot({ path: join(shots, '24-phone-selected.png') });
-  for (const ws of ['interface', 'signal', 'chip', 'research']) {
-    await p2.locator(T(`nav-${ws}`)).scrollIntoViewIfNeeded();
-    await p2.locator(T(`nav-${ws}`)).tap();
-    await p2.waitForTimeout(700);
-    const o = await p2.evaluate(() => { const el = document.querySelector('.shell-pane:not([style*="none"]) .page') ?? document.documentElement; return el.scrollWidth - el.clientWidth; });
-    assert(o <= 2, `${ws}: horizontal overflow of ${o}px on a phone`);
-    await p2.screenshot({ path: join(shots, `25-phone-${ws}.png`) });
+  await p2.waitForTimeout(900);
+  await shot('22-phone-selected', p2);
+  const overflow = {};
+  for (const w of ['brain', 'interface', 'signal', 'chip', 'decoder', 'research']) {
+    await p2.goto(`${BASE}/#/${w}`); await p2.waitForTimeout(w === 'chip' || w === 'decoder' ? 1500 : 700);
+    overflow[w] = await p2.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (w === 'interface') await shot('23-phone-neurons', p2);
+    if (w === 'decoder') await shot('24-phone-decoder', p2);
   }
+  for (const [w, o] of Object.entries(overflow)) assert(o <= 1, `${w} overflows the phone width by ${o} px`);
   eq(errs.length, 0, `page errors on phone: ${errs[0]}`);
   await c2.close();
+  return `brain fills ${(cov.w * 100).toFixed(0)} % of the width; no horizontal overflow in any of the six scenes`;
 });
 
 await step('no console errors during the whole desktop walkthrough', async () => {
   const real = consoleErrors.filter((e) => !/net::ERR_FAILED|Failed to load resource/.test(e));
   eq(real.length, 0, `console errors: ${real.slice(0, 2).join(' | ')}`);
 });
-
-// headless timings: recorded for completeness, explicitly NOT a performance claim
-const perf = await page.evaluate(() => {
-  const q = (a, p) => { const s = [...a].sort((x, y) => x - y); return s.length ? +s[Math.min(s.length - 1, Math.floor(p * s.length))].toFixed(2) : null; };
-  const P = window.__atlasPerf;
-  return P ? { pickN: P.pickMs.length, pickP50: q(P.pickMs, 0.5), pickP95: q(P.pickMs, 0.95), bvhMs: Math.round(P.bvhBuiltMs) } : null;
-}).catch(() => null);
 
 await browser.close();
 stop();
@@ -581,9 +586,8 @@ const lines = [
   '',
   ...results.map((r) => `${r.ok ? '✓' : '✗'} ${r.name}${r.info ? `\n    ${r.info}` : ''}  (${r.ms} ms)`),
   '',
-  perf && perf.pickN ? `Pick timing in THIS run (CPU ray casts; ${perf.pickN} samples): p50 ${perf.pickP50} ms, p95 ${perf.pickP95} ms; BVH build ${perf.bvhMs} ms.` : '',
-  process.env.HEADED ? '' : 'This was a headless run (no display): the renderer above is what the browser reported, but frame pacing without a display is not representative. Interactive measurements are in docs/evidence/performance.txt.',
-  `Screenshots: docs/evidence/screenshots/ (${results.length ? 'captured from the running application in this run' : ''}).`,
+  process.env.HEADED ? '' : 'This was a headless run: frame pacing without a display is not representative. Interactive timings are measured separately, in a visible window, by tests/e2e/perf.mjs.',
+  'Screenshots: docs/evidence/cinematic/screens/ (captured from the running application in this run).',
 ].filter((l) => l !== '');
 writeFileSync(join(root, 'docs/evidence/e2e-report.txt'), lines.join('\n') + '\n');
 console.log(`\n${results.length - failed.length}/${results.length} steps passed`);

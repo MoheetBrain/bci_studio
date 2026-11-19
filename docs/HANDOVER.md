@@ -4,6 +4,52 @@ Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed 
 owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
+## 0 · Cinematic rebuild — 2026-11-19 (read this first)
+
+Branch `feature/cinematic-rebuild`, cut from `feature/brain-atlas-studio` @ `df9ba12`. **Local commits only: not pushed,
+no pull request, nothing merged, published or deployed.** PR #1 (`feature/brain-atlas-studio` → `main`) is untouched.
+One engineering agent; no sub-agents, no second model, no paid or generative image/video service.
+
+What changed, in one paragraph: the home screen is now one continuous brain surface derived from the atlas subject’s
+own T1 MRI, lit by a custom tissue shader on a dark stage, with the atlas’s 251 models kept as the bodies inside;
+selection is a smooth contour with the rest dimmed and one card with one invitation; the cut shows the real MRI; a
+finder (⌘K) replaces the search form; the Neurons scene is a 3D schematic driven by the Hodgkin–Huxley model with a
+seekable timeline; a new Decoder scene steps the on-chip decoder through the real RTL trace one clock cycle at a
+time; all scenes share the dark stage, link to each other, and three of them carry a predict-then-check task. The
+decisions and their reasons are in `docs/CINEMATIC_REBUILD.md`.
+
+| Phase of the brief | Status | Evidence |
+|---|---|---|
+| 0 · Inspect, baseline before edits, one decision record | Done | `docs/evidence/cinematic/baseline/`, `docs/CINEMATIC_REBUILD.md` |
+| 1 · Cinematic brain: geometry, material, lighting, framing, stage; two looks compared | Done | `docs/evidence/cinematic/compare/01…04`, `tests/specimen-assets.test.ts` |
+| 2 · Regional discovery: hover, select, reframe, card, finder, real slice | Done | walkthrough steps 2–10 |
+| 3 · One multiscale walkthrough: brain → neurons → signal → chip → decoder | Done; the Neurons and Signal traces are two stated models, not yet one signal | walkthrough steps 11–19 |
+| 4 · Platform coherence: one stage, one dock, rails, detail levels | Done; three detail levels in Neurons and Decoder only | `src/kit/` |
+| 5 · Test, polish, reviewable branch | Done locally; **push awaits the owner’s go-ahead** | below |
+
+Checks on this branch (2026-11-19, this machine): `npm run check` — typecheck clean, **92/92** unit tests, three
+model-versus-RTL checks pass; `npm run build` clean; `npm run test:e2e` — **27/27** steps; `npm run check:sources` —
+27 DOIs, 0 problems; performance in `docs/evidence/performance.txt` (two profiles). Full list:
+`docs/evidence/cinematic/README.md`.
+
+Defects found by these checks and fixed: surface micro-relief computed in millimetres against view-space metres
+(speckle); slice volumes double-inflated when the server announces `Content-Encoding: gzip`; a new cut opened facing
+away from the viewer; deep structures (hippocampus) selected but invisible because a few hidden surface vertices
+counted as “on the surface”; region borders drawn as jagged triangle strips; timeline could step slightly negative on
+its first frame (crashed the Decoder scene on a phone); a feedback sentence claimed spikes get smaller under stronger
+drive when only later spikes do; “fires N times a second” was shown for two spikes followed by silence; “µm” rendered
+as “MM” inside an upper-cased heading.
+
+One mistake made and undone during the work: a new stylesheet was first written to `src/ui/ui.css`, which belongs to
+the original chip studio. It was restored from git at once (`git diff df9ba12 -- src/ui` is empty) and the new shared
+code lives in `src/kit/` instead. The original studio’s folders were not otherwise touched.
+
+Known limits of this branch: `docs/CINEMATIC_REBUILD.md` §8. Decisions waiting for the owner: push this branch;
+whether it should replace or stack on PR #1; confirm the DANDI attribution wording (`docs/LICENCES.md` §5).
+
+Sections 1–8 below describe the first integrated release (`df9ba12`) and are kept as its record; where they mention
+“five screens”, a light stage, the search form or 29 walkthrough steps, this section supersedes them.
+
 ## 1 · What exists now
 
 The acceptance walkthrough runs end to end in the production build and is automated (`npm run test:e2e`, 29 steps):

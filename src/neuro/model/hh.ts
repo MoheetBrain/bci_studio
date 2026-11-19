@@ -118,6 +118,17 @@ export function sampleAt(trace: Float32Array, perMs: number, tMs: number): numbe
   return i + 1 < trace.length ? trace[i] * (1 - fr) + trace[i + 1] * fr : trace[i];
 }
 
+/**
+ * True when the neuron is still firing regularly at the end of the current step. Just above threshold the model
+ * gives one or two spikes and then settles; that is not "firing at N per second".
+ */
+export function isSustained(r: HHResult): boolean {
+  const s = r.spikesMs.filter((t) => t >= r.params.onMs && t < r.params.offMs);
+  if (s.length < 3) return false;
+  const lastGap = s[s.length - 1] - s[s.length - 2];
+  return r.params.offMs - s[s.length - 1] < 2 * lastGap;
+}
+
 /** Mean firing rate over the current step, in spikes per second (0 when fewer than two spikes). */
 export function firingRateHz(r: HHResult): number {
   const s = r.spikesMs.filter((t) => t >= r.params.onMs && t < r.params.offMs);

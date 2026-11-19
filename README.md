@@ -1,8 +1,9 @@
 # Hamiltonian Interface — BCI Studio
 
-An interactive neuroscience and brain–computer-interface research studio. The first screen is a real, MRI-derived
-3D human brain; from a selected region you follow the signal down to an electrode contact, through an acquisition
-chain, into the Hamiltonian digital chip — with every claim labelled by the evidence behind it.
+An interactive neuroscience and brain–computer-interface research studio. The first screen is one continuous,
+MRI-derived 3D human brain on a dark stage; from a selected region you dive to neurons and an electrode contact,
+follow the signal through an acquisition chain into the Hamiltonian digital chip, and watch its decoder add up a
+frame one clock cycle at a time — with every claim labelled by the evidence behind it.
 
 > Educational and research software. Not a medical device, not a surgical planner, and it controls no stimulation.
 > The atlas is one volunteer's anatomy and, per its licence, is for research purposes only.
@@ -24,30 +25,38 @@ npm run preview      # http://127.0.0.1:5181  (also serves the search service)
 ## Test it
 
 ```sh
-npm run check        # typecheck + 63 unit tests + the three model-versus-RTL checks
-npm run test:e2e     # production build, then the 29-step acceptance walkthrough in headless Chrome
-node tests/e2e/perf.mjs      # opens a visible Chrome window for ~15 s; writes docs/evidence/performance.txt
+npm run check        # typecheck + 92 unit tests + the three model-versus-RTL checks
+npm run test:e2e     # production build, then the 27-step walkthrough in headless Chrome (also captures the screens)
+node tests/e2e/perf.mjs      # opens a visible Chrome window for ~40 s; writes docs/evidence/performance.txt
+node tests/e2e/capture-looks.mjs && node tests/e2e/compare.mjs   # same-camera look captures + before/after sheets (dev server running)
+node tests/e2e/record.mjs    # 30 s screen recording of real interaction (needs ffmpeg on the PATH)
 npm run check:sources        # verifies every cited DOI against Crossref (needs network)
 ```
 
 The browser tests drive the Chrome already installed on the machine (`playwright-core`, no browser download).
 
-## The five screens
+## The six scenes
 
-| | Screen | What it is | Evidence label |
+Ordered by physical scale in the dock; the selected brain region is carried through all of them, each scene links to
+the previous and next one, and one click returns to the region.
+
+| | Scene | What it is | Evidence label |
 |---|---|---|---|
-| 1 | **Brain** (home) | 251 structures of the SPL/NAC atlas. Hover names a structure, click pins it and opens a cited explanation. Search, anatomical tree, isolate / hide / context / restore, hemispheres, cortex opacity, cutaway. | Measured dataset |
-| 2 | **Neural interface** | Scale ladder from the atlas down to neurons and one electrode contact; membrane potential (mV) versus electrode voltage (µV). | Schematic + synthetic example |
-| 3 | **Signal journey** | Neural source → electrode → (routing) → AFE → (analogue MUX) → ADC → our chip → decoder/host. Play, pause, scrub, change gain / sample rate / bit depth and see the calculated consequences. | Synthetic quantitative example |
-| 4 | **Our chip** | What the digital design actually contains, read from the RTL (file:line), which executed suites cover it, and what is *not* implemented. The existing full chip studio is one click away. | RTL + recorded simulation |
-| 5 | **Research** | Local full-text search over the project documents, RTL and curated cards, with exact locations. Passages, not generated answers. | — |
+| 1 | **Brain** (home, 15 cm) | One continuous surface from the atlas subject’s own T1 MRI; every point carries its region from the label volume. Hover names a region, click reframes and opens one card. Solid / X-ray (the atlas’s 251 bodies inside a glass shell) / Regions / Slice (the MRI on the cut face). Finder: ⌘K or `/`. | Measured dataset; the tissue look is rendering |
+| 2 | **Neurons** (≈ 1 mm) | A 3D schematic patch of cortex. One neuron runs the Hodgkin–Huxley equations; an electrode contact at an adjustable distance records a faint, inverted echo. Play / pause / scrub in stated slow motion; three detail levels. | Schematic + synthetic example |
+| 3 | **Signal** (µV → bits) | Neural source → electrode → (routing) → AFE → (analogue MUX) → ADC → our chip → decoder/host, with computed traces and consequences. | Synthetic example; digital stage checked against RTL |
+| 4 | **Chip** (RTL) | What the digital design actually contains, read from the RTL (file:line), which executed suites cover it, what is *not* implemented. The original full chip studio is one click away, unchanged. | Read from source; “not fabricated” stated |
+| 5 | **Decoder** (8 → 2) | Eight inputs, sixteen multiply-accumulates, two totals, one answer — stepped by engine clock cycle over 32 frames of the RTL trace on recorded ECoG samples. Totals are re-added in the page and checked against the RTL. | RTL simulation trace; what-if is a labelled software re-run |
+| 6 | **Research** (sources) | Local full-text search over the project documents, RTL and curated cards, with exact locations. Passages, not generated answers. | — |
 
-The selected brain region is carried through all five and one click returns to it.
+Three predict-then-check tasks (spikes are all-or-nothing; aliasing; one dominant decoder channel) ask for an answer
+before the scene shows the model’s result. Answers stay in the browser.
 
 ## Regenerating data
 
 ```sh
-npm run atlas:build      # atlas assets from reference/spl-brain-atlas (see docs/ATLAS_PROVENANCE.md for the clone command)
+npm run atlas:build      # the 251 atlas bodies from reference/spl-brain-atlas (see docs/ATLAS_PROVENANCE.md for the clone command)
+npm run atlas:specimen   # the continuous surface, its region ids, baked occlusion and the slice volumes (run after atlas:build)
 npm run chip:extract     # chip hierarchy from chip/rtl → public/artifacts/chip_hierarchy.json
 npm run check:rtl        # run the model-versus-RTL checks → public/artifacts/studio_checks.json
 npm run corpus:build     # local search index → corpus/index.sqlite (git-ignored) + public/corpus/manifest.json
@@ -60,18 +69,20 @@ search service is unavailable (the rest of the studio works without it).
 ## Layout
 
 ```
-src/atlas/      atlas viewer, picking rules, search, region cards        src/journey/   signal-chain model, lesson UI
-src/neuro/      neural-interface lesson                                   src/chipmap/   source-traced chip map
-src/research/   corpus search UI                                          src/shell/     app shell and navigation
-src/science/    bibliography, citations, evidence labels                  src/…          the existing chip studio (unchanged)
-server/         localhost-only search API (Vite plugin)                   tools/         atlas, chip and corpus builders
-chip/           read-only snapshot of the chip repository (RTL, tb, docs) tests/         unit tests + tests/e2e browser tests
-public/atlas/   atlas assets + licence                                    docs/          decision note, provenance, licences, audit, handover, evidence
+src/atlas/      brain stage: surface, tissue shader, picking rules, finder   src/neuro/     Neurons scene + Hodgkin–Huxley model
+src/journey/    signal-chain model and scene                                 src/chipmap/   source-traced chip map
+src/decoder/    Decoder scene (stepping over the RTL trace)                  src/research/  corpus search UI
+src/kit/        timeline, transport, detail levels, predict tasks, rail      src/shell/     app shell, dock, region finder
+src/science/    bibliography, citations, evidence labels                     src/…          the original chip studio (unchanged)
+server/         localhost-only search API (Vite plugin)                      tools/         atlas, specimen, chip and corpus builders
+chip/           read-only snapshot of the chip repository (RTL, tb, docs)    tests/         unit tests + tests/e2e browser tests
+public/atlas/   atlas + specimen assets + licence                            docs/          decisions, provenance, licences, audit, handover, evidence
 ```
 
 ## Read next
 
 - `docs/HANDOVER.md` — what was built, what was reused, test results, limitations, next task.
+- `docs/CINEMATIC_REBUILD.md` — the cinematic rebuild: what was decided and why; `docs/evidence/cinematic/README.md` indexes its evidence.
 - `docs/DECISION_ATLAS_FOUNDATION.md` — why this atlas and this architecture.
 - `docs/ATLAS_PROVENANCE.md` — dataset, transforms, coverage, verification, known source problems.
 - `docs/LICENCES.md`, `THIRD_PARTY_NOTICES.md` — code and data licences.

@@ -112,5 +112,11 @@
     .scene-foot { left: 10px; right: 10px; bottom: 10px; }
     .rail-cue { display: none; }
     .tp-clock { min-width: 64px; }
+    .scene { grid-template-rows: auto auto; }
+    .scene-stage { min-height: 600px; }
+    .transport { flex-wrap: wrap; border-radius: 18px; }
+    .tp-scrub { flex: 1 1 120px; }
+    .rail-label { white-space: normal; }
+    .scene-tag:not(.accent) { display: none; }
   }
 }

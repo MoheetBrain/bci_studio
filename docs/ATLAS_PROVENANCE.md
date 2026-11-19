@@ -97,6 +97,40 @@ Manual, by the engineering agent, against the source's own Slicer snapshots (`sl
 **This is not an expert anatomical review and not a clinical validation.** No neuroanatomist has checked the labels;
 individual cerebellar lobule and thalamic nucleus boundaries were not inspected one by one.
 
+## The specimen surface (added in the cinematic rebuild)
+
+The home screen no longer draws the 251 models directly. It draws **one continuous surface derived from the same
+subject’s T1 image**, and uses the models for whatever lies beneath it. This is a further modification of the atlas
+data and is marked as such in the app (“About this brain”), in `specimen.json` and here.
+
+| | |
+|---|---|
+| Source image | `slicer/volumes/imaging/A1_grayT1.nrrd` — float, 288 × 320 × 208 voxels at 0.75 mm, same repository and commit (sha256 in `specimen.json`) |
+| Source labels | `slicer/volumes/labels/hncma-atlas.nrrd` (the label volume already used for the cross-check) |
+| Registration | none: image, labels and models are in one scanner space; the builder converts between the two voxel grids with their own NRRD headers |
+| Surface definition | where blurred T1 × soft mask crosses fluid + 0.55 × (grey − fluid); mask = labelled brain grown by 2 voxels, softened; class means measured from the labels (fluid 219, grey 404, white 516 → level 321) |
+| Meshing | naive surface nets → largest of 126 components kept (20,472 stray triangles dropped) → Taubin smoothing × 8 (mean move 0.10 mm, 95th percentile 0.20 mm, maximum 0.34 mm) → meshoptimizer decimation 1,043,224 → 459,996 triangles (error ≤ 0.05 mm) |
+| Region per vertex | label volume probed 0.5 – 3.2 mm inward along the normal; first non-white-matter label wins (1,675 vertices fall back to white matter); gaps filled by neighbour majority → 0 unlabelled vertices; 201 structures own part of the surface |
+| Border tidy | a vertex takes the region held by more than half of its neighbours, 2 passes: 6,087 vertices (2.67 %) changed. Borders are then drawn as smoothed contours. **A drawn border is accurate to about a millimetre, not to a voxel**; the label volume stays authoritative (the Slice view reads it directly) |
+| Shading aids (not data) | normals smoothed over neighbours × 2; ambient occlusion baked with 40 rays to 22 mm; a border band packed into the flag byte |
+| Slice volumes | T1 (8-bit, windowed to 1.25 × mean white matter, shown only within 4.5 mm of labelled brain) and region ids resampled to a RAS-aligned 1 mm grid; gzip |
+| Size | `specimen.bin` 2.5 MB; slice volumes 1.8 + 0.25 MB (fetched when Slice is first opened) |
+
+**What it is not.** Not a validated pial surface (no cortical-surface reconstruction, no topology correction: about
+0.2 % of edges are pinched where folds touch, and thresholding leaves a few bridges and tunnels in deep sulci). Not a
+population average. Not in MNI space.
+
+**Verification** (`tests/specimen-assets.test.ts`, runs without the source atlas): recorded hashes and counts; closed
+surface with no open edges and 1.0 – 1.6 l enclosed; every region’s surface patch (≥ 200 vertices; 120+ regions) lies
+within 4 mm of that region’s own atlas model bounds; hemisphere flags agree with structure names and with the fitted
+mid-sagittal plane; precentral gyrus anterior to postcentral on both sides; the region volume agrees with the surface
+labels 1.5 mm beneath the surface for > 80 % of probes; structure centroids fall in their own region’s voxels.
+`tests/surface-fields.test.ts` checks the meshing and smoothing helpers on spheres with known answers.
+
+The 251 models themselves gained one byte per vertex of baked occlusion (layered, so a structure is only darkened by
+tissue at its own depth or deeper); positions, indices, ids and counts are unchanged in meaning, and
+`tests/atlas-assets.test.ts` still passes against the regenerated chunks.
+
 ## Known problems in the source (reported, not corrected)
 
 - Four structures whose model and label volume disagree by more than 3 mm in bounding box: *white matter of right
@@ -109,6 +143,9 @@ individual cerebellar lobule and thalamic nucleus boundaries were not inspected 
 - Two structures are listed twice in the hierarchy (*third ventricle*, *left inferior colliculus*).
 
 ## Commands
+
+`npm run atlas:specimen` rebuilds the specimen surface and slice volumes (run after `npm run atlas:build`; needs the
+T1 volume in the sparse checkout: add `slicer/volumes/imaging/A1_grayT1.nrrd` to the sparse-checkout list).
 
 ```sh
 git clone --depth 1 --filter=blob:none --sparse https://github.com/mhalle/spl-brain-atlas.git reference/spl-brain-atlas

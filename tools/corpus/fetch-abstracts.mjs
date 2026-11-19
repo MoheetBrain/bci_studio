@@ -13,7 +13,7 @@ const E = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const get = async (url) => {
   for (let i = 0; i < 4; i++) {
-    const res = await fetch(url, { headers: { 'User-Agent': 'bci-studio-corpus/1.0' } });
+    const res = await fetch(url, { headers: { 'User-Agent': 'abstract-fetch/1.0' } });
     if (res.ok) return res;
     await sleep(1200 * (i + 1));
   }

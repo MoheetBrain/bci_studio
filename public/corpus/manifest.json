@@ -1,6 +1,6 @@
 {
  "generatedBy": "tools/corpus/build-index.mjs",
- "builtAt": "2026-11-17T11:57:08.025Z",
+ "builtAt": "2026-11-19T08:44:19.141Z",
  "chipCommit": "207285fcb7153f688751e5234e4b3d9d59025bf9",
  "retrieval": "SQLite FTS5 (porter stemming), BM25 ranking, heading weighted ×3. Keyword retrieval only: no embeddings and no language model.",
  "documents": [
@@ -412,13 +412,26 @@
    "title": "Atlas provenance, coverage and verification",
    "kind": "studio document",
    "path": "docs/ATLAS_PROVENANCE.md",
-   "sha256": "03431fa768719465f5c8e92e84f19472f08966045e72d58e95eea404fa16fe57",
-   "bytes": 8672,
+   "sha256": "419f9df3caa0204349c8902cf2a25238ebc5f7bc89e8c186b8463aa06bcf0fc0",
+   "bytes": 12495,
    "licence": null,
    "visibility": "public",
    "reading": "authored in this build",
    "note": null,
-   "chunks": 11
+   "chunks": 13
+  },
+  {
+   "id": "studio:CINEMATIC_REBUILD.md",
+   "title": "Cinematic rebuild — what was decided and why",
+   "kind": "studio document",
+   "path": "docs/CINEMATIC_REBUILD.md",
+   "sha256": "9a59655691f5e3771a813d67fbff600e3e821bd43b74ef8feef9481506a27b9d",
+   "bytes": 7874,
+   "licence": null,
+   "visibility": "public",
+   "reading": "authored in this build",
+   "note": null,
+   "chunks": 10
   },
   {
    "id": "studio:DECISION_ATLAS_FOUNDATION.md",
@@ -438,13 +451,13 @@
    "title": "Code and data licence manifest",
    "kind": "studio document",
    "path": "docs/LICENCES.md",
-   "sha256": "d3b9b2d431dc1c917d4a164f74b4cda0728ee0a013c7ed70e2829bd3d2cf5ccb",
-   "bytes": 6901,
+   "sha256": "1b593f96297b6abdcebc83735204ff3b3bb80d91af69acfd58636dd7d6eede76",
+   "bytes": 8972,
    "licence": null,
    "visibility": "public",
    "reading": "authored in this build",
    "note": null,
-   "chunks": 7
+   "chunks": 9
   },
   {
    "id": "abs:buzsaki2012",
@@ -708,8 +721,8 @@
   }
  ],
  "totals": {
-  "documents": 54,
-  "chunks": 385,
+  "documents": 55,
+  "chunks": 399,
   "private": 20
  },
  "searchedLocations": [

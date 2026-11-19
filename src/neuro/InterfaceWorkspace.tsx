@@ -11,7 +11,7 @@ import { Wave } from '../journey/Wave';
 import { ClaimList, EvidenceTag } from '../science/Cite';
 import type { Claim } from '../atlas/content/regions';
 import { JourneyRail, LevelSwitch, Predict, Transport, useLevel, useTimeline, type PredictTask } from '../kit/kit';
-import { firingRateHz, HH, HH_LIMITS, sampleAt, simulateHH } from './model/hh';
+import { firingRateHz, HH, HH_LIMITS, isSustained, sampleAt, simulateHH } from './model/hh';
 import { buildColumn, DEFAULT_COLUMN, DISTANCE_LIMITS_UM, NOISE_RMS_UV, REF_AMP_UV, REF_DIST_UM, type ColumnParams } from './model/column';
 import { NeuronStage } from './NeuronStage';
 import './neuro.css';
@@ -44,7 +44,7 @@ const TASK: PredictTask = {
   explain: 'In this model a spike is all-or-nothing. Once the membrane crosses threshold, the sodium and potassium gates run nearly the same course whatever started it, so extra drive shortens the wait between spikes instead of enlarging them.',
   wrong: {
     taller: 'Spike height is set by the channels and the ion gradients, not by how hard the cell is pushed.',
-    both: 'Only the timing changes; the height actually falls a little, because the sodium gates have less time to recover.',
+    both: 'Only the timing changes much. The first spike is as tall as before, and the ones that follow are slightly smaller, because the sodium gates have less time to recover between them.',
   },
   tryLabel: 'Double the current',
 };
@@ -76,8 +76,13 @@ export default function InterfaceWorkspace() {
 
   // the prediction's check, computed from the same model the scene runs
   const check = useMemo(() => {
-    const peak = (I: number) => { const r = simulateHH({ currentUaCm2: I, onMs: 10, offMs: 185, durationMs: 200 }); let p = -Infinity; for (const v of r.v) p = Math.max(p, v); return { rate: firingRateHz(r), peak: p }; };
-    return { lo: peak(10), hi: peak(20) };
+    const run = (I: number) => {
+      const r = simulateHH({ currentUaCm2: I, onMs: 10, offMs: 185, durationMs: 200 });
+      // peak of each spike: the maximum within 3 ms of its upward zero crossing
+      const peaks = r.spikesMs.map((ts) => { let p = -Infinity; for (let k = Math.floor(ts * r.perMs), end = Math.min(r.v.length, k + 3 * r.perMs); k < end; k++) p = Math.max(p, r.v[k]); return p; });
+      return { rate: firingRateHz(r), first: peaks[0] ?? NaN, later: peaks[peaks.length - 1] ?? NaN };
+    };
+    return { lo: run(10), hi: run(20) };
   }, []);
 
   const cortical = tissue === 'cortex';
@@ -156,7 +161,7 @@ k chosen so the spike is ${REF_AMP_UV} µV × (${REF_DIST_UM} µm / d)   →  ${
             <label htmlFor="k-current">Current pushed into the neuron</label>
             <output data-testid="current-out">{fmt(col.params.currentUaCm2, 1)} µA/cm²</output>
             <input id="k-current" type="range" min={HH_LIMITS.currentUaCm2[0]} max={20} step={0.5} value={params.currentUaCm2} onChange={(e) => set({ currentUaCm2: +e.target.value })} data-testid="knob-current" />
-            <span className="small">{col.hh.spikesMs.length === 0 ? 'Too little to reach threshold: no spikes.' : rate > 0 ? `Fires ${fmt(rate, 0)} times a second while the current is on.` : 'One spike, then it settles: not enough to keep firing.'}</span>
+            <span className="small" data-testid="firing-note">{col.hh.spikesMs.length === 0 ? 'Too little to reach threshold: no spikes.' : isSustained(col.hh) ? `Fires ${fmt(rate, 0)} times a second while the current is on.` : `${col.hh.spikesMs.length === 1 ? 'One spike' : `${col.hh.spikesMs.length} spikes`}, then it settles: not enough to keep firing.`}</span>
           </div>
           <div className="knob">
             <label htmlFor="k-distance">Distance from neuron to contact</label>
@@ -171,7 +176,7 @@ k chosen so the spike is ${REF_AMP_UV} µV × (${REF_DIST_UM} µm / d)   →  ${
               <div><dt>m · h · n</dt><dd>{fmt(sampleAt(col.hh.m, col.perMs, t), 2)} · {fmt(sampleAt(col.hh.h, col.perMs, t), 2)} · {fmt(sampleAt(col.hh.n, col.perMs, t), 2)}</dd></div>
               <div><dt>I sodium</dt><dd>{fmt(sampleAt(col.hh.iNa, col.perMs, t), 0)} <small>µA/cm²</small></dd></div>
               <div><dt>I potassium</dt><dd>{fmt(sampleAt(col.hh.iK, col.perMs, t), 0)} <small>µA/cm²</small></dd></div>
-              <div><dt>Firing rate</dt><dd>{fmt(rate, 0)} <small>/s</small></dd></div>
+              <div><dt>Firing rate</dt><dd>{isSustained(col.hh) ? fmt(rate, 0) : '—'} <small>/s</small></dd></div>
               {level === 'engineering' && <div><dt>Inside ÷ outside</dt><dd>≈ {fmt(100000 / Math.max(1, col.focusAmplitudeUv), 0)} <small>×</small></dd></div>}
               {level === 'engineering' && <div><dt>Noise (stated)</dt><dd>{NOISE_RMS_UV} <small>µV rms</small></dd></div>}
             </dl>
@@ -182,7 +187,7 @@ k chosen so the spike is ${REF_AMP_UV} µV × (${REF_DIST_UM} µm / d)   →  ${
         <Predict
           task={TASK}
           onTry={() => { set({ currentUaCm2: 20 }); tl.seek(0); tl.setPlaying(true); }}
-          result={<>Model, 10 → 20 µA/cm²: rate {fmt(check.lo.rate, 0)} → {fmt(check.hi.rate, 0)} spikes a second; peak {fmt(check.lo.peak, 0)} → {fmt(check.hi.peak, 0)} mV.</>}
+          result={<>Model, 10 → 20 µA/cm²: rate {fmt(check.lo.rate, 0)} → {fmt(check.hi.rate, 0)} spikes a second. The first spike peaks at {fmt(check.lo.first, 0)} → {fmt(check.hi.first, 0)} mV; later ones at {fmt(check.lo.later, 0)} → {fmt(check.hi.later, 0)} mV.</>}
         />
 
         <section className="panel">

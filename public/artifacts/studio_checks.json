@@ -1,6 +1,6 @@
 {
  "generatedBy": "scripts/run-checks.mjs",
- "ranAt": "2026-11-19T07:21:16.103Z",
+ "ranAt": "2026-11-19T08:44:36.891Z",
  "node": "v24.22.0",
  "chipCommit": "207285fcb7153f688751e5234e4b3d9d59025bf9",
  "note": "These compare the studio's TypeScript models with recorded RTL simulation traces (fixtures). They do not re-run the Verilog.",

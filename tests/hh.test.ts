@@ -2,7 +2,7 @@
 // teaching model built on it (src/neuro/model/column.ts).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { firingRateHz, HH, rates, sampleAt, simulateHH, steady } from '../src/neuro/model/hh.ts';
+import { firingRateHz, HH, isSustained, rates, sampleAt, simulateHH, steady } from '../src/neuro/model/hh.ts';
 import { load } from './helpers/bundle.ts';
 
 // column.ts reuses the Signal scene's spike template, which lives in a bundler-style module
@@ -47,6 +47,12 @@ test('a strong current step produces all-or-nothing action potentials of the tex
 test('threshold behaviour: a weak step gives at most one spike, a stronger one fires repeatedly, and rate grows with current', () => {
   assert.equal(run(1).spikesMs.length, 0);
   assert.ok(run(4).spikesMs.length <= 1, 'below the repetitive-firing threshold');
+  // just above threshold: a spike or two, then silence — not sustained firing; a little higher and it repeats
+  assert.equal(run(5, 400).spikesMs.length, 1);
+  assert.equal(isSustained(run(5, 400)), false);
+  assert.ok(run(6, 400).spikesMs.length <= 3 && !isSustained(run(6, 400)), 'two spikes at 6 µA/cm² are not sustained firing');
+  assert.ok(isSustained(run(7, 400)) && isSustained(run(10)));
+  assert.equal(isSustained(run(0)), false);
   const f8 = firingRateHz(run(8, 200)), f12 = firingRateHz(run(12, 200)), f20 = firingRateHz(run(20, 200));
   assert.ok(f8 > 40 && f12 > f8 && f20 > f12, `${f8} < ${f12} < ${f20}`);
 });

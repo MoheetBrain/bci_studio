@@ -68,9 +68,11 @@ export function useTimeline(duration: number, initialSpeed: number, opts: { star
     const r = ref.current;
     r.last = performance.now();
     const tick = (now: number) => {
-      const dt = Math.min(0.1, (now - r.last) / 1000);     // a stalled tab must not jump the timeline
+      // a stalled tab must not jump the timeline; and a frame timestamp can precede the moment Play was pressed,
+      // so time never runs backwards either
+      const dt = Math.max(0, Math.min(0.1, (now - r.last) / 1000));
       r.last = now;
-      r.t = Math.min(r.duration, r.t + dt * r.speed);
+      r.t = Math.max(0, Math.min(r.duration, r.t + dt * r.speed));
       if (now - r.lastRender > 1000 / (opts.fps ?? 30) || r.t >= r.duration) { r.lastRender = now; setT(r.t); }
       if (r.t >= r.duration) { r.playing = false; setPlayingState(false); return; }
       raf = requestAnimationFrame(tick);

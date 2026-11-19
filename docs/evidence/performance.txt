@@ -1,4 +1,4 @@
-# Atlas performance — measured 2026-11-17T11:51:28.785Z
+# Studio performance — measured 2026-11-19T08:30:49.437Z
 
 These are measurements on ONE machine in ONE run, with a visible Chrome window. They are not guarantees for other
 hardware, browsers, window sizes or system load. Targets from the brief: hover feedback within 100 ms; near 60 fps.
@@ -7,29 +7,55 @@ hardware, browsers, window sizes or system load. Targets from the brief: hover f
 Machine: Apple M5 Ultra
 Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
 WebGL renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
-Window: 1440 × 893 CSS px; canvas 2880 × 1646 device px (devicePixelRatio 2, pixel ratio capped at 2)
-Scene: 251 structures, 760,155 triangles, one draw call per visible structure; production build
+Scene: one continuous surface of 459,996 triangles (one draw call); 251 atlas bodies (760,155 triangles) drawn only when revealed; production build
 
-## Results
-Ray-cast pick (600 casts, 209 hits):        p50 0 ms   p95 0.2 ms   max 1.1 ms
-Hover feedback, pointer event → highlighted frame presented (60 moves): p50 16.6 ms   p95 17.4 ms   max 17.6 ms   (target ≤ 100 ms)
-Frame time, continuous orbit, opaque cortex (600 frames):      p50 8.3 ms (120 fps)   p95 8.4 ms (119 fps)   max 9.3 ms
-Frame time, continuous orbit, cortex at 30 % (344 frames):  p50 8.3 ms (120 fps)   p95 8.6 ms (116 fps)   max 141.7 ms
+## Profile A — this machine as it is
+Window: 1440 × 893 CSS px; canvas 2880 × 1786 device px (devicePixelRatio 2, pixel ratio capped at 2)
+Time from navigation to an interactive brain (local server, warm disk): 349 ms
+Ray-cast pick (600 casts, 462 hits):                       p50 0 ms   p95 0.1 ms   max 1.2 ms
+Hover feedback, pointer event → highlighted frame (60):    p50 16.7 ms   p95 18.5 ms   max 18.9 ms   (target ≤ 100 ms)
+Select a region → next frame, incl. smoothed mask (24):    p50 10.9 ms   p95 13.3 ms   max 16.6 ms
+Orbit, solid surface (600 frames):                         p50    8.3 ms (120 fps)   p95   10.2 ms ( 98 fps)   max 10.4 ms
+Orbit, X-ray: glass shell + inner bodies (360 frames):     p50    8.3 ms (120 fps)   p95   10.3 ms ( 97 fps)   max 10.4 ms
+Orbit, slice with the MRI on the cut (240 frames):         p50    8.3 ms (120 fps)   p95   10.3 ms ( 97 fps)   max 10.4 ms
+Neurons scene playing (360 frames):                        p50    8.3 ms (120 fps)   p95   10.3 ms ( 97 fps)
+Decoder scene playing (227 frames):                        p50    8.3 ms (120 fps)   p95     10 ms (100 fps)
+Idle, no input for 2 s: 0 frames rendered while the display ticked 241 times (demand rendering)
+First opening of the Regions view (border fields for the whole surface): 73 ms
+First opening of the Slice view (fetch + inflate + upload two volumes): 45 ms
+Picking acceleration (BVH for the surface and all 251 bodies) built in 322 ms, in idle slices after first paint
+
+## Profile B — constrained: CPU slowed 4× by the browser’s throttle, 1280 × 720 window
+This emulates a slower CPU on the same GPU. It is NOT a measurement of a low-end laptop or a phone: GPU speed,
+memory and thermal limits are unchanged. Read it as “what happens to the script-bound parts when the CPU is 4× slower”.
+Window: 1280 × 720 CSS px; canvas 1280 × 720 device px (devicePixelRatio 1, pixel ratio capped at 2)
+Time from navigation to an interactive brain (local server, warm disk): 1025 ms
+Ray-cast pick (600 casts, 426 hits):                       p50 0 ms   p95 0.2 ms   max 2 ms
+Hover feedback, pointer event → highlighted frame (60):    p50 16.5 ms   p95 18.5 ms   max 19 ms   (target ≤ 100 ms)
+Select a region → next frame, incl. smoothed mask (24):    p50 46.9 ms   p95 60.5 ms   max 73 ms
+Orbit, solid surface (600 frames):                         p50    8.3 ms (120 fps)   p95   10.1 ms ( 99 fps)   max 10.4 ms
+Orbit, X-ray: glass shell + inner bodies (360 frames):     p50    8.3 ms (120 fps)   p95   10.1 ms ( 99 fps)   max 10.3 ms
+Orbit, slice with the MRI on the cut (241 frames):         p50    8.3 ms (120 fps)   p95   10.2 ms ( 98 fps)   max 10.4 ms
+Neurons scene playing (361 frames):                        p50    8.3 ms (120 fps)   p95   10.2 ms ( 98 fps)
+Decoder scene playing (240 frames):                        p50    8.3 ms (120 fps)   p95   10.1 ms ( 99 fps)
 Idle, no input for 2 s: 0 frames rendered while the display ticked 242 times (demand rendering)
-Picking acceleration (BVH for all 251 structures) built in 227 ms, in idle slices after first paint
-Time from navigation to an interactive atlas (local server, warm disk): 597 ms
+First opening of the Regions view (border fields for the whole surface): 275 ms
+First opening of the Slice view (fetch + inflate + upload two volumes): 77 ms
+Picking acceleration (BVH for the surface and all 251 bodies) built in 1253 ms, in idle slices after first paint
 
 ## Payload (production build, uncompressed on disk; a server that gzips would send less)
-Atlas data (manifest + 4 mesh chunks): 4309 KB   — transferred in this run: 4073 KB
-Home-screen JavaScript (index chunk): 1148 KB   — all JavaScript transferred for the home screen: 330 KB
-The existing chip studio (1013 KB) and the lesson screens load only when opened.
+Brain at first paint (manifest, surface, four body chunks): 7152 KB   — transferred in this run: 8875 KB including the slice volumes
+Slice volumes (MRI + region ids, gzip; fetched when the Slice view is first opened): 1964 KB
+Home-screen JavaScript (index chunk): 1180 KB   — all JavaScript transferred for the home screen: 341 KB
+The existing chip studio (1006 KB) and the other scenes load only when opened.
 
 ## Memory
-JavaScript heap after loading the atlas: 37.3 MB
-Vertex + index buffers handed to the GPU: about 10.6 MB (computed from the manifest; GPU memory itself is not observable from the page)
+JavaScript heap after the measurements above: 66.5 MB
+Vertex + index buffers handed to the GPU: about 22.2 MB (computed from the manifests; GPU memory itself is not observable from the page)
 
 ## Limits of this measurement
-- One run, one machine, one window size. No low-end or integrated-GPU device and no phone was measured.
+- One run, one machine, one display. No integrated-GPU laptop and no physical phone was measured; Profile B only slows the CPU.
 - Frame time is the interval between animation frames, so it cannot be shorter than the display refresh interval.
 - "Hover feedback" is measured from a synthetic pointer event to two animation frames later, which bounds the time to a presented frame from above.
 - The headless end-to-end run (docs/evidence/e2e-report.txt) is functional evidence only and is not a performance figure.
+- Before this rebuild: docs/evidence/cinematic/baseline/performance-before.txt (different scene, same machine).

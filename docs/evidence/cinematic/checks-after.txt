@@ -1,0 +1,21 @@
+# Checks after the cinematic rebuild — 2026-11-19T08:44:32Z, branch feature/cinematic-rebuild
+
+## npx tsc -b --noEmit
+exit 0
+
+## npm test
+ℹ tests 92
+ℹ pass 92
+ℹ fail 0
+ℹ skipped 0
+
+## npm run check:rtl
+  rtl_trace_v04_real.json: trained model · 32 frames
+    quantiser (L, x): 256/256 features agree
+    MLP (h, logits, class, margin): 32/32 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 32/32
+
+## npm run build
+✓ built in 2.21s
