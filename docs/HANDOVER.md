@@ -6,8 +6,9 @@ that the studio stays in this repository. One engineering agent; no sub-agents o
 
 ## 0 · Cinematic rebuild — 2026-11-19 (read this first)
 
-Branch `feature/cinematic-rebuild`, cut from `feature/brain-atlas-studio` @ `df9ba12`. **Local commits only: not pushed,
-no pull request, nothing merged, published or deployed.** PR #1 (`feature/brain-atlas-studio` → `main`) is untouched.
+Branch `feature/cinematic-rebuild`, cut from `feature/brain-atlas-studio` @ `df9ba12`. **Pushed to GitHub on 2026-11-19
+at the owner’s request (plain push, no force); no pull request, nothing merged, published or deployed.** PR #1
+(`feature/brain-atlas-studio` → `main`) is untouched.
 One engineering agent; no sub-agents, no second model, no paid or generative image/video service.
 
 What changed, in one paragraph: the home screen is now one continuous brain surface derived from the atlas subject’s
