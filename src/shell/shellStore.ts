@@ -7,7 +7,7 @@ export type Workspace = 'brain' | 'interface' | 'signal' | 'chip' | 'decoder' | 
 /** The scenes of the studio, ordered by physical scale: tissue → cells → electronics → silicon → computation → evidence. */
 export const WORKSPACES: Array<{ id: Workspace; label: string; scale: string; hint: string }> = [
   { id: 'brain', label: 'Brain', scale: '15 cm', hint: 'The whole brain: find and select a region' },
-  { id: 'interface', label: 'Neurons', scale: '0.2 mm', hint: 'Neurons and one electrode contact beneath the selected region' },
+  { id: 'interface', label: 'Neurons', scale: '1 mm', hint: 'Neurons and one electrode contact beneath the selected region' },
   { id: 'signal', label: 'Signal', scale: 'µV → bits', hint: 'Electrode → amplifier → ADC → digital samples' },
   { id: 'chip', label: 'Chip', scale: 'RTL', hint: 'What the Hamiltonian digital design implements, traced to source' },
   { id: 'decoder', label: 'Decoder', scale: '8 → 2', hint: 'How eight band energies become a prediction on the chip' },

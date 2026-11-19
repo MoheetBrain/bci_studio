@@ -57,6 +57,14 @@ export function InsightCard() {
   const viewMode = useAtlas((s) => s.viewMode);
   const dirty = useAtlas((s) => s.hasOverrides());
   const go = useShell((s) => s.go);
+  /** Fly into the region, then hand over to the Neurons scene (no flight when motion is reduced). */
+  const dive = () => {
+    const a = useAtlas.getState();
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { go('interface'); return; }
+    a.camera({ kind: 'dive', ids: a.selectionIds() });
+    document.querySelector('[data-testid="atlas-workspace"]')?.classList.add('diving');
+    window.setTimeout(() => { go('interface'); document.querySelector('[data-testid="atlas-workspace"]')?.classList.remove('diving'); }, 760);
+  };
   const openResearch = useShell((s) => s.openResearch);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLElement | null>(null);
@@ -126,7 +134,7 @@ export function InsightCard() {
 
         {/* one invitation */}
         {cortical ? (
-          <button type="button" className="btn btn-primary insight-go" onClick={() => go('interface')} data-testid="to-interface">
+          <button type="button" className="btn btn-primary insight-go" onClick={dive} data-testid="to-interface">
             <span>See the neurons beneath this surface</span><span aria-hidden="true">→</span>
           </button>
         ) : (

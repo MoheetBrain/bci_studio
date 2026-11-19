@@ -7,6 +7,7 @@ import { useAtlas } from '../atlas/atlasStore';
 import { cardFor } from '../atlas/content/regions';
 import { SOURCES } from '../science/sources';
 import { SourceList } from '../science/Cite';
+import { JourneyRail } from '../kit/kit';
 import './research.css';
 
 interface Hit {
@@ -139,7 +140,7 @@ export default function ResearchWorkspace() {
   }, [manifest]);
 
   return (
-    <div className="page research" data-testid="research-workspace">
+    <div className="page research cine" data-testid="research-workspace">
       <div className="page-inner">
         <header>
           <h1>Research</h1>
@@ -227,6 +228,7 @@ export default function ResearchWorkspace() {
             </>
           )}
         </section>
+        <JourneyRail prev={{ to: 'decoder', label: 'Back to the decoder', cue: '8 → 2' }} next={{ to: 'brain', label: 'Start again at the whole brain', cue: '15 cm' }} />
       </div>
     </div>
   );

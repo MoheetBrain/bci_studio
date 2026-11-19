@@ -8,6 +8,7 @@ import { useHierarchy, srcRef, type ChipHierarchy, type ChipInstance, type ChipM
 import { CONCEPTUAL, DIGITAL_PATHS, MILESTONES } from './chipFacts';
 import { STAGES } from '../journey/stages';
 import { useShell } from '../shell/shellStore';
+import { JourneyRail } from '../kit/kit';
 import { useAtlas } from '../atlas/atlasStore';
 import { EvidenceTag } from '../science/Cite';
 import '../journey/journey.css';
@@ -130,8 +131,8 @@ function ChipMap() {
   const region = useAtlas((s) => s.nameOf(s.selectedId));
   const highlight = useMemo(() => new Set(pathId ? DIGITAL_PATHS.find((p) => p.id === pathId)!.instances : []), [pathId]);
 
-  if (error) return <div className="page"><div className="page-inner"><div className="card" role="alert" data-testid="chip-error"><strong>The chip hierarchy could not be loaded.</strong><p>{error}. Run <code>npm run chip:extract</code>. No placeholder diagram is shown.</p></div></div></div>;
-  if (!h) return <div className="shell-loading" role="status">Reading the chip hierarchy…</div>;
+  if (error) return <div className="page cine"><div className="page-inner"><div className="card" role="alert" data-testid="chip-error"><strong>The chip hierarchy could not be loaded.</strong><p>{error}. Run <code>npm run chip:extract</code>. No placeholder diagram is shown.</p></div></div></div>;
+  if (!h) return <div className="shell-loading cine" role="status">Reading the chip hierarchy…</div>;
   const inst = orphan ? null : h.instances.find((i) => i.path === selected) ?? null;
   const mod = orphan ? h.modules.find((m) => m.name === orphan)! : inst ? h.modules.find((m) => m.name === inst.module)! : h.modules.find((m) => m.name === h.top)!;
   const orphans = h.modules.filter((m) => !m.inChipTop);
@@ -139,7 +140,7 @@ function ChipMap() {
   const artifactFor: Record<string, boolean | null> = { rtl: true, sim: h.verification.passing === h.verification.suites, synth: manifest.data ? has(/^synth_stats\.json$/) : null, layout: manifest.data ? has(/^layout_v04\/.*\.gds\.gz$/) : null };
 
   return (
-    <div className="page chip" data-testid="chip-map">
+    <div className="page chip cine" data-testid="chip-map">
       <div className="page-inner">
         <header className="jr-header">
           <div>
@@ -238,6 +239,10 @@ function ChipMap() {
           )}
           <p className="muted">Agreement is shown for these recorded stimuli only. It does not prove the model and the RTL agree for every input, and it says nothing about silicon.</p>
         </section>
+        <JourneyRail
+          prev={{ to: 'signal', label: 'Where the samples come from', cue: 'µV → bits' }}
+          next={{ to: 'decoder', label: 'Watch the on-chip decoder add up one frame', cue: '8 → 2' }}
+        />
       </div>
     </div>
   );
@@ -249,7 +254,7 @@ export default function ChipWorkspace() {
   if (view === 'studio') {
     return (
       <div className="chip-studio" data-testid="chip-studio">
-        <div className="chip-studio-bar">
+        <div className="chip-studio-bar cine">
           <button type="button" className="btn" onClick={() => setChipView('map')} data-testid="back-to-map">← Source-traced map</button>
           <span className="muted">Full chip studio: semantic zoom from system to physical layout, with its own evidence labels.</span>
         </div>

@@ -37,8 +37,9 @@ export interface WaveProps {
   valueDigits?: number;
 }
 
-function css(name: string, fallback: string): string {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/** A colour token as seen from `el` (tokens are redefined on the dark scenes, so the root value would be wrong there). */
+function cssOf(el: Element, name: string, fallback: string): string {
+  const v = getComputedStyle(el).getPropertyValue(name).trim();
   return v || fallback;
 }
 const nice = (v: number, digits = 3) => {
@@ -67,6 +68,7 @@ export function Wave(p: WaveProps) {
       if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
       const g = canvas.getContext('2d');
       if (!g) return;
+      const css = (name: string, fallback: string) => cssOf(canvas, name, fallback);
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
       const padL = 54, padR = 8, padT = 6, padB = p.showTimeAxis ? 18 : 6;

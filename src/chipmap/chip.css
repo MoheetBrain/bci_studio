@@ -83,7 +83,7 @@
 }
 
 
-.chip-studio { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
-.chip-studio-bar { display: flex; align-items: center; gap: 12px; padding: 5px 12px; background: var(--surface-panel); border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.chip-studio { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; padding-top: 64px; box-sizing: border-box; background: #05080F; }
+.chip-studio-bar { display: flex; align-items: center; gap: 12px; padding: 6px 14px; background: #0D1424; border-bottom: 1px solid #25324F; font-size: 12.5px; color: #B4C0D8; }
 .chip-studio-body { position: relative; min-height: 0; }
 .chip-studio-body > .app { position: absolute; inset: 0; height: auto; }

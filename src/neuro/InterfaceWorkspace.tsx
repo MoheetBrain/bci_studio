@@ -1,218 +1,197 @@
-// Neural interface: from the selected cortical region down to neurons and one electrode contact.
-// Separate panels per scale, with the scale jump stated between them — the cellular drawing is a schematic and was
-// never "resolved" from the MRI atlas. The traces come from the same deterministic model as the signal journey.
-import { useMemo } from 'react';
+// Neurons: beneath the selected region, at the scale of cells. A schematic patch of cortex in 3D, one neuron driven
+// by the Hodgkin–Huxley membrane model, and one electrode contact listening from a set distance.
+//
+// What is what (also said in the UI):
+//   • cell shapes and positions — a drawing; the MRI atlas has no cellular data and nothing was "zoomed into";
+//   • the membrane potential — computed from the published Hodgkin–Huxley equations (squid axon, not human cortex);
+//   • the contact's voltage — a stated teaching rule (1 / distance) plus fixed-seed noise.
+import { useEffect, useMemo, useState } from 'react';
 import { useAtlas } from '../atlas/atlasStore';
-import { useJourney } from '../journey/journeyStore';
 import { Wave } from '../journey/Wave';
-import { ANALOG_RATE_HZ, LIMITS, RESTING_MV } from '../journey/model/chain';
-import { ClaimList, Cites, EvidenceTag } from '../science/Cite';
+import { ClaimList, EvidenceTag } from '../science/Cite';
 import type { Claim } from '../atlas/content/regions';
-import { useShell } from '../shell/shellStore';
-import '../journey/journey.css';
+import { JourneyRail, LevelSwitch, Predict, Transport, useLevel, useTimeline, type PredictTask } from '../kit/kit';
+import { firingRateHz, HH, HH_LIMITS, sampleAt, simulateHH } from './model/hh';
+import { buildColumn, DEFAULT_COLUMN, DISTANCE_LIMITS_UM, NOISE_RMS_UV, REF_AMP_UV, REF_DIST_UM, type ColumnParams } from './model/column';
+import { NeuronStage } from './NeuronStage';
 import './neuro.css';
 
-const UNIT_COLORS = ['#B0532A', '#3B6FB6', '#7A4FB0', '#56616A'];
-const ANGLES = [200, 150, 232, 120, 260, 175, 215, 140].map((d) => (d * Math.PI) / 180);
-
 const CLAIMS: Claim[] = [
+  { text: 'The membrane potential shown is the Hodgkin–Huxley model: sodium, potassium and leak conductances fitted to the squid giant axon at 6.3 °C. It is integrated exactly as published; it is not a model of a human cortical neuron and not a recording.', kind: 'assumption', sources: ['hodgkin1952'] },
   { text: 'Neuronal activity gives rise to transmembrane currents that can be measured in the fluid outside the cells. Synaptic currents are the major contributor to that extracellular signal; action potentials and other membrane events add to it.', kind: 'background', sources: ['buzsaki2012'] },
   { text: 'The size of the first, negative phase of the extracellular spike follows the size of the neuron’s intracellular action potential — the electrode sees a small, inverted, sharpened shadow of it, not the membrane potential itself.', kind: 'background', sources: ['henze2000'] },
   { text: 'A recording site does not listen to one neuron. For a tetrode in rat hippocampus, roughly a thousand neurons lie within range and 60–100 should be large enough to tell apart in principle, yet about six are usually isolated.', kind: 'background', sources: ['henze2000'] },
   { text: 'Intracortical arrays intended for brain–computer interfaces record from small populations of neurons rather than single units, with an average signal-to-noise ratio around 6 : 1 reported for one array design.', kind: 'background', sources: ['maynard1997'] },
-  { text: 'In this lesson spike size falls as 1 / distance from a reference of 120 µV at 30 µm. That rule and those numbers are a teaching model, not measurements of this (or any) brain.', kind: 'assumption', sources: [] },
-  { text: 'The electrode position in the selected region is illustrative. Nothing here is a placement recommendation, and the atlas contains no cellular data.', kind: 'assumption', sources: [] },
+  { text: `In this scene a spike’s size at the contact is ${REF_AMP_UV} µV × (${REF_DIST_UM} µm ÷ distance), its shape is the negative of the membrane potential’s rate of change, and the noise is a fixed ${NOISE_RMS_UV} µV rms. Those are teaching rules, not measurements of this (or any) brain.`, kind: 'assumption', sources: [] },
+  { text: 'The cell shapes, their positions, the neighbours’ spike times and the electrode position are invented for the drawing. Nothing here is a placement recommendation, and the atlas contains no cellular data.', kind: 'assumption', sources: [] },
 ];
 
-function ScaleCard(p: { n: number; title: string; scale: string; evidence: React.ReactNode; children: React.ReactNode; jump?: string }) {
-  return (
-    <>
-      {p.jump && <div className="scale-jump" aria-label={`Scale change: ${p.jump}`}><span>{p.jump}</span></div>}
-      <section className="card scale-card">
-        <header><span className="scale-n">{p.n}</span><h2>{p.title}</h2><span className="scale-size mono">{p.scale}</span></header>
-        <div className="scale-ev">{p.evidence}</div>
-        {p.children}
-      </section>
-    </>
-  );
-}
+const SPEEDS = [
+  { value: 1, label: '1000× slower' },
+  { value: 4, label: '250× slower' },
+  { value: 20, label: '50× slower' },
+];
 
-/** Schematic of the cortical sheet (six layers). Proportions are indicative only. */
-function LayersSchematic() {
-  const layers = [['I', 0.08], ['II', 0.1], ['III', 0.24], ['IV', 0.1], ['V', 0.2], ['VI', 0.28]] as const;
-  let y = 8;
-  const H = 150;
-  return (
-    <svg viewBox="0 0 260 176" className="layers" role="img" aria-label="Schematic cross-section of the cortical sheet with six layers, a few millimetres thick, above white matter. Not to scale and not from this subject.">
-      {layers.map(([name, f]) => {
-        const h = f * H; const y0 = y; y += h;
-        return <g key={name}><rect x="44" y={y0} width="150" height={h} className="layer" /><text x="34" y={y0 + h / 2 + 4} textAnchor="end" className="lbl">{name}</text></g>;
-      })}
-      <rect x="44" y={8 + H} width="150" height="12" className="wm" /><text x="34" y={8 + H + 10} textAnchor="end" className="lbl">WM</text>
-      {/* two pyramidal cells: soma in III and V, apical dendrite to layer I, axon to white matter */}
-      {[[92, 60], [146, 108]].map(([x, yy], i) => (
-        <g key={i} className="cell">
-          <line x1={x} y1={yy} x2={x} y2={14} /><line x1={x} y1={yy + 6} x2={x} y2={8 + H + 6} className="axon" />
-          <line x1={x} y1={yy + 3} x2={x - 16} y2={yy + 16} /><line x1={x} y1={yy + 3} x2={x + 16} y2={yy + 16} />
-          <polygon points={`${x},${yy - 8} ${x - 7},${yy + 5} ${x + 7},${yy + 5}`} />
-        </g>
-      ))}
-      <line x1="210" y1="8" x2="210" y2={8 + H} className="bar" /><line x1="205" y1="8" x2="215" y2="8" className="bar" /><line x1="205" y1={8 + H} x2="215" y2={8 + H} className="bar" />
-      <text x="218" y={8 + H / 2} className="lbl" transform={`rotate(90 218 ${8 + H / 2})`} textAnchor="middle">a few mm</text>
-    </svg>
-  );
-}
+const TASK: PredictTask = {
+  id: 'all-or-nothing',
+  question: 'The neuron is firing with 10 µA/cm² of current pushed into it. You double the current to 20. What happens to its spikes?',
+  options: [
+    { id: 'taller', label: 'Each spike gets about twice as tall' },
+    { id: 'more', label: 'They come more often, at about the same height' },
+    { id: 'both', label: 'Both: taller and more often' },
+  ],
+  correct: 'more',
+  explain: 'In this model a spike is all-or-nothing. Once the membrane crosses threshold, the sodium and potassium gates run nearly the same course whatever started it, so extra drive shortens the wait between spikes instead of enlarging them.',
+  wrong: {
+    taller: 'Spike height is set by the channels and the ion gradients, not by how hard the cell is pushed.',
+    both: 'Only the timing changes; the height actually falls a little, because the sodium gates have less time to recover.',
+  },
+  tryLabel: 'Double the current',
+};
+
+const fmt = (v: number, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : '—');
 
 export default function InterfaceWorkspace() {
-  const go = useShell((s) => s.go);
-  const selectedId = useAtlas((s) => s.selectedId);
-  const node = useAtlas((s) => (s.selectedId ? s.tree.get(s.selectedId) : undefined));
-  const structure = useAtlas((s) => (s.selectedId ? s.structures.get(s.selectedId) : undefined));
-  const manifest = useAtlas((s) => s.manifest);
-  const members = useAtlas((s) => (s.selectedId ? s.idsOf(s.selectedId) : []));
-  const structures = useAtlas((s) => s.structures);
-  const r = useJourney((s) => s.result);
-  const setUnitDistance = useJourney((s) => s.setUnitDistance);
-  const p = r.params, d = r.derived;
+  const regionName = useAtlas((s) => s.nameOf(s.selectedId));
+  const tissue = useAtlas((s) => (s.selectedId ? s.structures.get(s.selectedId)?.tissue : undefined));
+  const level = useLevel((s) => s.level);
+  const [params, setParams] = useState<ColumnParams>(DEFAULT_COLUMN);
+  const col = useMemo(() => buildColumn(params), [params]);
+  const T = col.params.durationMs;
+  const tl = useTimeline(T, 4);
+  const [zoom, setZoom] = useState<'all' | 'spike'>('all');
 
-  // extent of the selection in this subject (from the atlas bounds)
-  const extent = useMemo(() => {
-    const ids = structure ? [structure.id] : members;
-    if (!ids.length) return null;
-    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
-    for (const id of ids) { const s = structures.get(id); if (!s) continue; for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], s.boundsMm[0][k]); hi[k] = Math.max(hi[k], s.boundsMm[1][k]); } }
-    return hi.map((v, k) => v - lo[k]);
-  }, [structure, members, structures]);
-  const brainExtent = useMemo(() => {
-    if (!manifest) return null;
-    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
-    for (const s of manifest.structures) for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], s.boundsMm[0][k]); hi[k] = Math.max(hi[k], s.boundsMm[1][k]); }
-    return hi.map((v, k) => v - lo[k]);
-  }, [manifest]);
-  const isCortex = structure?.tissue === 'cortex';
+  // start moving on arrival, unless the visitor prefers stillness
+  useEffect(() => {
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) tl.setPlaying(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // one spike of the nearest neuron, for the membrane-vs-electrode comparison
-  const spike = r.truth.find((s) => s.unit === 0);
-  const t0 = spike ? Math.max(0, spike.tMs - 2.5) : 0, t1 = spike ? Math.min(p.durationMs, spike.tMs + 5.5) : Math.min(p.durationMs, 8);
-  const peak = useMemo(() => {
-    if (!spike) return null;
-    const i0 = Math.floor((t0 / 1000) * ANALOG_RATE_HZ), i1 = Math.ceil((t1 / 1000) * ANALOG_RATE_HZ);
-    let vm = -Infinity;
-    for (let i = i0; i <= i1; i++) vm = Math.max(vm, r.analog.vmMv[i]);
-    return { vmSwingMv: vm - RESTING_MV, veUv: d.unitAmplitudeUv[0] };
-  }, [spike, t0, t1, r, d]);
+  const t = tl.t;
+  const [t0, t1] = zoom === 'all' ? [0, T] : [Math.max(0, Math.min(T - 10, t - 4)), Math.max(10, Math.min(T, t + 6))];
+  const rateHz = col.perMs * 1000;
+  const spikes = col.hh.spikesMs.map((ts) => ({ tMs: ts, kind: 'triangle' as const, color: '#FFB45C' }));
+  const vm = sampleAt(col.hh.v, col.perMs, t), ve = sampleAt(col.electrodeUv, col.perMs, t);
+  const rate = firingRateHz(col.hh);
 
-  // amplitude-vs-distance curve of the model
-  const curve = useMemo(() => {
-    const W = 300, H = 150, x0 = 38, y0 = 10, w = W - x0 - 10, h = H - y0 - 26, rMax = 220, aMax = Math.max(140, d.unitAmplitudeUv[0] * 1.1);
-    const X = (rr: number) => x0 + (rr / rMax) * w, Y = (a: number) => y0 + (1 - Math.min(a, aMax) / aMax) * h;
-    let path = '';
-    for (let rr = 15; rr <= rMax; rr += 3) path += `${path ? 'L' : 'M'}${X(rr).toFixed(1)},${Y((p.spikeUvAtRef * p.refDistanceUm) / rr).toFixed(1)}`;
-    return { W, H, x0, y0, w, h, X, Y, path, rMax, aMax };
-  }, [p, d]);
-  const detectFloorUv = d.spikePeakRetained > 0 ? d.thresholdInputUv / d.spikePeakRetained : Infinity;
-  const noiseUv = Math.hypot(d.inputNoiseUvRms, p.backgroundUvRms);
+  // the prediction's check, computed from the same model the scene runs
+  const check = useMemo(() => {
+    const peak = (I: number) => { const r = simulateHH({ currentUaCm2: I, onMs: 10, offMs: 185, durationMs: 200 }); let p = -Infinity; for (const v of r.v) p = Math.max(p, v); return { rate: firingRateHz(r), peak: p }; };
+    return { lo: peak(10), hi: peak(20) };
+  }, []);
+
+  const cortical = tissue === 'cortex';
+  const place = regionName ? (cortical ? `Beneath the ${regionName}` : `Cells like those near the ${regionName}`) : 'Beneath the surface';
+  const set = (over: Partial<ColumnParams>) => setParams((p) => ({ ...p, ...over }));
 
   return (
-    <div className="page neuro" data-testid="interface-workspace">
-      <div className="page-inner">
-        <header className="jr-header">
-          <div>
-            <h1>Neural interface</h1>
-            <p className="lede">
-              {node
-                ? <>From the <button type="button" className="btn-link inline" onClick={() => go('brain')} data-testid="iface-region">{node.name}</button> down to neurons and one electrode contact. Each panel is a different scale; the cellular panels are schematics and a computed example, <strong>not</strong> something seen in the MRI atlas.</>
-                : <>No brain region is selected. The lesson below is generic; <button type="button" className="btn-link inline" onClick={() => go('brain')}>choose a region in the atlas</button> to anchor it.</>}
-            </p>
-            {node && !isCortex && structure && <p className="note" role="note" data-testid="iface-not-cortex">“{node.name}” is not a cortical gyrus in this atlas ({structure.tissue.replace('-', ' ')}). The layered-cortex schematic below describes cerebral cortex in general and does not apply to this structure.</p>}
+    <div className="scene cine" data-testid="interface-workspace">
+      <div className="scene-stage">
+        <div className="scene-grid" aria-hidden="true" />
+        <NeuronStage col={col} now={tl.now} playing={tl.playing} labels={level === 'intuitive'} />
+        <header className="scene-head">
+          <div className="scene-kicker">
+            <span>Neurons · about 1 mm across</span>
+            <EvidenceTag kind="schematic" title="The cell shapes are a drawing. The membrane potential is computed from a published model. Nothing here was measured from this brain." />
           </div>
+          <h1 data-testid="interface-title">{place}</h1>
+          <p>
+            {level === 'intuitive' && <>You are now about 150 times closer than the whole-brain view. One neuron fires; a metal contact {Math.round(col.params.distanceUm)} µm away hears a faint, upside-down echo of each spike.</>}
+            {level === 'math' && <>The warm cell follows the Hodgkin–Huxley equations. The contact’s voltage is a stated rule: proportional to −dV/dt, and to 1 / distance.</>}
+            {level === 'engineering' && <>Inside the cell the swing is about 100 mV. At the contact it is {fmt(col.focusAmplitudeUv, 0)} µV on {NOISE_RMS_UV} µV rms of noise — a ratio of {fmt(col.snr, 1)} : 1. That is the signal the electronics get.</>}
+          </p>
         </header>
-
-        <div className="scales">
-          <ScaleCard n={1} title="Whole brain" scale={brainExtent ? `≈ ${brainExtent.map((v) => v.toFixed(0)).join(' × ')} mm` : '≈ 15 cm'} evidence={<EvidenceTag kind="measured" />}>
-            <p>The atlas you just explored: surfaces segmented from one volunteer’s MRI (1 mm voxels). At this scale you can tell gyri apart, not cells.</p>
-            <button type="button" className="btn" onClick={() => go('brain')}>Back to the atlas</button>
-          </ScaleCard>
-          <ScaleCard n={2} title={node ? node.name : 'A cortical region'} scale={extent ? `≈ ${extent.map((v) => v.toFixed(0)).join(' × ')} mm box` : 'centimetres'} evidence={<EvidenceTag kind="measured" />} jump="× ~3 closer">
-            {node
-              ? <p>The selected {node.kind === 'group' ? 'group' : 'structure'} as labelled in the atlas. Its bounding box in this subject is given above (R–L × A–P × S–I). {selectedId && /precentral_gyrus$/.test(selectedId) && <>It contains primary motor cortex but is not identical to it.</>}</p>
-              : <p className="muted">No region selected.</p>}
-          </ScaleCard>
-          <ScaleCard n={3} title="Cortical sheet and local circuit" scale="≈ 2–4 mm thick" evidence={<EvidenceTag kind="schematic" />} jump="× ~20 closer">
-            <LayersSchematic />
-            <p>Cerebral cortex is a folded sheet a few millimetres thick, conventionally described in six layers above the white matter. Pyramidal neurons send dendrites up toward the surface and axons down and out. <Cites ids={['kandel2021']} /></p>
-            <p className="muted">General textbook description; drawn, not measured, and not specific to this subject or region.</p>
-          </ScaleCard>
-          <ScaleCard n={4} title="Neurons and one electrode contact" scale="≈ 0.2 mm across" evidence={<EvidenceTag kind="synthetic" />} jump="× ~15 closer">
-            <svg viewBox="-235 -150 290 290" className="tissue" role="img" data-testid="tissue-svg"
-              aria-label={`Electrode contact with ${p.units.length} model neurons at ${p.units.map((u) => `${u.distanceUm} micrometres`).join(', ')}. Distances are to scale; cell shapes are schematic.`}>
-              <rect x="6" y="-150" width="26" height="290" className="shank" />
-              <circle cx="0" cy="0" r="10" className="contact" />
-              <text x="38" y="4" className="lbl">contact</text>
-              {p.units.map((u, i) => {
-                const x = u.distanceUm * Math.cos(ANGLES[i % ANGLES.length]), y = u.distanceUm * Math.sin(ANGLES[i % ANGLES.length]);
-                return (
-                  <g key={i} style={{ color: UNIT_COLORS[i % UNIT_COLORS.length] }}>
-                    <line x1={x} y1={y} x2="0" y2="0" className="dist" />
-                    <line x1={x} y1={y} x2={x} y2={y - 46} className="dend" />
-                    <polygon points={`${x},${y - 11} ${x - 9},${y + 7} ${x + 9},${y + 7}`} className="soma" />
-                    <text x={x - 12} y={y + 22} textAnchor="end" className="lbl">{u.distanceUm} µm · {d.unitAmplitudeUv[i].toFixed(0)} µV</text>
-                  </g>
-                );
-              })}
-              <line x1="-225" y1="128" x2="-175" y2="128" className="bar" /><text x="-200" y="122" textAnchor="middle" className="lbl">50 µm</text>
-            </svg>
-            <label className="prm">
-              <span className="prm-label">Nearest neuron</span>
-              <input type="range" min={LIMITS.distanceUm[0]} max={200} step={5} value={p.units[0].distanceUm} onChange={(e) => setUnitDistance(0, +e.target.value)} data-testid="iface-distance" aria-label="Distance from the contact to the nearest model neuron, micrometres" />
-              <span className="prm-value mono">{p.units[0].distanceUm} µm</span>
-            </label>
-            <p className="muted">Distances are to scale; cell shapes are schematic. Three model neurons are shown; real tissue has thousands within this view.</p>
-          </ScaleCard>
-        </div>
-
-        <section className="card" aria-label="Membrane potential versus the electrode signal">
-          <h2>Inside the cell vs. at the electrode <EvidenceTag kind="synthetic" /></h2>
-          {spike && peak ? (
-            <>
-              <p className="lede">The same action potential, on the same time axis. Note the units: <strong>millivolts</strong> inside the neuron, <strong>microvolts</strong> at the contact.</p>
-              <div className="waves">
-                <Wave title="Membrane potential of the nearest neuron" unit="mV" data={r.analog.vmMv} rateHz={ANALOG_RATE_HZ} t0={t0} t1={t1} playheadMs={spike.tMs} color={UNIT_COLORS[0]} yRange={[-80, 40]} note="illustrative template; intracellular" testId="iface-vm" valueDigits={1} height={110} />
-                <Wave title="Electrode − reference" unit="µV" data={r.analog.veUv} rateHz={ANALOG_RATE_HZ} t0={t0} t1={t1} playheadMs={spike.tMs} color="#3B6FB6" note="extracellular: this neuron plus its neighbours, the background and the slow field potential" testId="iface-ve" valueDigits={1} height={110} showTimeAxis />
-              </div>
-              <p className="compare" data-testid="iface-compare">
-                Membrane swing ≈ <strong>{peak.vmSwingMv.toFixed(0)} mV</strong>. The same spike at a contact {p.units[0].distanceUm} µm away ≈ <strong>−{peak.veUv.toFixed(0)} µV</strong> in this model — about <strong>{Math.round((peak.vmSwingMv * 1000) / peak.veUv).toLocaleString()}×</strong> smaller, and negative-going.
-              </p>
-            </>
-          ) : <p className="muted">The nearest model neuron does not fire in this window, so there is no spike to compare.</p>}
-        </section>
-
-        <div className="neuro-grid">
-          <section className="card" aria-label="Spike size versus distance in the model">
-            <h2>How far can the contact “hear”? <EvidenceTag kind="synthetic" /></h2>
-            <svg viewBox={`0 0 ${curve.W} ${curve.H}`} className="curve" role="img" data-testid="iface-curve"
-              aria-label={`Model curve of extracellular spike amplitude against distance: ${p.units.map((u, i) => `${u.distanceUm} micrometres gives ${d.unitAmplitudeUv[i].toFixed(0)} microvolts`).join('; ')}.`}>
-              <rect x={curve.x0} y={curve.y0} width={curve.w} height={curve.h} className="frame" />
-              {Number.isFinite(detectFloorUv) && detectFloorUv < curve.aMax && <><line x1={curve.x0} x2={curve.x0 + curve.w} y1={curve.Y(detectFloorUv)} y2={curve.Y(detectFloorUv)} className="thr" /><text x={curve.x0 + curve.w - 3} y={curve.Y(detectFloorUv) - 4} textAnchor="end" className="lbl thr-l">detected above {detectFloorUv.toFixed(0)} µV</text></>}
-              <line x1={curve.x0} x2={curve.x0 + curve.w} y1={curve.Y(noiseUv)} y2={curve.Y(noiseUv)} className="noise" /><text x={curve.x0 + curve.w - 3} y={curve.Y(noiseUv) - 4} textAnchor="end" className="lbl">noise + background {noiseUv.toFixed(1)} µV RMS</text>
-              <path d={curve.path} className="amp" />
-              {p.units.map((u, i) => <circle key={i} cx={curve.X(Math.min(u.distanceUm, curve.rMax))} cy={curve.Y(d.unitAmplitudeUv[i])} r="4.5" fill={UNIT_COLORS[i % UNIT_COLORS.length]} />)}
-              <text x={curve.x0 - 5} y={curve.y0 + 8} textAnchor="end" className="lbl">{curve.aMax.toFixed(0)}</text><text x={curve.x0 - 5} y={curve.y0 + curve.h} textAnchor="end" className="lbl">0 µV</text>
-              {[50, 100, 150, 200].map((rr) => <text key={rr} x={curve.X(rr)} y={curve.H - 8} textAnchor="middle" className="lbl">{rr}{rr === 200 ? ' µm' : ''}</text>)}
-            </svg>
-            <p className="muted">Curve: amplitude = {p.spikeUvAtRef} µV × {p.refDistanceUm} µm / distance (model assumption). Dots: the three model neurons. A spike is detected only if its filtered peak clears the chip’s threshold.</p>
-          </section>
-          <section className="card" aria-label="What is established and what is assumed">
-            <h2>What is established, what is assumed</h2>
-            <ClaimList claims={CLAIMS} />
-          </section>
-        </div>
-
-        <div className="next">
-          <button type="button" className="btn btn-primary" onClick={() => go('signal')} data-testid="to-signal">Follow this electrode signal through the acquisition chain →</button>
-          <span className="muted">The same model and the same settings continue in the Signal journey.</span>
+        <p className="scene-caption" data-testid="interface-caption">
+          {vm > -20
+            ? <><strong>Spike.</strong> Sodium rushes in and the inside swings positive; the contact dips at the same instant.</>
+            : vm < -67
+              ? <><strong>Recovery.</strong> Potassium flows out and the membrane overshoots below rest before the next spike can start.</>
+              : <><strong>Charging.</strong> The injected current pushes the membrane up from rest towards threshold.</>}
+          {' '}The drawing is schematic; the atlas holds no cells.
+        </p>
+        <div className="scene-foot">
+          <Transport tl={tl} duration={T} speeds={SPEEDS} step={0.02} label="Neuron timeline" clock="Model time (milliseconds of biology), not wall-clock time" format={(x) => `${x.toFixed(2)} ms`} />
+          <JourneyRail
+            prev={{ to: 'brain', label: 'Back to the whole brain', cue: '≈150× wider' }}
+            next={{ to: 'signal', label: 'Follow the contact’s voltage into the amplifier', cue: 'µV → bits' }}
+          />
         </div>
       </div>
+
+      <aside className="scene-side" aria-label="Plots and controls">
+        <LevelSwitch />
+
+        <section className="panel">
+          <h2>Inside the neuron <EvidenceTag kind="synthetic" title="Computed from the Hodgkin–Huxley equations; not a recording." /></h2>
+          <Wave title="Membrane potential" unit="mV" data={col.hh.v} rateHz={rateHz} t0={t0} t1={t1} playheadMs={t} color="#FFB45C" height={104} yRange={[-90, 55]}
+            hlines={[{ value: HH.rest, color: 'rgba(255,255,255,0.25)', label: 'rest', dashed: true }]} markers={spikes} onSeek={tl.seek} testId="wave-vm" valueDigits={1} />
+          {level === 'math' && (
+            <>
+              <Wave title="m — sodium opens" unit="" data={col.hh.m} rateHz={rateHz} t0={t0} t1={t1} playheadMs={t} color="#FF8FA3" height={44} yRange={[0, 1]} onSeek={tl.seek} testId="wave-m" />
+              <Wave title="h — sodium stays available" unit="" data={col.hh.h} rateHz={rateHz} t0={t0} t1={t1} playheadMs={t} color="#C6A6FF" height={44} yRange={[0, 1]} onSeek={tl.seek} testId="wave-h" />
+              <Wave title="n — potassium opens" unit="" data={col.hh.n} rateHz={rateHz} t0={t0} t1={t1} playheadMs={t} color="#8DB8FF" height={44} yRange={[0, 1]} onSeek={tl.seek} testId="wave-n" />
+              <div className="eq" data-testid="hh-equations">{`C dV/dt = I − gNa·m³h·(V − ENa) − gK·n⁴·(V − EK) − gL·(V − EL)
+dx/dt   = αx(V)·(1 − x) − βx(V)·x        x ∈ {m, h, n}
+C = ${HH.C} µF/cm²   gNa = ${HH.gNa}   gK = ${HH.gK}   gL = ${HH.gL} mS/cm²
+ENa = ${HH.ENa}   EK = ${HH.EK}   EL = ${HH.EL} mV`}</div>
+            </>
+          )}
+          <h2>At the contact, <span className="nocase">{Math.round(col.params.distanceUm)} µm</span> away <EvidenceTag kind="synthetic" title="A teaching rule (1 / distance) plus fixed-seed noise; not a recording." /></h2>
+          <Wave title="Contact voltage" unit="µV" data={col.electrodeUv} rateHz={rateHz} t0={t0} t1={t1} playheadMs={t} color="#7FE7FF" height={104}
+            hlines={[{ value: -col.focusAmplitudeUv, color: 'rgba(127,231,255,0.45)', label: 'this neuron’s spike', dashed: true }]} markers={spikes} onSeek={tl.seek} showTimeAxis testId="wave-ve" valueDigits={0} />
+          {level === 'math' && <div className="eq">{`V_contact(t) ≈ −k·dV/dt + neighbours + noise
+k chosen so the spike is ${REF_AMP_UV} µV × (${REF_DIST_UM} µm / d)   →  ${fmt(col.focusAmplitudeUv, 1)} µV at d = ${Math.round(col.params.distanceUm)} µm`}</div>}
+          <div className="row-between">
+            <span className="small">Smaller ticks in the lower trace are neighbouring cells. Click a plot to move the playhead.</span>
+            <div className="seg" role="group" aria-label="Time window">
+              <button type="button" className={`seg-btn${zoom === 'all' ? ' on' : ''}`} aria-pressed={zoom === 'all'} onClick={() => setZoom('all')} data-testid="zoom-all">All</button>
+              <button type="button" className={`seg-btn${zoom === 'spike' ? ' on' : ''}`} aria-pressed={zoom === 'spike'} onClick={() => setZoom('spike')} data-testid="zoom-spike">10 ms</button>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel" aria-label="Change a variable">
+          <h2>Change something</h2>
+          <div className="knob">
+            <label htmlFor="k-current">Current pushed into the neuron</label>
+            <output data-testid="current-out">{fmt(col.params.currentUaCm2, 1)} µA/cm²</output>
+            <input id="k-current" type="range" min={HH_LIMITS.currentUaCm2[0]} max={20} step={0.5} value={params.currentUaCm2} onChange={(e) => set({ currentUaCm2: +e.target.value })} data-testid="knob-current" />
+            <span className="small">{col.hh.spikesMs.length === 0 ? 'Too little to reach threshold: no spikes.' : rate > 0 ? `Fires ${fmt(rate, 0)} times a second while the current is on.` : 'One spike, then it settles: not enough to keep firing.'}</span>
+          </div>
+          <div className="knob">
+            <label htmlFor="k-distance">Distance from neuron to contact</label>
+            <output data-testid="distance-out">{Math.round(col.params.distanceUm)} µm</output>
+            <input id="k-distance" type="range" min={DISTANCE_LIMITS_UM[0]} max={DISTANCE_LIMITS_UM[1]} step={5} value={params.distanceUm} onChange={(e) => set({ distanceUm: +e.target.value })} data-testid="knob-distance" />
+            <span className="small">The neuron’s spike at the contact: <strong data-testid="amp-out">{fmt(col.focusAmplitudeUv, 0)} µV</strong> ({fmt(col.snr, 1)} × the noise). The neuron itself does not change.</span>
+          </div>
+          {level !== 'intuitive' && (
+            <dl className="readouts" data-testid="neuron-readouts">
+              <div><dt>V membrane</dt><dd>{fmt(vm, 1)} <small>mV</small></dd></div>
+              <div><dt>V contact</dt><dd>{fmt(ve, 0)} <small>µV</small></dd></div>
+              <div><dt>m · h · n</dt><dd>{fmt(sampleAt(col.hh.m, col.perMs, t), 2)} · {fmt(sampleAt(col.hh.h, col.perMs, t), 2)} · {fmt(sampleAt(col.hh.n, col.perMs, t), 2)}</dd></div>
+              <div><dt>I sodium</dt><dd>{fmt(sampleAt(col.hh.iNa, col.perMs, t), 0)} <small>µA/cm²</small></dd></div>
+              <div><dt>I potassium</dt><dd>{fmt(sampleAt(col.hh.iK, col.perMs, t), 0)} <small>µA/cm²</small></dd></div>
+              <div><dt>Firing rate</dt><dd>{fmt(rate, 0)} <small>/s</small></dd></div>
+              {level === 'engineering' && <div><dt>Inside ÷ outside</dt><dd>≈ {fmt(100000 / Math.max(1, col.focusAmplitudeUv), 0)} <small>×</small></dd></div>}
+              {level === 'engineering' && <div><dt>Noise (stated)</dt><dd>{NOISE_RMS_UV} <small>µV rms</small></dd></div>}
+            </dl>
+          )}
+          {level === 'engineering' && <p className="small">What this hands to the electronics: tens of microvolts, lasting about a millisecond, next to neighbours and noise of similar size. The next scene amplifies, filters and digitises it.</p>}
+        </section>
+
+        <Predict
+          task={TASK}
+          onTry={() => { set({ currentUaCm2: 20 }); tl.seek(0); tl.setPlaying(true); }}
+          result={<>Model, 10 → 20 µA/cm²: rate {fmt(check.lo.rate, 0)} → {fmt(check.hi.rate, 0)} spikes a second; peak {fmt(check.lo.peak, 0)} → {fmt(check.hi.peak, 0)} mV.</>}
+        />
+
+        <section className="panel">
+          <details data-testid="interface-evidence">
+            <summary>What is real here, and what is a drawing</summary>
+            <ClaimList claims={CLAIMS} />
+          </details>
+        </section>
+      </aside>
     </div>
   );
 }

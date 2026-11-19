@@ -389,7 +389,7 @@ function BrainScene({ onGizmo, apiRef, look }: { onGizmo: (g: GizmoAxes) => void
       go(home.centre.clone().addScaledVector(new Vector3(...dirs[cmd.view]).normalize(), frameDistance(w, h)), home.centre.clone());
       return;
     }
-    if (cmd.kind === 'fit') {
+    if (cmd.kind === 'fit' || cmd.kind === 'dive') {
       const sph = new Sphere();
       let first = true;
       for (const id of cmd.ids) {
@@ -405,6 +405,12 @@ function BrainScene({ onGizmo, apiRef, look }: { onGizmo: (g: GizmoAxes) => void
       const dir = outward.length() > 0.012 ? dirNow.clone().lerp(outward.normalize(), 0.55).normalize() : dirNow;
       if (dir.y < 0.05) dir.setY(0.05).normalize();
       // Close enough to read the structure, far enough that the brain around it still says where it is.
+      if (cmd.kind === 'dive') {
+        // straight in along the structure's outward direction, until it fills the stage
+        const inDir = outward.length() > 0.012 ? outward.clone().normalize() : dirNow;
+        go(sph.center.clone().addScaledVector(inDir, Math.max(0.05, sph.radius * 1.6)), sph.center.clone());
+        return;
+      }
       const r = Math.max(sph.radius, 0.014);
       const homeDist = homePose().pos.distanceTo(home.centre);
       const dist = Math.min(homeDist * 0.92, Math.max(homeDist * 0.50, frameDistance(r * 4.2, r * 4.2, 0.9, 0.9)));

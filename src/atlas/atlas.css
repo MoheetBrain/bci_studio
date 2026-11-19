@@ -43,6 +43,8 @@
 .stage-notes { position: absolute; left: 24px; top: 84px; z-index: 4; display: grid; gap: 3px; max-width: 320px; font-size: 12.5px; color: #C9D4EA; pointer-events: none; }
 .stage-notes span { padding-left: 10px; border-left: 2px solid rgba(127, 231, 255, 0.5); }
 
+.stage::after { content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none; background: #060A14; opacity: 0; transition: opacity .3s ease; }
+.stage.diving::after { opacity: 1; transition: opacity .5s ease .26s; }
 .stage-corner { position: absolute; z-index: 6; }
 .stage-corner.bl { left: 22px; bottom: 22px; }
 .stage-corner.br { right: 22px; bottom: 22px; }

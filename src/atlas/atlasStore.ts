@@ -13,6 +13,8 @@ export type CameraCmd =
   | { kind: 'view'; view: ViewName; nonce: number }
   | { kind: 'orbit'; dAz: number; dPolar: number; nonce: number }
   | { kind: 'zoom'; factor: number; nonce: number }
+  /** Fly in close to these structures (the lead-in to the Neurons scene). */
+  | { kind: 'dive'; ids: string[]; nonce: number }
   /** Fly to an explicit pose in display coordinates (used by guided journeys; seekable, so no tween when instant). */
   | { kind: 'pose'; position: [number, number, number]; target: [number, number, number]; instant?: boolean; nonce: number };
 

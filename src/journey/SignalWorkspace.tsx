@@ -10,7 +10,25 @@ import { Cites, EvidenceTag, SourceList } from '../science/Cite';
 import { useHierarchy, srcRef } from '../chipmap/useHierarchy';
 import { useShell } from '../shell/shellStore';
 import { useAtlas } from '../atlas/atlasStore';
+import { JourneyRail, Predict, type PredictTask } from '../kit/kit';
 import './journey.css';
+
+const ALIAS_TASK: PredictTask = {
+  id: 'aliasing',
+  question: 'A 7 kHz tone reaches a converter that takes 10,000 samples a second, and the low-pass filter in front of it is set far too wide. Where does the tone show up in the digital samples?',
+  options: [
+    { id: 'same', label: 'At 7 kHz, as it went in' },
+    { id: 'folded', label: 'At 3 kHz — a frequency that was never there' },
+    { id: 'gone', label: 'Nowhere: it is too fast to be captured at all' },
+  ],
+  correct: 'folded',
+  explain: 'Sampling 10,000 times a second can only tell frequencies up to 5 kHz apart. Anything faster folds back: 10 − 7 = 3 kHz. The samples are identical to those of a real 3 kHz tone, so nothing after the converter can undo it — the filter before it has to prevent it.',
+  wrong: {
+    same: 'The converter cannot represent 7 kHz at this rate, but it does not ignore it either.',
+    gone: 'It does not vanish; it lands on a different frequency and looks like real signal there.',
+  },
+  tryLabel: 'Load the aliasing example',
+};
 
 const f = (v: number, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : '—');
 const si = (v: number, unit: string) => {
@@ -172,7 +190,7 @@ export default function SignalWorkspace() {
   const rasterData = useMemo(() => { const a = new Float32Array(r.adc.count); for (const e of r.digital.events) a[e.n] = 1; return a; }, [r]);
 
   return (
-    <div className="page journey" data-testid="signal-workspace">
+    <div className="page journey cine" data-testid="signal-workspace">
       <div className="page-inner">
         <header className="jr-header">
           <div>
@@ -321,6 +339,15 @@ export default function SignalWorkspace() {
             <p className="jr-foot"><Cites ids={['buzsaki2012', 'henze2000', 'harrison2003', 'shannon1949', 'hbci-rtl']} /></p>
           </div>
         </div>
+        <Predict
+          task={ALIAS_TASK}
+          onTry={() => { s.applyPreset('aliasing'); document.querySelector('[data-testid="signal-workspace"]')?.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          result={s.result.derived.interferer ? <>Model: a {(s.result.derived.interferer.fHz / 1000).toFixed(0)} kHz tone sampled at {(s.result.params.fsHz / 1000).toFixed(0)} kS/s appears at {(s.result.derived.interferer.aliasHz / 1000).toFixed(1)} kHz{s.result.derived.interferer.aliased ? '' : ' (not aliased with the current settings)'}. Lower the low-pass corner in the controls and it fades.</> : <>Load the example to see the model’s numbers.</>}
+        />
+        <JourneyRail
+          prev={{ to: 'interface', label: 'Back to the neuron and the contact', cue: '1 mm' }}
+          next={{ to: 'chip', label: 'The samples enter our digital design', cue: 'bits → RTL' }}
+        />
       </div>
     </div>
   );
