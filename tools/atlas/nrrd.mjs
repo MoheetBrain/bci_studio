@@ -1,4 +1,4 @@
-// Minimal NRRD0004 reader for the SPL label volume (type short, 3-D, gzip, little-endian, space LPS).
+// Minimal NRRD0004 reader for the SPL volumes (type short or float, 3-D, gzip, little-endian, space LPS).
 // Returns the voxel array and the voxel-index → RAS-millimetre affine derived from the header (nothing assumed).
 import fs from 'node:fs';
 import { gunzipSync } from 'node:zlib';
@@ -17,7 +17,8 @@ export function readNrrd(file) {
     if (i > 0) header[line.slice(0, i).trim()] = line.slice(i + 1).replace(/^=/, '').trim();
   }
   if (header.dimension !== '3') throw new Error(`${file}: expected a 3-D volume`);
-  if (header.type !== 'short' && header.type !== 'unsigned short') throw new Error(`${file}: unsupported type ${header.type}`);
+  const isFloat = header.type === 'float';
+  if (!isFloat && header.type !== 'short' && header.type !== 'unsigned short') throw new Error(`${file}: unsupported type ${header.type}`);
   if (header.endian !== 'little') throw new Error(`${file}: unsupported endian ${header.endian}`);
   if (header.encoding !== 'gzip' && header.encoding !== 'gz') throw new Error(`${file}: unsupported encoding ${header.encoding}`);
   const space = header.space;
@@ -27,12 +28,25 @@ export function readNrrd(file) {
   const origin = vec(header['space origin']);
   const raw = gunzipSync(buf.subarray(end + 2));
   const n = sizes[0] * sizes[1] * sizes[2];
-  if (raw.byteLength !== n * 2) throw new Error(`${file}: ${raw.byteLength} bytes, expected ${n * 2}`);
-  const data = new Int16Array(raw.buffer, raw.byteOffset, n);
+  const bytes = isFloat ? 4 : 2;
+  if (raw.byteLength !== n * bytes) throw new Error(`${file}: ${raw.byteLength} bytes, expected ${n * bytes}`);
+  // copy so the typed array is aligned whatever the gunzip buffer's offset is
+  const ab = raw.buffer.slice(raw.byteOffset, raw.byteOffset + n * bytes);
+  const data = isFloat ? new Float32Array(ab) : new Int16Array(ab);
   // LPS → RAS flips the first two world axes.
   const f = space === 'left-posterior-superior' ? [-1, -1, 1] : [1, 1, 1];
   const toRas = (i, j, k) => [0, 1, 2].map((a) => f[a] * (origin[a] + i * dirs[0][a] + j * dirs[1][a] + k * dirs[2][a]));
-  return { header, sizes, data, toRas, spaceDirections: dirs, origin, space };
+  // inverse: RAS mm → continuous voxel index (the direction matrix of these volumes is a signed permutation × spacing)
+  const cols = [0, 1, 2].map((axis) => [0, 1, 2].map((a) => f[a] * dirs[axis][a]));
+  const o = [0, 1, 2].map((a) => f[a] * origin[a]);
+  const toVoxel = (r, a, s) => {
+    const d = [r - o[0], a - o[1], s - o[2]];
+    return cols.map((c) => (d[0] * c[0] + d[1] * c[1] + d[2] * c[2]) / (c[0] * c[0] + c[1] * c[1] + c[2] * c[2]));
+  };
+  for (let x = 0; x < 3; x++) for (let y = x + 1; y < 3; y++) {
+    if (Math.abs(cols[x][0] * cols[y][0] + cols[x][1] * cols[y][1] + cols[x][2] * cols[y][2]) > 1e-9) throw new Error(`${file}: non-orthogonal space directions`);
+  }
+  return { header, sizes, data, toRas, toVoxel, spaceDirections: dirs, origin, space };
 }
 
 /**

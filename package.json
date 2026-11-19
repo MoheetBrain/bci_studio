@@ -12,6 +12,7 @@
     "check:v03": "node scripts/check-v03-vs-rtl.mjs",
     "check:v04": "node scripts/check-v04-vs-rtl.mjs",
     "atlas:build": "node tools/atlas/build-atlas.mjs",
+    "atlas:specimen": "node --max-old-space-size=8192 tools/atlas/build-specimen.mjs",
     "check:sources": "node scripts/check-sources.mjs",
     "test": "node --test --disable-warning=ExperimentalWarning \"tests/*.test.ts\"",
     "check": "npm run typecheck && npm test && npm run check:rtl",

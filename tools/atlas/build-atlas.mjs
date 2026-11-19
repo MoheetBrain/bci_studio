@@ -19,6 +19,8 @@ import { execFileSync } from 'node:child_process';
 import { MeshoptSimplifier, MeshoptEncoder } from 'meshoptimizer';
 import { parseVtk } from './vtk.mjs';
 import { readNrrd, labelStats } from './nrrd.mjs';
+import { adjacency, vertexNormals } from './meshing.mjs';
+import { bakeAO, buildBvh, smoothScalar } from './ao.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, all) => (v.startsWith('--') ? [...a, [v.slice(2), all[i + 1]]] : a), []));
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
@@ -34,7 +36,7 @@ const PARAMS = {
   maxBoundsDriftMm: 0.5,  // a decimation level is rejected if it moves the structure's bounding box by more than this
   positionRangeMm: 100,   // int16 full scale, relative to quantisation.offsetMm
 };
-const STRIDE = 12; // i16 x y z · i8 nx ny nz · 3 pad bytes
+const STRIDE = 12; // i16 x y z · i8 nx ny nz · u8 baked occlusion · 2 pad bytes
 
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 const round = (v, d = 3) => +v.toFixed(d);
@@ -185,6 +187,30 @@ const parts = structures.map((s) => {
   return { s, tissue, pos, nrm, indices, count, srcTris, srcStats, errMm, decimated: decimate && usedRatio < 1, usedRatio, fileSha: sha256(bytes), fileBytes: bytes.length };
 });
 
+// Baked occlusion per structure (a rendering aid, stored in a spare vertex byte). A structure is shadowed only by
+// structures of the same or a deeper layer, so that nothing is left dark when the layers above it are peeled away:
+// exterior (cortex, cerebellum, brainstem) ← everything; white matter ← white matter and deep; deep ← deep only.
+const LAYER = { cortex: 0, cerebellum: 0, brainstem: 0, sulcus: -1, 'white-matter': 1, diencephalon: 2, 'basal-nuclei': 2, 'medial-temporal': 2, commissure: 2, ventricle: 2 };
+const AO = { rays: 32, maxDistMm: 14, biasMm: 0.2 };
+{
+  const tAo = Date.now();
+  for (const layer of [0, 1, 2]) {
+    const occ = parts.filter((p) => LAYER[p.tissue] >= layer);
+    const nV = occ.reduce((a, p) => a + p.count, 0), nI = occ.reduce((a, p) => a + p.indices.length, 0);
+    const pos = new Float32Array(nV * 3), idx = new Uint32Array(nI);
+    let vo = 0, io = 0;
+    for (const p of occ) { pos.set(p.pos, vo * 3); for (let i = 0; i < p.indices.length; i++) idx[io + i] = p.indices[i] + vo; vo += p.count; io += p.indices.length; }
+    const bvh = buildBvh(pos, idx);
+    for (const p of parts.filter((q) => LAYER[q.tissue] === layer)) {
+      // shading normals for the bake come from the decimated geometry itself
+      const n = vertexNormals(p.pos, p.indices);
+      p.ao = smoothScalar(bakeAO(p.pos, n, bvh, { rays: AO.rays, maxDist: AO.maxDistMm, bias: AO.biasMm }), adjacency(p.count, p.indices), 1);
+    }
+  }
+  for (const p of parts) if (!p.ao) p.ao = new Float32Array(p.count).fill(1);   // sulcus curves: unshadowed, and they shadow nothing
+  console.log(`occlusion baked for ${parts.length} structures in ${((Date.now() - tAo) / 1000).toFixed(1)} s`);
+}
+
 // One quantisation frame for everything.
 const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
 for (const { srcStats } of parts) for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], srcStats.min[k]); hi[k] = Math.max(hi[k], srcStats.max[k]); }
@@ -241,6 +267,7 @@ for (const p of parts) {
       dv.setInt8(o + 6 + k, Math.max(-127, Math.min(127, Math.round(p.nrm[v * 3 + k] * 127))));
       qpos[remap[v] * 3 + k] = q * scaleMm + offsetMm[k];
     }
+    vtx[o + 9] = Math.max(0, Math.min(255, Math.round(p.ao[v] * 255)));
   }
   const st = meshStats(qpos, p.indices);
   const drift = Math.max(...[0, 1, 2].flatMap((k) => [Math.abs(st.min[k] - p.srcStats.min[k]), Math.abs(st.max[k] - p.srcStats.max[k])]));
@@ -301,8 +328,9 @@ for (const p of parts) {
   triangles += p.indices.length / 3;
 }
 
-fs.rmSync(OUT, { recursive: true, force: true });
+// replace only this script's own outputs (the specimen surface and slice volumes live in the same folder)
 fs.mkdirSync(OUT, { recursive: true });
+for (const f of fs.readdirSync(OUT)) if (/^chunk-.*\.bin$/.test(f) || f === 'manifest.json') fs.rmSync(path.join(OUT, f));
 const outChunks = chunks.map((c) => {
   const raw = Buffer.concat(c.buffers);
   const file = `chunk-${c.name}.bin`;
@@ -346,6 +374,7 @@ const manifest = {
   transforms: [
     { step: 'decimation', tool: 'meshoptimizer 0.22.0 simplify', params: PARAMS, note: 'per-structure achieved error in model.decimationErrorMm' },
     { step: 'quantisation', positions: 'int16', normals: 'int8', offsetMm, scaleMm, note: 'decoded = int16 * scaleMm + offsetMm (RAS mm)' },
+    { step: 'occlusion', params: AO, layers: LAYER, note: 'Byte 9 of each vertex: baked ambient occlusion (0…255). A rendering aid computed from geometry; not anatomical data.' },
     { step: 'encoding', tool: 'meshoptimizer vertex/index codecs', vertexStride: STRIDE },
   ],
   display: { note: 'Viewer-only transform, never written back: three.js (x, y, z) = (R, S, −A) × 0.001 m/mm.' },

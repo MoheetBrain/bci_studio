@@ -8,7 +8,7 @@ import type { TreeNode } from './types';
 
 interface Row { id: string; depth: number; node: TreeNode; expanded: boolean; hasChildren: boolean }
 
-export function AtlasSearch({ onPicked }: { onPicked?: () => void }) {
+export function AtlasSearch({ onPicked, autoFocus }: { onPicked?: () => void; autoFocus?: boolean }) {
   const tree = useAtlas((s) => s.tree);
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
@@ -30,8 +30,9 @@ export function AtlasSearch({ onPicked }: { onPicked?: () => void }) {
     <div className="atlas-search" role="search">
       <input
         type="search"
+        autoFocus={autoFocus}
         value={q}
-        placeholder="Search structures (e.g. motor, hippocampus, M1)"
+        placeholder="Find a region — try “motor”, “hippocampus” or “M1”"
         aria-label="Search atlas structures by name or synonym"
         aria-controls="atlas-search-results"
         aria-expanded={hits.length > 0}
@@ -72,11 +73,11 @@ export function AtlasSearch({ onPicked }: { onPicked?: () => void }) {
   );
 }
 
-export function AtlasTree() {
+export function AtlasTree({ onPicked }: { onPicked?: () => void } = {}) {
   const tree = useAtlas((s) => s.tree);
   const rootId = useAtlas((s) => s.rootId);
   const selectedId = useAtlas((s) => s.selectedId);
-  const vis = useAtlas((s) => s.vis);
+  const hiddenMap = useAtlas((s) => s.hidden);
   const members = useAtlas((s) => s.members);
   const [open, setOpen] = useState<Set<string>>(() => new Set([rootId, 'prosencephalon', 'telencephalon']));
   const [focusId, setFocusId] = useState<string>(rootId);
@@ -133,7 +134,7 @@ export function AtlasTree() {
     else if (e.key === 'ArrowUp' && rows[i - 1]) focusRow(rows[i - 1].id);
     else if (e.key === 'ArrowRight') { if (row.hasChildren && !row.expanded) toggle(row.id, true); else if (row.expanded) focusRow(row.node.children[0]); }
     else if (e.key === 'ArrowLeft') { if (row.expanded) toggle(row.id, false); else if (row.node.parentId) focusRow(row.node.parentId); }
-    else if (e.key === 'Enter' || e.key === ' ') { st.select(row.id); st.camera({ kind: 'fit', ids: st.idsOf(row.id) }); }
+    else if (e.key === 'Enter' || e.key === ' ') { st.select(row.id); st.camera({ kind: 'fit', ids: st.idsOf(row.id) }); if (e.key === 'Enter') onPicked?.(); }
     else if (e.key === 'Home') focusRow(rows[0].id);
     else if (e.key === 'End') focusRow(rows[rows.length - 1].id);
     else return;
@@ -145,7 +146,7 @@ export function AtlasTree() {
     <ul ref={list} className="atlas-tree" role="tree" aria-label="Anatomical hierarchy (from the source atlas)" data-testid="atlas-tree" onMouseLeave={() => st.hover(null)}>
       {rows.map((row) => {
         const ids = members.get(row.id) ?? [row.id];
-        const hidden = ids.length > 0 && ids.every((id) => vis[id] === 'hidden');
+        const hidden = ids.length > 0 && ids.every((id) => hiddenMap[id]);
         return (
           <li
             key={row.id}
@@ -160,8 +161,8 @@ export function AtlasTree() {
             onKeyDown={(e) => onKey(e, row)}
             onFocus={() => { setFocusId(row.id); st.hover(row.id, 'tree'); }}
             onMouseEnter={() => st.hover(row.id, 'tree')}
-            onClick={() => { st.select(row.id); setFocusId(row.id); }}
-            onDoubleClick={() => st.camera({ kind: 'fit', ids })}
+            onClick={() => { st.select(row.id); setFocusId(row.id); st.camera({ kind: 'fit', ids }); }}
+            onDoubleClick={() => onPicked?.()}
           >
             <span
               className={`tree-caret${row.hasChildren ? '' : ' leaf'}`}
@@ -176,7 +177,7 @@ export function AtlasTree() {
               tabIndex={-1}
               aria-label={`${hidden ? 'Show' : 'Hide'} ${row.node.name}`}
               title={hidden ? 'Show' : 'Hide'}
-              onClick={(e) => { e.stopPropagation(); st.setVis(ids, hidden ? undefined : 'hidden'); }}
+              onClick={(e) => { e.stopPropagation(); st.setHidden(ids, !hidden); }}
             >{hidden ? '○' : '●'}</button>
           </li>
         );

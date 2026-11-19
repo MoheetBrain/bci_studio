@@ -2,14 +2,16 @@
 // workspaces, so moving along the journey never loses "where in the brain" the learner is.
 import { create } from 'zustand';
 
-export type Workspace = 'brain' | 'interface' | 'signal' | 'chip' | 'research';
+export type Workspace = 'brain' | 'interface' | 'signal' | 'chip' | 'decoder' | 'research';
 
-export const WORKSPACES: Array<{ id: Workspace; label: string; step: string; hint: string }> = [
-  { id: 'brain', label: 'Brain', step: '1', hint: 'Anatomical atlas: find and select a region' },
-  { id: 'interface', label: 'Neural interface', step: '2', hint: 'From cortical area to neurons and an electrode contact' },
-  { id: 'signal', label: 'Signal journey', step: '3', hint: 'Electrode → analogue front end → ADC → digital processing → decoder' },
-  { id: 'chip', label: 'Our chip', step: '4', hint: 'What the Hamiltonian digital design actually implements, traced to source' },
-  { id: 'research', label: 'Research', step: '5', hint: 'Search the local source corpus and read the evidence' },
+/** The scenes of the studio, ordered by physical scale: tissue → cells → electronics → silicon → computation → evidence. */
+export const WORKSPACES: Array<{ id: Workspace; label: string; scale: string; hint: string }> = [
+  { id: 'brain', label: 'Brain', scale: '15 cm', hint: 'The whole brain: find and select a region' },
+  { id: 'interface', label: 'Neurons', scale: '0.2 mm', hint: 'Neurons and one electrode contact beneath the selected region' },
+  { id: 'signal', label: 'Signal', scale: 'µV → bits', hint: 'Electrode → amplifier → ADC → digital samples' },
+  { id: 'chip', label: 'Chip', scale: 'RTL', hint: 'What the Hamiltonian digital design implements, traced to source' },
+  { id: 'decoder', label: 'Decoder', scale: '8 → 2', hint: 'How eight band energies become a prediction on the chip' },
+  { id: 'research', label: 'Research', scale: 'sources', hint: 'Search the local source corpus and read the evidence' },
 ];
 
 function fromHash(): Workspace {
@@ -24,6 +26,9 @@ interface ShellState {
   researchQuery: string;
   /** Sub-view inside the chip workspace: the source-traced map, or the full existing studio. */
   chipView: 'map' | 'studio';
+  /** The region finder (⌘K). */
+  paletteOpen: boolean;
+  setPalette: (open: boolean) => void;
   go: (w: Workspace) => void;
   openResearch: (query: string) => void;
   setChipView: (v: 'map' | 'studio') => void;
@@ -33,6 +38,8 @@ export const useShell = create<ShellState>((set) => ({
   workspace: fromHash(),
   researchQuery: '',
   chipView: 'map',
+  paletteOpen: false,
+  setPalette: (open) => set({ paletteOpen: open }),
   go: (w) => {
     if (typeof location !== 'undefined' && location.hash !== `#/${w}`) history.replaceState(null, '', `#/${w}`);
     set({ workspace: w });

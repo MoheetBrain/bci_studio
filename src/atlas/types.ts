@@ -87,3 +87,24 @@ export interface TreeNode {
   parentId: string | null;
   children: string[];
 }
+
+/** public/atlas/spl-nac/specimen.json (written by tools/atlas/build-specimen.mjs). */
+export interface SpecimenMeta {
+  format: string;
+  what: string;
+  dataset: { id: string; commit: string; licence: string };
+  source: { image: { file: string; sha256: string; sizes: number[]; voxelMm: number; space: string }; labels: { file: string; sha256: string } };
+  parameters: Record<string, unknown>;
+  intensity: { fluid: number; grey: number; white: number; level: number };
+  mesh: {
+    file: string; bytes: number; sha256: string; vertexStride: number; vertexCount: number; indexCount: number; vertexBytes: number; indexBytes: number;
+    triangles: number; boundsMm: [[number, number, number], [number, number, number]]; surfaceAreaMm2: number; surfaceAreaBeforeSmoothingMm2: number;
+    smoothingDisplacementMm: { mean: number; p95: number; max: number }; decimationErrorMm: number; layout: string;
+  };
+  regions: { structuresOnSurface: number; unlabelledVertices: number; unlabelledFraction: number; borderTidy: { passes: number; changedVertices: number; changedFraction: number; rule: string };
+    labelledThroughWhiteMatter: number; verticesPerStructure: Record<string, number>; structureCount: number };
+  slices: {
+    note: string; originMm: [number, number, number]; dims: [number, number, number]; voxelMm: number;
+    t1: { file: string; bytes: number; rawBytes: number; sha256: string }; region: { file: string; bytes: number; rawBytes: number; sha256: string };
+  };
+}

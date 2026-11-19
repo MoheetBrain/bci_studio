@@ -1,56 +1,89 @@
-/* App shell: journey bar, region chip, workspace panes. */
-.shell { display: grid; grid-template-rows: 48px minmax(0, 1fr) 22px; height: 100%; background: var(--surface-workspace); }
-.shell-bar { display: flex; align-items: center; gap: 16px; padding: 0 14px; background: var(--surface-panel); border-bottom: 1px solid var(--border); min-width: 0; }
-.shell-brand { display: flex; align-items: center; gap: 8px; font-weight: 650; white-space: nowrap; flex: none; }
-.shell-brand small { color: var(--fg-tertiary); font-weight: 400; }
-.shell-mark { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #E6D6C6, #B99A86 70%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .12); }
-.shell-nav { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.shell-nav::-webkit-scrollbar { display: none; }
-.shell-step-wrap { display: inline-flex; align-items: center; gap: 2px; flex: none; }
-.shell-arrow { color: var(--fg-tertiary); font-size: 12px; }
-.shell-step { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--fg-secondary); cursor: pointer; font-size: 13.5px; white-space: nowrap; }
-.shell-step:hover { background: var(--surface-raised); color: var(--fg); }
-.shell-step.current { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 650; }
-.shell-step-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-raised); font-size: 11px; font-weight: 700; color: var(--fg-secondary); }
-.shell-step.current .shell-step-n { background: var(--accent); color: var(--fg-on-accent); }
+/* App shell: one dark stage, a slim dock of scenes, the selected region always at hand.
+   `.cine` carries the cinematic colour tokens. It is put on the new scenes and the shell chrome — never on an
+   ancestor of the embedded existing chip studio, which keeps its own paper / graphite themes. */
+.cine {
+  --surface-workspace: #060A14; --surface-panel: #0D1424; --surface-raised: #151E33; --surface-sunken: #080D19;
+  --border: #25324F; --border-soft: #182139;
+  --fg: #E8EEF9; --fg-secondary: #B4C0D8; --fg-tertiary: #8E9DBB; --fg-on-accent: #04121A;
+  --accent: #7FE7FF; --accent-hover: #A8F1FF; --accent-soft: rgba(127, 231, 255, 0.12); --focus: #7FE7FF; --selection: #7FE7FF;
+  --copper: #E0A07A; --copper-hi: #F2B892; --silver: #9AA6BA;
+  --ok: #6BE3A3; --warn: #FFC56B; --danger: #FF7B8A; --info: #8DB8FF;
+  --ev-concept: #A9B0C8; --ev-demo: #7FD4FF; --ev-scripted: #C6A6FF; --ev-rtl: #6BE3A3; --ev-synth: #FFC56B; --ev-layout: #F2B892; --ev-measured: #E8EEF9;
+  --signal: #FFB45C;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-2: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color: var(--fg);
+  color-scheme: dark;
+}
 
-.region-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; max-width: 46vw; padding: 0 11px; border-radius: 999px; border: 1px solid var(--accent); background: var(--surface-panel); color: var(--fg); cursor: pointer; font-size: 13px; flex: none; min-width: 0; }
-.region-chip:hover { background: var(--accent-soft); }
-.region-chip-empty { border-color: var(--border); border-style: dashed; color: var(--fg-tertiary); cursor: default; }
-button.region-chip-empty { cursor: pointer; }
-.region-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--selection); flex: none; }
-.region-chip-label { color: var(--fg-tertiary); font-size: 11.5px; }
-.region-chip-name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.region-chip-name::first-letter { text-transform: uppercase; }
-.region-chip-back { color: var(--accent); font-size: 12px; white-space: nowrap; }
-
+.shell { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); height: 100%; background: #05080F; }
 .shell-main { position: relative; min-height: 0; }
 .shell-pane { position: absolute; inset: 0; min-height: 0; overflow: hidden; }
-.shell-loading { display: grid; place-items: center; height: 100%; color: var(--fg-tertiary); }
-.shell-foot { display: flex; align-items: center; justify-content: center; padding: 0 12px; font-size: 11px; color: var(--fg-secondary); background: var(--surface-panel); border-top: 1px solid var(--border-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shell-loading { display: grid; place-items: center; height: 100%; color: var(--fg-tertiary); background: #05080F; }
 
+/* the bar floats over every scene */
+.shell-bar { position: absolute; z-index: 20; top: 0; left: 0; right: 0; height: 64px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 20px;
+  background: linear-gradient(180deg, rgba(5, 8, 15, 0.88) 0%, rgba(5, 8, 15, 0.55) 62%, rgba(5, 8, 15, 0) 100%); pointer-events: none; }
+.shell-bar > * { pointer-events: auto; }
+.shell-brand { justify-self: start; display: flex; align-items: center; gap: 9px; border: 0; background: none; padding: 4px 6px; border-radius: 8px; color: #F2F6FF; font: inherit; font-weight: 650; letter-spacing: .02em; cursor: pointer; white-space: nowrap; }
+.shell-brand small { color: #8FA0BF; font-weight: 400; letter-spacing: .01em; }
+.shell-mark { width: 15px; height: 15px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #FFC4D2, #C4587C 62%, #5B2447 100%); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 14px rgba(232, 154, 174, 0.35); }
+
+.dock { justify-self: center; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(12, 18, 34, 0.72); border: 1px solid rgba(150, 185, 245, 0.16); backdrop-filter: blur(12px); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.dock::-webkit-scrollbar { display: none; }
+.dock-item { display: grid; justify-items: center; gap: 0; min-width: 74px; padding: 5px 14px 6px; border: 0; border-radius: 999px; background: transparent; color: #B4C0D8; font: inherit; cursor: pointer; white-space: nowrap; }
+.dock-item:hover { color: #fff; background: rgba(150, 185, 245, 0.10); }
+.dock-item.current { background: rgba(127, 231, 255, 0.15); color: #E6FAFF; box-shadow: inset 0 0 0 1px rgba(127, 231, 255, 0.5); }
+.dock-label { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
+.dock-scale { font-size: 10px; letter-spacing: .04em; color: #7F8EAC; line-height: 1.2; font-family: var(--mono); }
+.dock-item.current .dock-scale { color: #9FD9EA; }
+
+.shell-right { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.region-chip { display: inline-flex; align-items: center; gap: 7px; height: 32px; max-width: min(30vw, 280px); padding: 0 12px; border-radius: 999px; border: 1px solid rgba(127, 231, 255, 0.5); background: rgba(12, 18, 34, 0.72); color: #F2F6FF; cursor: pointer; font: inherit; font-size: 13px; min-width: 0; backdrop-filter: blur(10px); }
+.region-chip:hover { background: rgba(127, 231, 255, 0.14); }
+.region-chip-empty { border-color: rgba(150, 185, 245, 0.2); border-style: dashed; color: #8FA0BF; }
+.region-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(127, 231, 255, 0.8); flex: none; }
+.region-chip-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.region-chip-name::first-letter { text-transform: uppercase; }
+.region-chip-back { color: var(--accent); font-size: 12px; white-space: nowrap; }
+.find-btn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px 0 11px; border-radius: 999px; border: 1px solid rgba(150, 185, 245, 0.18); background: rgba(12, 18, 34, 0.72); color: #B4C0D8; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; backdrop-filter: blur(10px); }
+.find-btn:hover { color: #fff; border-color: rgba(127, 231, 255, 0.5); }
+kbd { font: 11px var(--mono); padding: 1px 6px; border-radius: 5px; border: 1px solid rgba(150, 185, 245, 0.25); color: #9FB0CF; background: rgba(150, 185, 245, 0.06); }
+
+/* region finder */
+.finder-scrim { position: absolute; inset: 0; z-index: 40; display: grid; justify-items: center; align-items: start; padding: 84px 20px 20px; background: rgba(3, 5, 10, 0.55); backdrop-filter: blur(3px); }
+.finder { width: min(620px, 100%); max-height: calc(100vh - 120px); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 14px; border-radius: 18px; background: rgba(11, 17, 32, 0.96); border: 1px solid rgba(150, 185, 245, 0.24); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65); }
+.finder-browse { min-height: 0; overflow: auto; border-radius: 12px; border: 1px solid rgba(150, 185, 245, 0.12); padding: 6px; max-height: 46vh; }
+.finder-title { display: flex; justify-content: space-between; gap: 12px; padding: 4px 8px 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8493B0; }
+.finder-title span { letter-spacing: 0; text-transform: none; color: #6F7E9C; }
+.finder-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #7F8EAC; padding: 0 4px; }
+
+:focus-visible { outline: 2px solid var(--focus, #7FE7FF); outline-offset: 2px; }
+
+/* generic page layout used by the lesson scenes */
 @scope (.shell) to (.chip-studio-body) {
-/* generic page layout used by the lesson workspaces */
-.page { height: 100%; overflow: auto; }
-.page-inner { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
-.page h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
-.page h2 { margin: 0 0 6px; font-size: 17px; }
-.page p { margin: 0; }
-.page .lede { font-size: 15.5px; color: var(--fg-secondary); max-width: 78ch; }
-.card { background: var(--surface-panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .page { height: 100%; overflow: auto; background:
+      radial-gradient(ellipse 70% 40% at 50% 0%, rgba(64, 92, 168, 0.20) 0%, rgba(5, 8, 15, 0) 70%), linear-gradient(180deg, #0A1122 0%, #060A14 40%, #05080F 100%);
+    color: var(--fg); }
+  .page-inner { max-width: 1240px; margin: 0 auto; padding: 88px 28px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .page h1 { margin: 0; font-size: 30px; letter-spacing: -.02em; font-weight: 650; color: #F5F8FF; }
+  .page h2 { margin: 0 0 6px; font-size: 16px; font-weight: 650; color: #F2F6FF; letter-spacing: -.005em; }
+  .page p { margin: 0; }
+  .page a { color: var(--accent); }
+  .page .lede { font-size: 15.5px; color: var(--fg-secondary); max-width: 80ch; line-height: 1.55; }
+  .card { background: linear-gradient(180deg, rgba(15, 22, 40, 0.92), rgba(11, 17, 32, 0.92)); border: 1px solid rgba(150, 185, 245, 0.14); border-radius: 16px; padding: 18px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .muted { color: var(--fg-tertiary); }
+  @media (max-width: 760px) { .page-inner { padding: 112px 14px 32px; } .page h1 { font-size: 24px; } }
 }
 
-@media (max-width: 760px) {
-  .shell { grid-template-rows: auto minmax(0, 1fr) 0; }
-  .shell-bar { flex-wrap: wrap; gap: 6px 10px; padding: 6px 10px; }
+@media (max-width: 1180px) {
+  .shell-bar { grid-template-columns: auto 1fr; grid-template-rows: auto auto; height: auto; padding: 8px 12px 14px; row-gap: 8px; }
+  .dock { grid-column: 1 / 3; grid-row: 2; justify-self: stretch; justify-content: flex-start; }
+  .shell-right { grid-column: 2; grid-row: 1; }
+  .find-btn span, .find-btn kbd { display: none; }
+  .find-btn { padding: 0 9px; }
   .shell-brand small { display: none; }
-  .shell-nav { order: 3; flex-basis: 100%; }
-  .shell-step { height: 34px; padding: 0 8px; }
-  .region-chip { max-width: 58vw; margin-left: auto; }
-  .region-chip-label, .region-chip-back { display: none; }
-  .shell-foot { display: none; }
-}
-@scope (.shell) to (.chip-studio-body) {
-  @media (max-width: 760px) { .page-inner { padding: 14px 12px 28px; } }
+  .region-chip { max-width: 46vw; }
+  .region-chip-back { display: none; }
+  .dock-item { min-width: 64px; padding: 5px 11px 6px; }
 }
