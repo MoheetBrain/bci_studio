@@ -1,7 +1,7 @@
 # The interactive BCI experiment — what was built, on what basis, and what it is not
 
-Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. Local commits only: nothing was pushed,
-merged, published or deployed. One engineering agent; no sub-agents, no second model, no paid or generative service.
+Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. Pushed to GitHub on 2026-11-19 at the
+owner’s request (plain push, no force); no pull request, nothing merged, published or deployed. One engineering agent; no sub-agents, no second model, no paid or generative service.
 
 The brief: stop being a brain viewer. Pick up a virtual BCI, attach it to cortex, learn what that cortex does, record
 from it, and follow one signal through acquisition and decoding to an output — as a working simulation, not a mock-up.

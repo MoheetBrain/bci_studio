@@ -6,8 +6,8 @@ that the studio stays in this repository. One engineering agent; no sub-agents o
 
 ## 0 · Interactive BCI experiment — 2026-11-19 (read this first)
 
-Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. **Local commits only: not pushed, no
-pull request, nothing merged, published or deployed.** One engineering agent; no sub-agents, no second model, no paid or
+Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. **Pushed to GitHub on 2026-11-19 at
+the owner’s request (plain push, no force); no pull request, nothing merged, published or deployed.** One engineering agent; no sub-agents, no second model, no paid or
 generative service. Decision record, models, sources and limits: `docs/BCI_EXPERIMENT.md`.
 
 What changed, in one paragraph: the Brain scene has an **Add BCI** control — a virtual device follows the pointer over
@@ -30,7 +30,7 @@ Things to know before touching it:
   the brain's size still holds.
 - **Everything in the Experiment scene is simulated.** The only measured data in the studio remain the atlas and the RTL
   trace on recorded ECoG in the Decoder scene.
-- Open decisions for the owner: push this branch or not; whether it stacks on or replaces the two earlier branches;
+- Open decisions for the owner: whether this branch stacks on or replaces the two earlier branches;
   whether to download a public electrophysiology dataset for a real-data decoder benchmark (not done — needs your
   go-ahead and a licence review).
 
