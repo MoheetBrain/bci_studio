@@ -41,7 +41,8 @@ for (const s of Object.values(SOURCES)) {
   const page = String(msg.page ?? msg['article-number'] ?? '');
   const pageOk = !firstPage || !page || page.toLowerCase().startsWith(firstPage.toLowerCase());
   const family = msg.author?.[0]?.family ?? '';
-  const authorOk = !family || norm(s.authors).startsWith(norm(family).split(' ').pop());
+  // a family name may carry a particle ("Van Essen" → printed "Essen") or a hyphen ("Grill-Spector")
+  const authorOk = !family || norm(s.authors).startsWith(norm(family)) || norm(s.authors).startsWith(norm(family).split(' ').pop());
   const ok = titleOk && yearOk && volOk && pageOk && authorOk;
   if (!ok) bad++;
   say(`${ok ? '✓' : '✗'}  ${s.id}: ${s.doi}`);

@@ -20,7 +20,8 @@
     "corpus:abstracts": "node --disable-warning=ExperimentalWarning tools/corpus/fetch-abstracts.mjs",
     "check:rtl": "node scripts/run-checks.mjs",
     "corpus:build": "node --disable-warning=ExperimentalWarning tools/corpus/build-index.mjs",
-    "test:e2e": "npm run build && node tests/e2e/walkthrough.mjs"
+    "test:e2e": "npm run build && node tests/e2e/walkthrough.mjs",
+    "test:e2e:experiment": "npm run build && node tests/e2e/experiment.mjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.0",

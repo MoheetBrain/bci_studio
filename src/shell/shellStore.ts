@@ -2,11 +2,12 @@
 // workspaces, so moving along the journey never loses "where in the brain" the learner is.
 import { create } from 'zustand';
 
-export type Workspace = 'brain' | 'interface' | 'signal' | 'chip' | 'decoder' | 'research';
+export type Workspace = 'brain' | 'experiment' | 'interface' | 'signal' | 'chip' | 'decoder' | 'research';
 
 /** The scenes of the studio, ordered by physical scale: tissue → cells → electronics → silicon → computation → evidence. */
 export const WORKSPACES: Array<{ id: Workspace; label: string; scale: string; hint: string }> = [
   { id: 'brain', label: 'Brain', scale: '15 cm', hint: 'The whole brain: find and select a region' },
+  { id: 'experiment', label: 'Experiment', scale: 'BCI · live', hint: 'Attach the virtual BCI, record simulated signals and follow them to a decoded output' },
   { id: 'interface', label: 'Neurons', scale: '1 mm', hint: 'Neurons and one electrode contact beneath the selected region' },
   { id: 'signal', label: 'Signal', scale: 'µV → bits', hint: 'Electrode → amplifier → ADC → digital samples' },
   { id: 'chip', label: 'Chip', scale: 'RTL', hint: 'What the Hamiltonian digital design implements, traced to source' },

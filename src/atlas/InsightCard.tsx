@@ -7,6 +7,8 @@ import { hemisphereLabel } from './visibility';
 import { ClaimList, Cites, EvidenceTag, SourceList } from '../science/Cite';
 import { useShell } from '../shell/shellStore';
 import type { AtlasStructure } from './types';
+import { BciActions, RegionBrief } from '../experiment/RegionBrief';
+import { dossierFor } from '../experiment/content/dossiers';
 
 const fmt = (v: number[]) => v.map((n) => n.toFixed(1)).join(', ');
 
@@ -103,6 +105,9 @@ export function InsightCard() {
     ? [...card.summarySources, ...(card.caution?.sources ?? []), ...[...card.location, ...card.functions, ...card.bci, ...card.limits].flatMap((c) => c.sources)]
     : ['spl-atlas'];
   const cortical = !!card?.journey || s?.tissue === 'cortex';
+  const dossier = dossierFor(s?.name);
+  if (dossier) allSources.push(...[...dossier.anatomy, ...dossier.function, ...dossier.bci, ...dossier.signals, ...dossier.unknowns].flatMap((c) => c.sources));
+  const lobe = chain.find((c, i) => i > 0 && /\blobe\b/.test(c.name))?.name ?? null;
 
   return (
     <aside ref={ref} className={`insight${open ? ' open' : ''}`} aria-label="Selected region" data-testid="region-inspector">
@@ -118,7 +123,7 @@ export function InsightCard() {
             {found!.inherited && <p className="insight-inherit">About the parent region <strong>{found!.inherited}</strong> — nothing more specific is asserted for “{node.name}”.</p>}
             <p className="insight-summary" data-testid="region-summary">{card.summary} <Cites ids={card.summarySources} /></p>
             {card.caution && (
-              <details className="insight-caution" data-testid="region-caution" open>
+              <details className="insight-caution" data-testid="region-caution" open={!dossier}>
                 <summary>{card.caution.title}</summary>
                 <p>{card.caution.body}</p>
                 <Cites ids={card.caution.sources} />
@@ -128,12 +133,18 @@ export function InsightCard() {
         ) : (
           <div className="insight-empty" data-testid="region-no-card">
             <strong>No curated explanation yet.</strong>
-            <p>Its name, position and shape come straight from the atlas. Nothing about its function is asserted here, because no reviewed, cited text has been written for it.</p>
+            <p>Its name, position, borders and shape come straight from the atlas. Nothing about its function is asserted here, because no reviewed, cited text has been written for it.</p>
           </div>
         )}
 
-        {/* one invitation */}
-        {cortical ? (
+        {/* the invitation: connect the virtual BCI here (cortex), or cut through the structure (everything else) */}
+        {cortical && s && !isGroup ? (
+          <>
+            <BciActions s={s} />
+            <RegionBrief s={s} card={found?.inherited ? undefined : card} lobe={lobe} />
+            <button type="button" className="insight-alt" onClick={dive} data-testid="to-interface">Or just look at the neurons beneath this surface →</button>
+          </>
+        ) : cortical ? (
           <button type="button" className="btn btn-primary insight-go" onClick={dive} data-testid="to-interface">
             <span>See the neurons beneath this surface</span><span aria-hidden="true">→</span>
           </button>
@@ -142,9 +153,8 @@ export function InsightCard() {
             <span>{viewMode === 'slice' ? 'Back to the whole brain' : 'Slice the brain through it'}</span><span aria-hidden="true">→</span>
           </button>
         )}
-        {cortical
-          ? <p className="insight-note">An illustrative path from this region to neurons, an electrode, the acquisition chain and our chip. Not a placement guide.</p>
-          : <p className="insight-note">The cut shows this subject’s MRI with the structure outlined — measured data, not a drawing.</p>}
+        {!cortical && <p className="insight-note">The cut shows this subject’s MRI with the structure outlined — measured data, not a drawing.</p>}
+        {!cortical && !isGroup && <RegionBrief s={s} card={found?.inherited ? undefined : card} lobe={lobe} />}
 
         <div className="insight-actions" role="group" aria-label="Display actions for this region">
           <button type="button" className="btn" onClick={() => st.camera({ kind: 'fit', ids })} title="Move the camera to this region (F)">Frame</button>
@@ -164,7 +174,7 @@ export function InsightCard() {
                 <button key={c.id} type="button" className="crumb" onClick={() => st.select(c.id)} title={`Select ${c.name}`}>{c.name}</button>
               ))}
             </nav>
-            {card && (
+            {card && isGroup && (
               <>
                 <section><h3>What it does</h3><ClaimList claims={card.functions} /></section>
                 {card.bci.length > 0 && <section><h3>Why it matters for a BCI</h3><ClaimList claims={card.bci} /></section>}

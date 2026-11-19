@@ -8,6 +8,7 @@ import { AtlasSearch, AtlasTree } from '../atlas/AtlasTree';
 import { applyDocumentPrefs, loadPrefs } from '../state/prefs';
 import './shell.css';
 
+const ExperimentWorkspace = lazy(() => import('../experiment/ExperimentWorkspace'));
 const InterfaceWorkspace = lazy(() => import('../neuro/InterfaceWorkspace'));
 const SignalWorkspace = lazy(() => import('../journey/SignalWorkspace'));
 const ChipWorkspace = lazy(() => import('../chipmap/ChipWorkspace'));
@@ -121,6 +122,7 @@ export default function Root() {
         <div className="shell-pane" data-workspace="brain" style={{ display: workspace === 'brain' ? undefined : 'none' }}>
           <AtlasWorkspace />
         </div>
+        {pane('experiment', <ExperimentWorkspace />)}
         {pane('interface', <InterfaceWorkspace />)}
         {pane('signal', <SignalWorkspace />)}
         {pane('chip', <ChipWorkspace />)}

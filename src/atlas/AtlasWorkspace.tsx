@@ -5,6 +5,8 @@ import { AtlasViewport, type GizmoAxes, type Look } from './AtlasScene';
 import { InsightCard } from './InsightCard';
 import type { ClipAxis } from './visibility';
 import { EvidenceTag } from '../science/Cite';
+import { experimentFor, useImplant } from '../experiment/implantStore';
+import { useShell } from '../shell/shellStore';
 import './atlas.css';
 
 /** Anatomical orientation: where the subject's right / front / top point on screen right now. */
@@ -123,6 +125,61 @@ function ModeBar() {
   );
 }
 
+/** Add, move, find or remove the virtual BCI. The device itself is handled in the 3D scene. */
+function BciBar() {
+  const placement = useImplant((s) => s.placement);
+  const placing = useImplant((s) => s.placing);
+  const preview = useImplant((s) => s.preview);
+  const name = useAtlas((s) => s.nameOf(placement?.regionId ?? null));
+  const go = useShell((s) => s.go);
+  const begin = () => {
+    // placing needs the solid, uncut surface under the pointer
+    const a = useAtlas.getState();
+    if (a.hasOverrides()) a.restoreAll();
+    useImplant.getState().begin();
+  };
+  useEffect(() => {
+    if (!placing) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') useImplant.getState().cancel(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [placing]);
+  if (placing) {
+    return (
+      <div className="stage-corner tl" data-testid="bci-bar" data-state="placing">
+        <div className="bci-pill placing" role="status">
+          <span>{preview ? (preview.compatible ? <>Click to attach on the <b>highlighted region</b></> : <>This spot cannot be used — move onto the cortex</>) : <>Move over the brain, then <b>click to attach</b>. Drag to turn the brain.</>}</span>
+          <button type="button" className="btn" onClick={() => useImplant.getState().cancel()} data-testid="bci-cancel">Cancel <kbd>Esc</kbd></button>
+        </div>
+      </div>
+    );
+  }
+  if (!placement) {
+    return (
+      <div className="stage-corner tl" data-testid="bci-bar" data-state="none">
+        <button type="button" className="bci-add" onClick={begin} data-testid="bci-add" title="Pick up a virtual brain–computer interface and attach it to the cortex">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="9" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.7" /><circle cx="12" cy="9" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.3" opacity=".7" /><path d="M9 15.5v5M12 15.8v6M15 15.5v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+          Add BCI
+        </button>
+      </div>
+    );
+  }
+  const a = useAtlas.getState();
+  const kind = experimentFor(name);
+  return (
+    <div className="stage-corner tl" data-testid="bci-bar" data-state="attached">
+      <div className="bci-pill">
+        <button type="button" className="linkish" onClick={() => { a.select(placement.regionId); a.camera({ kind: 'fit', ids: a.idsOf(placement.regionId) }); }} data-testid="bci-chip" title="Go to the device">
+          BCI on <b>{name ?? 'an unknown region'}</b>
+        </button>
+        {kind && <button type="button" className="btn btn-primary" onClick={() => go('experiment')} data-testid="bci-bar-start">Start experiment</button>}
+        <button type="button" className="btn" onClick={begin} data-testid="bci-bar-move">Move</button>
+        <button type="button" className="btn" onClick={() => useImplant.getState().remove()} data-testid="bci-bar-remove" aria-label="Remove the BCI">Remove</button>
+      </div>
+    </div>
+  );
+}
+
 function About({ onClose }: { onClose: () => void }) {
   const manifest = useAtlas((s) => s.manifest)!;
   const specimen = useAtlas((s) => s.specimen)!;
@@ -183,6 +240,7 @@ export function AtlasWorkspace() {
   const [axes, setAxes] = useState<GizmoAxes | null>(null);
   const [about, setAbout] = useState(false);
   const [look] = useState(lookFromUrl);
+  const placing = useImplant((s) => s.placing);
   const lastAxes = useRef('');
   const onGizmo = useCallback((g: GizmoAxes) => {
     const key = [...g.r, ...g.a, ...g.s].map((v) => v.toFixed(2)).join(',');
@@ -201,7 +259,7 @@ export function AtlasWorkspace() {
   if (!hemi.left || !hemi.right) notes.push(`${!hemi.left && !hemi.right ? 'Both hemispheres' : !hemi.left ? 'Left hemisphere' : 'Right hemisphere'} hidden.`);
 
   return (
-    <div className={`stage cine look-${look}${selectedId ? ' has-selection' : ''}`} style={{ '--inset-right': `${insetRight}px` } as React.CSSProperties} data-testid="atlas-workspace" data-status={status}>
+    <div className={`stage cine look-${look}${selectedId ? ' has-selection' : ''}${placing ? ' placing' : ''}`} style={{ '--inset-right': `${insetRight}px` } as React.CSSProperties} data-testid="atlas-workspace" data-status={status}>
       <div className="stage-bg" aria-hidden="true"><i className="hud tl" /><i className="hud tr" /><i className="hud bl" /><i className="hud br" /></div>
       {status === 'ready' && <AtlasViewport onGizmo={onGizmo} look={look} />}
       {status === 'loading' && (
@@ -221,7 +279,8 @@ export function AtlasWorkspace() {
 
       {status === 'ready' && look === 'tissue' && (
         <>
-          {!selectedId && viewMode === 'solid' && <p className="stage-hint" data-testid="atlas-hint">Move over the brain to name its parts. Click one to explore it.</p>}
+          {!selectedId && viewMode === 'solid' && !placing && <p className="stage-hint" data-testid="atlas-hint">Move over the brain to name its parts. Click one to explore it — or add a BCI and attach it.</p>}
+          <BciBar />
           {notes.length > 0 && <div className="stage-notes" role="status" data-testid="atlas-legend">{notes.map((n) => <span key={n}>{n}</span>)}</div>}
           <ViewMenu axes={axes} />
           <ModeBar />
