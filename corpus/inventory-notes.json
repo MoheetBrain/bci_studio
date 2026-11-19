@@ -1,0 +1,18 @@
+{
+  "searchedLocations": [
+    "~/bci_studio (this repository)",
+    "~/Hamiltonian-BCI-Chip at commit 207285f (the chip repository; snapshot in chip/)"
+  ],
+  "missing": [
+    { "what": "The visualisation and systems-engineering books mentioned in the build brief", "status": "inaccessible", "detail": "No book or PDF was found in the two project folders. Nothing from them is cited and no chapter or page reference is given anywhere in the studio." },
+    { "what": "ChatGPT attachments and earlier conversations", "status": "inaccessible", "detail": "Not present in this workspace. Not used, and not treated as evidence." },
+    { "what": "The external research report and the advisor's contract behind chip/docs/RESEARCH_AUDIT.md", "status": "inaccessible", "detail": "That audit itself records that the original files were not available and arrived only as pasted text. Only the audit document is indexed." },
+    { "what": "Full texts of the cited journal articles", "status": "not retrieved", "detail": "Bibliographic records were verified against Crossref; PubMed abstracts were retrieved for 20 of 27 and kept locally. No full text was read, so no page numbers appear." },
+    { "what": "Kandel et al., Principles of Neural Science (6th ed.)", "status": "not retrieved", "detail": "Cited as general textbook background only, without chapter or page." },
+    { "what": "PDF sources", "status": "unsupported in this build", "detail": "No PDF text extractor (pdftotext) is installed. Convert to text and place the file in corpus/private/inbox/ to index it with page numbers." }
+  ],
+  "answering": {
+    "modelConfigured": false,
+    "statement": "No language-model provider is configured. The Research screen shows retrieved passages with their exact locations; it does not generate answers. Keyword retrieval alone is not a retrieval-augmented answer system."
+  }
+}

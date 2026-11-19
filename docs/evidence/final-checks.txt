@@ -1,0 +1,160 @@
+# Final verification run — 2026-11-17T11:59:59Z
+node v24.22.0 on Apple M5 Ultra, macOS 27.0.1
+branch feature/brain-atlas-studio; run on the working tree that is committed immediately after this transcript
+
+## typecheck (tsc -b --noEmit)
+exit=0
+
+## unit tests (node --test)
+exit=0
+✔ manifest identifies its dataset, release, licence and coordinate space (0.64125ms)
+✔ chunk files match the recorded size and sha256 (1.858542ms)
+✔ every structure decodes: valid indices, finite coordinates, recorded bounds and counts (76.306417ms)
+✔ ids are unique and stable; source ids, label values and model files are retained (2.230416ms)
+✔ hierarchy: one root, every parent resolves, no cycles, path matches the ancestors (1.130959ms)
+✔ left / right naming agrees with geometry (RAS: left is −x of the fitted mid-sagittal plane) (1.768708ms)
+✔ motor-region landmarks: label values and anatomical order around the central sulcus (0.303791ms)
+✔ label-volume cross-check: coverage and the known source discrepancies are exactly as documented (0.211458ms)
+✔ source model hashes still match the reference clone (skipped when it is absent) (36.840334ms)
+✔ default: everything visible, opaque and pickable (1.010833ms)
+✔ hidden structure is neither drawn nor pickable (0.125042ms)
+✔ hemisphere toggle hides only that side (0.081125ms)
+✔ layer toggle hides the tissue class (0.051708ms)
+✔ faded context is drawn but never pickable (0.070292ms)
+✔ transparent cortex lets the pointer through; deep structures stay opaque (0.095875ms)
+✔ the selected structure stays opaque and pickable under a transparent cortex (0.768167ms)
+✔ fully transparent cortex is not drawn at all (0.04775ms)
+✔ non-finite opacity falls back to opaque (0.074875ms)
+✔ resolvePick returns the nearest hit (never something behind an opaque surface) (0.166667ms)
+✔ cut plane: a hit on the removed side is skipped, the next kept hit wins (0.0765ms)
+✔ display transform: RAS mm → three.js metres is a proper rotation and inverts exactly (0.156917ms)
+✔ search by name: exact and prefix matches rank first (7.310291ms)
+✔ search by synonym: "M1" finds the precentral gyri and carries the caveat (1.874834ms)
+✔ search: nothing matches nonsense or an empty query; results are bounded (1.293667ms)
+✔ no structure in the atlas is named after a functional area (0.558709ms)
+✔ every synonym key and every card key names something that exists in this atlas (0.134708ms)
+✔ cards: every statement is typed and every cited source exists; published findings always cite something (0.223208ms)
+✔ the motor card keeps gyrus and M1 apart (0.131417ms)
+✔ cardFor inherits from the nearest ancestor and says so; unknown regions get no card (0.086ms)
+✔ bibliography: unique ids, a year, and a DOI or URL for everything except books (0.311708ms)
+✔ defaults are valid; non-finite and out-of-range inputs are rejected with a message (1.52575ms)
+✔ deterministic replay: same parameters → identical numbers; another seed → different numbers (38.744375ms)
+✔ sampling: sample count, grid step and Nyquist follow the sample rate exactly (18.020583ms)
+✔ ADC code convention: mid-tread rounding, two's-complement range, left-aligned 16-bit sample (10.682792ms)
+✔ clipping: the amplifier saturates at its swing and the ADC clamps at its rails, both flagged (11.928917ms)
+✔ filter and noise formulas: corner gain, Johnson noise, alias folding (0.296417ms)
+✔ aliasing demonstration: a 7 kHz tone sampled at 10 kS/s shows up at 3 kHz unless the anti-alias filter removes it (14.941625ms)
+✔ input-referred noise: the simulated in-band noise matches √(thermal² + amplifier²) (11.890084ms)
+✔ source model: spike amplitude follows the stated 1/distance rule; the trace is a sum over several neurons (6.59325ms)
+✔ default lesson: most spikes above threshold are detected, with few false events (6.630833ms)
+✔ digital stage is exactly the RTL-checked chip model applied to the ADC samples (9.344833ms)
+✔ FEATURE path: pass band scales with the sample rate; a gamma burst raises window energy at the design rate (22.114167ms)
+✔ scrubbing: the state at an instant is recomputed exactly, in any order, and is clamped to the window (16.334334ms)
+✔ record paths name only instances that exist under the chip top (0.453958ms)
+✔ every "not implemented" statement quotes its project document verbatim (1.619917ms)
+✔ milestones: nothing beyond place-and-route is claimed (1.039ms)
+✔ recorded model-vs-RTL checks: all passing, for this snapshot, and each path that claims a check has one (0.360041ms)
+✔ snapshot integrity: every chip/ file matches the hash recorded at import, and the RTL hash is the recorded one (4.391084ms)
+✔ the committed hierarchy is exactly what the extractor produces from the snapshot (47.694ms)
+✔ every instance is where the artifact says it is: the source line names that module and instance (7.045125ms)
+✔ the instance names in the brief exist in source, with these exact module types (0.233458ms)
+✔ what is NOT in the RTL: no analogue front end, ADC, electrode, radio or stimulator module exists (0.930459ms)
+✔ tested behaviour: every module in the chip top is covered by at least one executed, passing suite (0.194875ms)
+✔ journey stages only name blocks that exist, and keep external hardware out of the "implemented" column (0.218834ms)
+✔ index: stable document ids, hashes that match the files, and every kind of source present (1.680375ms)
+✔ exact citations: a line-ranged location reproduces the passage from the file, character for character (9.693208ms)
+✔ the questions named in the brief find their sources (14.124708ms)
+✔ evaluation: development set is fully answered; held-out set meets the recorded baseline; unanswerable questions are refused (26.33725ms)
+✔ unsupported queries: empty, nonsense and off-topic questions are flagged, never answered (2.111125ms)
+✔ query sanitising: FTS operators, column filters and quotes in user text are inert (11.475833ms)
+✔ retrieved text is data: instructions and markup inside a document are returned verbatim and never acted on (3.524875ms)
+✔ API: loopback only, GET only, no path parameters, clear failure when the index is missing (11.885042ms)
+✔ public inventory: lists every document without any passage text, the missing sources, and that no model is configured (19.828625ms)
+ℹ tests 63
+ℹ pass 63
+ℹ fail 0
+ℹ skipped 0
+
+## model-versus-RTL checks (scripts/run-checks.mjs)
+exit=0
+✓ check:model
+  DEMO model vs RTL trace: 3200/3200 samples agree on all 9 fields; demo events=66, rtl events=66
+  PASS
+✓ check:v03
+  FEATURE internals: 4000/4000 samples agree on y, ysat, acc, cnt, done
+  FEATURE records: rtl=120 demo=120 all match (ch, ts, energy, sat)
+  RAW records: 4000 vs 4000 samples exact (value, channel, index)
+✓ check:v04
+  rtl_trace_v04.json: trained model · 3 frames
+    quantiser (L, x): 24/24 features agree
+    MLP (h, logits, class, margin): 3/3 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 3/3
+  rtl_trace_v04_real.json: trained model · 32 frames
+    quantiser (L, x): 256/256 features agree
+    MLP (h, logits, class, margin): 32/32 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 32/32
+
+## bibliography vs Crossref (scripts/check-sources.mjs)
+exit=1
+
+26 DOIs checked, 1 problem(s).
+
+## retrieval evaluation (tools/corpus/eval.mjs)
+exit=0
+Index: 54 documents, 385 passages (built 2026-11-17T11:57:08.025Z). Private abstracts present: true.
+## HELD-OUT set (tests/corpus-heldout.json)
+Answerable: expected document in the top 3: 14/15  (top-1: 13/15; skipped for missing private material: 0)
+Unanswerable correctly reported as unsupported: 5/5
+✗ RAW versus FEATURE records
+## DEVELOPMENT set (tests/corpus-eval.json)
+Answerable: expected document in the top 3: 20/20  (top-1: 16/20; skipped for missing private material: 0)
+Unanswerable correctly reported as unsupported: 5/5
+
+## production build (tsc -b && vite build)
+exit=0
+dist/assets/App--YYuVvXj.js                   1,035.46 kB │ gzip: 329.43 kB
+dist/assets/index-DPICFBbk.js                 1,176.20 kB │ gzip: 337.81 kB
+✓ built in 3.02s
+
+## end-to-end walkthrough (tests/e2e/walkthrough.mjs, headless Chrome, production build)
+exit=0
+✓ open the studio: the first screen is the 3D brain atlas — 251 structures, 69 groups; renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+✓ no permanent label cloud; hint invites hovering
+✓ hover the left precentral gyrus: the tag names exactly that structure — at (801, 287)
+✓ picking resolves real ids: five other structures hover as themselves — 5 structures
+✓ click selects it and opens a concise, cited explanation with the gyrus ≠ M1 caution — 22 citation chips
+✓ "M1" search finds the gyrus and carries the caveat; nothing is named M1
+✓ hidden structures are never picked: hiding the gyrus exposes what lies behind it — behind it: white_matter_of_left_cerebral_hemisphere
+✓ see-through cortex does not steal the pointer; the selection stays opaque — through the cortex: nothing
+✓ isolate, show in context, restore
+✓ hemisphere toggle and cutaway with a legend entry; picks respect the cut — 160 picks, all on the kept side
+✓ camera: a programmatic transition is interrupted by user input
+✓ keyboard equivalents: rotate, zoom, step through structures, fit, clear
+✓ tree: keyboard navigation selects a structure; focus highlights it in 3D
+✓ a structure without curated text says so instead of inventing an explanation
+✓ expose the illustrative electrode: neural interface keeps the region and separates mV from µV — Membrane swing ≈ 94 mV. The same spike at a contact 100 µm away ≈ −36 µV in this model — a
+✓ signal journey: stages, external-vs-implemented labels, three kinds of multiplexer
+✓ ADC consequences are computed: bit depth and gain change the LSB; saturation is reported — 0.046 µV → 11.72 µV; alias 7 kHz → 3 kHz
+✓ play, pause, scrub: the numbers at an instant are reproduced exactly — n = 1841, code -228, 4 events so far
+✓ our chip: real instances with source lines, executed suites, and what is not implemented — 4 milestones reached, 3 not
+✓ the existing full chip studio still runs inside the new shell
+✓ research: cited passages with exact locations; unsupported questions are refused — 12 passages; first: src/journey/stages.ts#adc
+✓ return to the same brain region: selection and view survived the whole journey
+✓ reload keeps the selected region
+✓ accessibility: every control has a name; landmarks, live region and focus are in place — tab order starts nav-brain → nav-interface → nav-signal → nav-chip → nav-research → region-chip; focus outline "solid"
+✓ load failure: when the atlas cannot be fetched the app says so and shows no substitute
+✓ load failure: search service down → explicit state, inventory still shown
+✓ WebGL unavailable: explicit message, no fake brain
+✓ phone viewport (390 × 844, touch): tap selects, layout fits, journey reachable
+✓ no console errors during the whole desktop walkthrough
+
+29/29 steps passed
+
+## note on the bibliography check above
+In the run above one Crossref lookup (collinger2013) was answered with HTTP 429 (rate limit after several runs in a
+few minutes), which the checker counts as a problem. The checker now pauses between requests and backs off on 429.
+Re-run at 2026-11-17T12:02:08Z: 27 DOIs checked, 0 problem(s). Full output: docs/evidence/sources-check.txt.

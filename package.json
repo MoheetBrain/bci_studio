@@ -1,0 +1,47 @@
+{
+  "name": "bci-studio",
+  "private": true,
+  "version": "0.5.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5180 --strictPort",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --noEmit",
+    "preview": "vite preview --host 127.0.0.1 --port 5181",
+    "check:model": "node scripts/check-demo-vs-rtl.mjs",
+    "check:v03": "node scripts/check-v03-vs-rtl.mjs",
+    "check:v04": "node scripts/check-v04-vs-rtl.mjs",
+    "atlas:build": "node tools/atlas/build-atlas.mjs",
+    "check:sources": "node scripts/check-sources.mjs",
+    "test": "node --test --disable-warning=ExperimentalWarning \"tests/*.test.ts\"",
+    "check": "npm run typecheck && npm test && npm run check:rtl",
+    "chip:extract": "node tools/chip/extract-hierarchy.mjs",
+    "corpus:abstracts": "node --disable-warning=ExperimentalWarning tools/corpus/fetch-abstracts.mjs",
+    "check:rtl": "node scripts/run-checks.mjs",
+    "corpus:build": "node --disable-warning=ExperimentalWarning tools/corpus/build-index.mjs",
+    "test:e2e": "npm run build && node tests/e2e/walkthrough.mjs"
+  },
+  "dependencies": {
+    "@react-three/drei": "9.114.0",
+    "@react-three/fiber": "8.17.10",
+    "@xyflow/react": "12.3.2",
+    "meshoptimizer": "0.22.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "0.169.0",
+    "zustand": "4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.1",
+    "@types/three": "0.169.0",
+    "@vitejs/plugin-react": "4.3.2",
+    "playwright-core": "1.56.1",
+    "typescript": "5.6.3",
+    "vite": "5.4.9"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}

@@ -1,0 +1,74 @@
+{
+ "evidence": "LAYOUT",
+ "generated_by": "scripts/extract_cells.py",
+ "generated_at": "2026-10-23T21:14:58+00:00",
+ "gds": "studio/public/artifacts/layout/hbci_event_core.gds.gz",
+ "gds_gz_sha256": "64268d6c6b80a8e7bcab0fb16d34d3a6a93152a001c81442077ba5da8c579ec2",
+ "gds_stream_sha256": "e2ec1cf607dbd0b1b821b514e3419c286ea535c1e78161867630b6a611a618e3",
+ "pdk": "sky130A",
+ "open_pdks_rev": "8afc8346a57fe1ab7934ba5a6056ea8b43078e71",
+ "scl": "sky130_fd_sc_hd",
+ "licence": "Apache-2.0 (SkyWater SKY130 PDK)",
+ "top_structure": "hbci_event_core",
+ "all_cell_instances_in_top": 10078,
+ "fill_decap_tap_instances_in_top": 6982,
+ "pdk_files": {
+  "lyp": {
+   "path": "hbci-eda VM:~/.ciel/ciel/sky130/versions/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/sky130A/libs.tech/klayout/tech/sky130A.lyp",
+   "read_from": "local cache build/pdk/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/libs.tech/klayout/tech/sky130A.lyp (copied from the VM by this script)",
+   "sha256": "7caca63445153c269bfb8d4431ae9c89eebdfd3c5835cc4966aba8c0018f4ddf",
+   "bytes": 246943
+  },
+  "spice": {
+   "path": "hbci-eda VM:~/.ciel/ciel/sky130/versions/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice",
+   "read_from": "local cache build/pdk/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice (copied from the VM by this script)",
+   "sha256": "304da9725492089107bb20840a4020558b028487d300f8df79bbbad5332aaa99",
+   "bytes": 926424
+  },
+  "ngspice_all": {
+   "path": "hbci-eda VM:~/.ciel/ciel/sky130/versions/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/sky130A/libs.tech/ngspice/all.spice",
+   "read_from": "local cache build/pdk/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/libs.tech/ngspice/all.spice (copied from the VM by this script)",
+   "sha256": "ada86dba53017af314dfa04dac253c8424e0941158cf476a7ca191c55aea3bbb",
+   "bytes": 5358
+  }
+ },
+ "layer_names_source": {
+  "file": "hbci-eda VM:~/.ciel/ciel/sky130/versions/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/sky130A/libs.tech/klayout/tech/sky130A.lyp",
+  "read_from": "local cache build/pdk/8afc8346a57fe1ab7934ba5a6056ea8b43078e71/libs.tech/klayout/tech/sky130A.lyp (copied from the VM by this script)",
+  "sha256": "7caca63445153c269bfb8d4431ae9c89eebdfd3c5835cc4966aba8c0018f4ddf",
+  "format": "KLayout layer properties: <name>layer.purpose - L/D</name> with <source>L/D@1</source>"
+ },
+ "cells": [
+  {
+   "cell": "sky130_fd_sc_hd__nand2_2",
+   "short_name": "NAND2",
+   "description": "2-input NAND, drive strength 2",
+   "file": "sky130_fd_sc_hd__nand2_2.json",
+   "instances_in_v02_design": 74,
+   "size_um": {
+    "width": 2.3,
+    "height": 2.72
+   },
+   "layers": 17,
+   "labels": 10,
+   "spice_devices": 8,
+   "gate_check": true
+  },
+  {
+   "cell": "sky130_fd_sc_hd__inv_2",
+   "short_name": "Inverter",
+   "description": "inverter (NOT), drive strength 2",
+   "file": "sky130_fd_sc_hd__inv_2.json",
+   "instances_in_v02_design": 68,
+   "size_um": {
+    "width": 1.38,
+    "height": 2.72
+   },
+   "layers": 17,
+   "labels": 9,
+   "spice_devices": 4,
+   "gate_check": true
+  }
+ ],
+ "command": "make cells   (/usr/bin/python3 -I scripts/extract_cells.py; PDK files come from the hbci-eda VM: physical/lima/vm.sh ensure)"
+}

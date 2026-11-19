@@ -1,0 +1,56 @@
+/* App shell: journey bar, region chip, workspace panes. */
+.shell { display: grid; grid-template-rows: 48px minmax(0, 1fr) 22px; height: 100%; background: var(--surface-workspace); }
+.shell-bar { display: flex; align-items: center; gap: 16px; padding: 0 14px; background: var(--surface-panel); border-bottom: 1px solid var(--border); min-width: 0; }
+.shell-brand { display: flex; align-items: center; gap: 8px; font-weight: 650; white-space: nowrap; flex: none; }
+.shell-brand small { color: var(--fg-tertiary); font-weight: 400; }
+.shell-mark { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #E6D6C6, #B99A86 70%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .12); }
+.shell-nav { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.shell-nav::-webkit-scrollbar { display: none; }
+.shell-step-wrap { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.shell-arrow { color: var(--fg-tertiary); font-size: 12px; }
+.shell-step { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--fg-secondary); cursor: pointer; font-size: 13.5px; white-space: nowrap; }
+.shell-step:hover { background: var(--surface-raised); color: var(--fg); }
+.shell-step.current { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 650; }
+.shell-step-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-raised); font-size: 11px; font-weight: 700; color: var(--fg-secondary); }
+.shell-step.current .shell-step-n { background: var(--accent); color: var(--fg-on-accent); }
+
+.region-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; max-width: 46vw; padding: 0 11px; border-radius: 999px; border: 1px solid var(--accent); background: var(--surface-panel); color: var(--fg); cursor: pointer; font-size: 13px; flex: none; min-width: 0; }
+.region-chip:hover { background: var(--accent-soft); }
+.region-chip-empty { border-color: var(--border); border-style: dashed; color: var(--fg-tertiary); cursor: default; }
+button.region-chip-empty { cursor: pointer; }
+.region-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--selection); flex: none; }
+.region-chip-label { color: var(--fg-tertiary); font-size: 11.5px; }
+.region-chip-name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.region-chip-name::first-letter { text-transform: uppercase; }
+.region-chip-back { color: var(--accent); font-size: 12px; white-space: nowrap; }
+
+.shell-main { position: relative; min-height: 0; }
+.shell-pane { position: absolute; inset: 0; min-height: 0; overflow: hidden; }
+.shell-loading { display: grid; place-items: center; height: 100%; color: var(--fg-tertiary); }
+.shell-foot { display: flex; align-items: center; justify-content: center; padding: 0 12px; font-size: 11px; color: var(--fg-secondary); background: var(--surface-panel); border-top: 1px solid var(--border-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@scope (.shell) to (.chip-studio-body) {
+/* generic page layout used by the lesson workspaces */
+.page { height: 100%; overflow: auto; }
+.page-inner { max-width: 1180px; margin: 0 auto; padding: 20px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.page h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+.page h2 { margin: 0 0 6px; font-size: 17px; }
+.page p { margin: 0; }
+.page .lede { font-size: 15.5px; color: var(--fg-secondary); max-width: 78ch; }
+.card { background: var(--surface-panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+}
+
+@media (max-width: 760px) {
+  .shell { grid-template-rows: auto minmax(0, 1fr) 0; }
+  .shell-bar { flex-wrap: wrap; gap: 6px 10px; padding: 6px 10px; }
+  .shell-brand small { display: none; }
+  .shell-nav { order: 3; flex-basis: 100%; }
+  .shell-step { height: 34px; padding: 0 8px; }
+  .region-chip { max-width: 58vw; margin-left: auto; }
+  .region-chip-label, .region-chip-back { display: none; }
+  .shell-foot { display: none; }
+}
+@scope (.shell) to (.chip-studio-body) {
+  @media (max-width: 760px) { .page-inner { padding: 14px 12px 28px; } }
+}

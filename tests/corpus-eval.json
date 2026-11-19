@@ -1,0 +1,178 @@
+{
+  "note": "DEVELOPMENT set: these questions were visible while the retrieval rules (stop words, domain synonyms, comparison handling) were written, so a perfect score here is not evidence of generalisation. The held-out set is tests/corpus-heldout.json. `expect` lists document ids, any one of which must appear in the top k passages. `private` marks questions that need the locally stored abstracts. `unanswerable` questions must be reported as unsupported.",
+  "k": 3,
+  "questions": [
+    {
+      "q": "primary motor cortex",
+      "expect": [
+        "card:regions",
+        "abs:geyer1996",
+        "abs:rademacher2001"
+      ]
+    },
+    {
+      "q": "Is the precentral gyrus the same as M1?",
+      "expect": [
+        "card:regions"
+      ]
+    },
+    {
+      "q": "motor hand area knob landmark",
+      "expect": [
+        "abs:yousry1997",
+        "card:regions"
+      ],
+      "private": true
+    },
+    {
+      "q": "AFE versus ADC",
+      "expect": [
+        "chip:docs/AFE_ADC_DECISION.md",
+        "card:stages"
+      ]
+    },
+    {
+      "q": "Which external analogue front end is recommended for the first test chip?",
+      "expect": [
+        "chip:docs/AFE_ADC_DECISION.md"
+      ]
+    },
+    {
+      "q": "What kinds of multiplexer are in the recording chain?",
+      "expect": [
+        "card:stages"
+      ]
+    },
+    {
+      "q": "record multiplexer arbiter FIFO drops",
+      "expect": [
+        "rtl:hbci_readout_core.v",
+        "chip:docs/V03_READOUT_SPEC.md"
+      ]
+    },
+    {
+      "q": "u_state versus u_fstate",
+      "expect": [
+        "rtl:hbci_event_core.v",
+        "rtl:hbci_readout_core.v"
+      ]
+    },
+    {
+      "q": "per-channel feature register file",
+      "expect": [
+        "rtl:hbci_readout_core.v"
+      ]
+    },
+    {
+      "q": "Which hardware is implemented and which is only conceptual?",
+      "expect": [
+        "card:stages",
+        "chip:README.md",
+        "chip:docs/HBCI02_REPORT.md",
+        "chip:docs/GAP_REGISTER.md",
+        "chip:BUILD_STATUS.md",
+        "chip:docs/ARCHITECTURE.md"
+      ]
+    },
+    {
+      "q": "has the chip been fabricated or measured",
+      "expect": [
+        "chip:docs/PHYSICAL.md",
+        "chip:docs/FABRICATION_READINESS.md",
+        "chip:README.md",
+        "chip:docs/HBCI02_REPORT.md"
+      ]
+    },
+    {
+      "q": "on-chip decoder model words CRC",
+      "expect": [
+        "chip:docs/AI_DECODER.md",
+        "rtl:hbci_ai_decoder.v"
+      ]
+    },
+    {
+      "q": "band-pass filter 70-150 Hz coefficients",
+      "expect": [
+        "chip:docs/V03_READOUT_SPEC.md",
+        "chip:docs/DSP_OPTIMISATION.md",
+        "card:stages",
+        "chip:README.md"
+      ]
+    },
+    {
+      "q": "sample stream SPI frame parity",
+      "expect": [
+        "rtl:hbci02_chip_top.v",
+        "chip:docs/AFE_ADC_DECISION.md",
+        "chip:docs/TEST_PLAN.md"
+      ]
+    },
+    {
+      "q": "How many neurons can one tetrode record?",
+      "expect": [
+        "abs:henze2000",
+        "card:stages"
+      ]
+    },
+    {
+      "q": "extracellular spike amplitude intracellular action potential",
+      "expect": [
+        "abs:henze2000"
+      ],
+      "private": true
+    },
+    {
+      "q": "microstimulation tactile sensations hand",
+      "expect": [
+        "abs:flesher2016",
+        "card:regions"
+      ]
+    },
+    {
+      "q": "handwriting brain-to-text characters per minute",
+      "expect": [
+        "abs:willett2021",
+        "card:regions"
+      ]
+    },
+    {
+      "q": "event-only output lossy raw waveform",
+      "expect": [
+        "chip:README.md",
+        "chip:docs/RESEARCH_AUDIT.md",
+        "rtl:hbci_event_core.v",
+        "chip:docs/V03_READOUT_SPEC.md"
+      ]
+    },
+    {
+      "q": "stimulation write path implemented",
+      "expect": [
+        "chip:docs/BIOHYBRID_INTERFACES.md",
+        "chip:docs/AFE_ADC_DECISION.md",
+        "chip:docs/FEEDBACK_CONTRACT.md",
+        "card:regions"
+      ]
+    },
+    {
+      "q": "microtubule quantum gravity consciousness collapse",
+      "unanswerable": true
+    },
+    {
+      "q": "Neuralink battery capacity milliamp hours",
+      "unanswerable": true
+    },
+    {
+      "q": "dopamine reward prediction error ventral tegmental",
+      "unanswerable": true
+    },
+    {
+      "q": "hemodynamic response function BOLD deconvolution",
+      "unanswerable": true
+    },
+    {
+      "q": "zzqx flurbish",
+      "unanswerable": true
+    }
+  ],
+  "set": "development"
+}

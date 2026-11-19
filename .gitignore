@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+# evaluation clones of third-party reference projects (never shipped)
+reference/
+# private / copyrighted source material and the local search index built from it
+corpus/private/
+corpus/index.sqlite
+corpus/index.sqlite-*
+# test output
+test-results/
+playwright-report/

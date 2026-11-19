@@ -1,0 +1,48 @@
+# End-to-end walkthrough — 2026-11-17T12:01:03.622Z
+Build: production (vite preview, http://127.0.0.1:5199). Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36
+Mode: headless; WebGL renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version); canvas 1440×830 at devicePixelRatio 1.
+Result: 29/29 steps passed.
+✓ open the studio: the first screen is the 3D brain atlas
+    251 structures, 69 groups; renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)  (981 ms)
+✓ no permanent label cloud; hint invites hovering  (5 ms)
+✓ hover the left precentral gyrus: the tag names exactly that structure
+    at (801, 287)  (187 ms)
+✓ picking resolves real ids: five other structures hover as themselves
+    5 structures  (248 ms)
+✓ click selects it and opens a concise, cited explanation with the gyrus ≠ M1 caution
+    22 citation chips  (185 ms)
+✓ "M1" search finds the gyrus and carries the caveat; nothing is named M1  (97 ms)
+✓ hidden structures are never picked: hiding the gyrus exposes what lies behind it
+    behind it: white_matter_of_left_cerebral_hemisphere  (1283 ms)
+✓ see-through cortex does not steal the pointer; the selection stays opaque
+    through the cortex: nothing  (759 ms)
+✓ isolate, show in context, restore  (1013 ms)
+✓ hemisphere toggle and cutaway with a legend entry; picks respect the cut
+    160 picks, all on the kept side  (2644 ms)
+✓ camera: a programmatic transition is interrupted by user input  (715 ms)
+✓ keyboard equivalents: rotate, zoom, step through structures, fit, clear  (1084 ms)
+✓ tree: keyboard navigation selects a structure; focus highlights it in 3D  (1433 ms)
+✓ a structure without curated text says so instead of inventing an explanation  (12 ms)
+✓ expose the illustrative electrode: neural interface keeps the region and separates mV from µV
+    Membrane swing ≈ 94 mV. The same spike at a contact 100 µm away ≈ −36 µV in this model — a  (438 ms)
+✓ signal journey: stages, external-vs-implemented labels, three kinds of multiplexer  (529 ms)
+✓ ADC consequences are computed: bit depth and gain change the LSB; saturation is reported
+    0.046 µV → 11.72 µV; alias 7 kHz → 3 kHz  (555 ms)
+✓ play, pause, scrub: the numbers at an instant are reproduced exactly
+    n = 1841, code -228, 4 events so far  (1519 ms)
+✓ our chip: real instances with source lines, executed suites, and what is not implemented
+    4 milestones reached, 3 not  (242 ms)
+✓ the existing full chip studio still runs inside the new shell  (2037 ms)
+✓ research: cited passages with exact locations; unsupported questions are refused
+    12 passages; first: src/journey/stages.ts#adc  (460 ms)
+✓ return to the same brain region: selection and view survived the whole journey  (112 ms)
+✓ reload keeps the selected region  (113 ms)
+✓ accessibility: every control has a name; landmarks, live region and focus are in place
+    tab order starts nav-brain → nav-interface → nav-signal → nav-chip → nav-research → region-chip; focus outline "solid"  (3113 ms)
+✓ load failure: when the atlas cannot be fetched the app says so and shows no substitute  (241 ms)
+✓ load failure: search service down → explicit state, inventory still shown  (261 ms)
+✓ WebGL unavailable: explicit message, no fake brain  (342 ms)
+✓ phone viewport (390 × 844, touch): tap selects, layout fits, journey reachable  (4400 ms)
+✓ no console errors during the whole desktop walkthrough  (0 ms)
+This was a headless run (no display): the renderer above is what the browser reported, but frame pacing without a display is not representative. Interactive measurements are in docs/evidence/performance.txt.
+Screenshots: docs/evidence/screenshots/ (captured from the running application in this run).

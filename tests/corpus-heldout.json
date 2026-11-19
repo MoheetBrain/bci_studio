@@ -1,0 +1,134 @@
+{
+  "set": "held-out",
+  "note": "HELD-OUT set: written after the retrieval rules were frozen and never used to adjust them. Whatever it scores is reported as-is.",
+  "k": 3,
+  "questions": [
+    {
+      "q": "reset synchroniser",
+      "expect": [
+        "rtl:hbci02_chip_top.v"
+      ]
+    },
+    {
+      "q": "refractory counter hysteresis re-arm",
+      "expect": [
+        "rtl:hbci_event_core.v",
+        "chip:README.md",
+        "chip:docs/VERIFICATION.md"
+      ]
+    },
+    {
+      "q": "cortex basal ganglia loops through the thalamus",
+      "expect": [
+        "card:regions"
+      ]
+    },
+    {
+      "q": "split brain corpus callosum",
+      "expect": [
+        "card:regions",
+        "abs:gazzaniga2000"
+      ]
+    },
+    {
+      "q": "probe with 384 channels and 960 sites",
+      "expect": [
+        "abs:jun2017",
+        "card:stages"
+      ]
+    },
+    {
+      "q": "thermal noise of the electrode impedance",
+      "expect": [
+        "card:stages"
+      ]
+    },
+    {
+      "q": "speech neuroprosthesis words per minute",
+      "expect": [
+        "abs:willett2023"
+      ],
+      "private": true
+    },
+    {
+      "q": "built-in self-test signature",
+      "expect": [
+        "rtl:hbci02_digital_top.v",
+        "chip:docs/TEST_PLAN.md",
+        "chip:docs/AI_DECODER.md",
+        "chip:docs/VERIFICATION.md"
+      ]
+    },
+    {
+      "q": "RAW versus FEATURE records",
+      "expect": [
+        "chip:docs/V03_READOUT_SPEC.md",
+        "chip:README.md",
+        "card:stages",
+        "rtl:hbci_readout_core.v"
+      ]
+    },
+    {
+      "q": "Intan RHD2216 price",
+      "expect": [
+        "chip:docs/AFE_ADC_DECISION.md"
+      ]
+    },
+    {
+      "q": "DRC and LVS results of the layout",
+      "expect": [
+        "chip:docs/PHYSICAL.md",
+        "chip:docs/HBCI02_REPORT.md",
+        "chip:BUILD_STATUS.md"
+      ]
+    },
+    {
+      "q": "window energy sum of squares",
+      "expect": [
+        "rtl:hbci_readout_core.v",
+        "card:stages",
+        "chip:docs/V03_READOUT_SPEC.md"
+      ]
+    },
+    {
+      "q": "fear conditioning",
+      "expect": [
+        "abs:ledoux2000",
+        "card:regions"
+      ]
+    },
+    {
+      "q": "aliasing above half the sample rate",
+      "expect": [
+        "card:stages",
+        "chip:docs/RESEARCH_AUDIT.md"
+      ]
+    },
+    {
+      "q": "hippocampus versus amygdala",
+      "expect": [
+        "card:regions"
+      ]
+    },
+    {
+      "q": "optogenetics channelrhodopsin stimulation wavelength",
+      "unanswerable": true
+    },
+    {
+      "q": "transformer attention heads language model fine-tuning",
+      "unanswerable": true
+    },
+    {
+      "q": "MRI gradient coil slew rate",
+      "unanswerable": true
+    },
+    {
+      "q": "serotonin reuptake inhibitor dosage",
+      "unanswerable": true
+    },
+    {
+      "q": "electrode impedance spectroscopy Randles circuit fit",
+      "unanswerable": true
+    }
+  ]
+}

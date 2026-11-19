@@ -1,0 +1,559 @@
+{
+ "generated_at": "2026-10-19T20:09:20+00:00",
+ "evidence": "LAYOUT",
+ "status": "complete",
+ "design": "hbci_event_core",
+ "flow": {
+  "name": "LibreLane Classic flow",
+  "librelane": "3.0.16",
+  "lineage": "LibreLane is the continuation of OpenLane 2 (renamed in 2025); same flow and config format.",
+  "run_tag": "hbci_layout",
+  "steps": 78,
+  "exit_code": 0,
+  "host": "Lima 2.2.1 VM (Apple Virtualization.framework), Ubuntu 24.04.5 LTS aarch64"
+ },
+ "tools": {
+  "openroad": "dcf36133a369abc8f3c5e5738cd4d82e4903c0e0",
+  "yosys": "Yosys 0.62 (git sha1 7326bb7d6641500ecb285c291a54a662cb1e76cf, clang++ 21.1.2 -fPIC -O3)",
+  "magic": "8.3.623",
+  "netgen": "Netgen 1.5.316 compiled on Tue Feb 10 10:44:29 UTC 2026",
+  "klayout": "KLayout 0.30.7",
+  "verilator": "Verilator 5.044 2026-01-01 rev v5.040",
+  "opensta": "2.7.0"
+ },
+ "pdk": {
+  "name": "sky130A",
+  "scl": "sky130_fd_sc_hd",
+  "open_pdks_rev": "8afc8346a57fe1ab7934ba5a6056ea8b43078e71",
+  "default_corner": "nom_tt_025C_1v80",
+  "sta_corners": [
+   "nom_tt_025C_1v80",
+   "nom_ss_100C_1v60",
+   "nom_ff_n40C_1v95",
+   "min_tt_025C_1v80",
+   "min_ss_100C_1v60",
+   "min_ff_n40C_1v95",
+   "max_tt_025C_1v80",
+   "max_ss_100C_1v60",
+   "max_ff_n40C_1v95"
+  ]
+ },
+ "constraints": {
+  "clock_port": "clk",
+  "clock_period_ns": 25.0,
+  "clock_mhz": 40.0,
+  "core_util_pct": 45.0,
+  "target_density_pct": 55.0,
+  "aspect_ratio": 1.0,
+  "io_delay_pct": 20.0,
+  "clock_uncertainty_ns": 0.25,
+  "clock_transition_ns": 0.15,
+  "timing_derate_pct": 5.0,
+  "max_transition_ns": 0.75,
+  "max_fanout": 10,
+  "reset": "rst_n: asynchronous active-low reset; constrained as a synchronous-release input (20% input delay) so recovery/removal are timed; assumes an external reset synchroniser",
+  "pin_placement": "LibreLane default: OpenROAD place_pins after an I/O-less global placement (wirelength-driven); met2 pins on the top/bottom edges, met3 on left/right; no pin-order file",
+  "routing_layers": "met1-met5",
+  "synthesis": "Yosys AREA 0, hierarchy flatten",
+  "config_file": "physical/openlane/config.json",
+  "sdc_file": "physical/openlane/hbci_event_core.sdc"
+ },
+ "die": {
+  "width_um": 245.755,
+  "height_um": 256.475,
+  "area_um2": 63030,
+  "bbox_um": [
+   0.0,
+   0.0,
+   245.755,
+   256.475
+  ]
+ },
+ "core": {
+  "width_um": 234.6,
+  "height_um": 233.92,
+  "area_um2": 54877.6,
+  "bbox_um": [
+   5.52,
+   10.88,
+   240.12,
+   244.8
+  ]
+ },
+ "cells": {
+  "total": 10078,
+  "stdcell": 3888,
+  "sequential": 389,
+  "by_class": {
+   "fill_cell": 6190,
+   "multi_input_combinational_cell": 1471,
+   "timing_repair_buffer": 1107,
+   "tap_cell": 792,
+   "sequential_cell": 389,
+   "inverter": 68,
+   "clock_buffer": 57,
+   "clock_inverter": 4
+  }
+ },
+ "area": {
+  "instance_um2": 54877.6,
+  "stdcell_um2": 34421.8,
+  "utilization_pct": 62.72
+ },
+ "timing": {
+  "corner": "nom_tt_025C_1v80",
+  "setup_ws_ns": 0.6656773098940081,
+  "setup_wns_ns": 0,
+  "setup_tns_ns": 0,
+  "hold_ws_ns": 0.10742429472247698,
+  "hold_wns_ns": 0,
+  "hold_tns_ns": 0,
+  "note": "Worst values across all 9 STA corners after detailed routing and SPEF extraction. WNS/TNS are reported as 0 when no path violates.",
+  "corners": [
+   {
+    "corner": "max_ff_n40C_1v95",
+    "setup_ws_ns": 13.681758335748993,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.10921391877763553,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "max_ss_100C_1v60",
+    "setup_ws_ns": 0.6656773098940081,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.8642744542448768,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 89,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "max_tt_025C_1v80",
+    "setup_ws_ns": 10.098755895145649,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.316807478107234,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "min_ff_n40C_1v95",
+    "setup_ws_ns": 13.809330070313758,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.10742429472247698,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "min_ss_100C_1v60",
+    "setup_ws_ns": 1.0868373175723107,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.8486740439508442,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 30,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "min_tt_025C_1v80",
+    "setup_ws_ns": 10.324170255370177,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.3091084142806215,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "nom_ff_n40C_1v95",
+    "setup_ws_ns": 13.7465216434099,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.10824541569471265,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "nom_ss_100C_1v60",
+    "setup_ws_ns": 0.8855139094850686,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.8562121254343331,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 43,
+    "max_cap_violations": 0
+   },
+   {
+    "corner": "nom_tt_025C_1v80",
+    "setup_ws_ns": 10.211730416969804,
+    "setup_tns_ns": 0,
+    "hold_ws_ns": 0.3126649028182901,
+    "hold_tns_ns": 0,
+    "setup_violations": 0,
+    "hold_violations": 0,
+    "max_slew_violations": 0,
+    "max_cap_violations": 0
+   }
+  ]
+ },
+ "power": {
+  "label": "ESTIMATE",
+  "corner": "nom_tt_025C_1v80",
+  "total_mw": 3.4313,
+  "internal_mw": 2.1897,
+  "switching_mw": 1.2416,
+  "leakage_mw": 3.03e-05,
+  "by_corner_mw": {
+   "max_ff_n40C_1v95": 4.0275,
+   "max_ss_100C_1v60": 2.7652,
+   "max_tt_025C_1v80": 3.4774,
+   "min_ff_n40C_1v95": 3.9194,
+   "min_ss_100C_1v60": 2.6923,
+   "min_tt_025C_1v80": 3.3854,
+   "nom_ff_n40C_1v95": 3.9732,
+   "nom_ss_100C_1v60": 2.7287,
+   "nom_tt_025C_1v80": 3.4313
+  },
+  "method": "OpenROAD report_power after routing (SPEF parasitics) with the tool's default switching activity: no simulation-derived activity, no VCD/SAIF. Headline value is the default corner; by_corner_mw lists all corners. An estimate, not a measurement."
+ },
+ "routing": {
+  "wirelength_um": 84080,
+  "vias": 20587
+ },
+ "checks": {
+  "drc": {
+   "status": "pass",
+   "magic_errors": 0,
+   "klayout_errors": 0,
+   "detailed_route_errors": 0
+  },
+  "lvs": {
+   "status": "pass",
+   "errors": 0,
+   "device_difference": 0,
+   "net_difference": 0,
+   "unmatched_pins": 0
+  },
+  "antenna": {
+   "status": "pass",
+   "violating_nets": 0,
+   "violating_pins": 0
+  },
+  "xor": {
+   "status": "pass",
+   "differences": 0
+  },
+  "timing": {
+   "status": "pass",
+   "setup_violations": 0,
+   "hold_violations": 0
+  },
+  "electrical": {
+   "max_slew_violations": 89,
+   "max_cap_violations": 0,
+   "max_fanout_violations": 13
+  }
+ },
+ "images": [
+  {
+   "file": "layout_routing.png",
+   "caption": "Routing: met1 blue, met2 red, met3 green, met4 yellow (power), met5 violet (power)",
+   "width_px": 2000,
+   "height_px": 2087,
+   "region_um": [
+    0.0,
+    0.0,
+    245.755,
+    256.475
+   ]
+  },
+  {
+   "file": "layout_cells.png",
+   "caption": "Devices: diffusion green, poly red, contacts pale yellow, taps yellow, n-well outline (li1 and metals hidden)",
+   "width_px": 2000,
+   "height_px": 2087,
+   "region_um": [
+    0.0,
+    0.0,
+    245.755,
+    256.475
+   ]
+  },
+  {
+   "file": "layout_detail.png",
+   "caption": "Centre 40 \u00b5m: 40 \u00d7 40 \u00b5m window at the die centre, all drawn layers in PDK colours (sky130A.lyp)",
+   "width_px": 1400,
+   "height_px": 1400,
+   "region_um": [
+    102.8775,
+    108.23750000000001,
+    142.8775,
+    148.2375
+   ]
+  }
+ ],
+ "files": {
+  "hbci_event_core.gds.gz": 1143770,
+  "hbci_event_core.def.gz": 367048,
+  "metrics.json": 17438,
+  "resolved_config.json": 171189,
+  "layout_routing.png": 932508,
+  "layout_cells.png": 1458153,
+  "layout_detail.png": 1629159
+ },
+ "attempts": [
+  {
+   "run_tag": "hbci_50mhz",
+   "clock_mhz": 50.0,
+   "overrides": [],
+   "setup_ws_ns": -0.8171739072268749,
+   "setup_tns_ns": -54.81477826791659,
+   "hold_ws_ns": 0.06569323049263151,
+   "max_slew_violations": 476,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "x40_grt",
+   "clock_mhz": 40.0,
+   "overrides": [
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True"
+   ],
+   "setup_ws_ns": -0.8171774599406542,
+   "setup_tns_ns": -25.37073911656665,
+   "hold_ws_ns": 0.10888307230694026,
+   "max_slew_violations": 525,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "x50_delay",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "SYNTH_STRATEGY=DELAY 1",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True"
+   ],
+   "setup_ws_ns": -2.6711380530173696,
+   "setup_tns_ns": -247.35044934612858,
+   "hold_ws_ns": 0.10829426550917771,
+   "max_slew_violations": 624,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "x50_grt",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True"
+   ],
+   "setup_ws_ns": -0.5747491534271642,
+   "setup_tns_ns": -31.653407901834967,
+   "hold_ws_ns": 0.06580425279823394,
+   "max_slew_violations": 422,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "y33_m",
+   "clock_mhz": 33.333,
+   "overrides": [
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=1",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=0.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=30",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=30"
+   ],
+   "setup_ws_ns": -0.43485927201119906,
+   "setup_tns_ns": -2.5246969673924156,
+   "hold_ws_ns": 0.10967782548159534,
+   "max_slew_violations": 240,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "y40_m",
+   "clock_mhz": 40.0,
+   "overrides": [
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=1",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=0.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=30",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=30"
+   ],
+   "setup_ws_ns": -0.6068781204900657,
+   "setup_tns_ns": -15.670325924851888,
+   "hold_ws_ns": 0.10997725263980511,
+   "max_slew_violations": 149,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "y50_m",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=1",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=0.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=30",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=30"
+   ],
+   "setup_ws_ns": -0.35801407296541354,
+   "setup_tns_ns": -5.7451840466720006,
+   "hold_ws_ns": 0.10996182053932638,
+   "max_slew_violations": 140,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "z40m",
+   "clock_mhz": 40.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=0.5",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=0.2",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=30",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=30"
+   ],
+   "setup_ws_ns": -0.8455867356766515,
+   "setup_tns_ns": -18.51148797756106,
+   "hold_ws_ns": 0.10803330757985918,
+   "max_slew_violations": 247,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "z50",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True"
+   ],
+   "setup_ws_ns": -0.6517151447414451,
+   "setup_tns_ns": -29.438596393840083,
+   "hold_ws_ns": 0.10821116531343429,
+   "max_slew_violations": 496,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "z50m",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=0.5",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=0.2",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=30",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=30"
+   ],
+   "setup_ws_ns": -0.825721736579818,
+   "setup_tns_ns": -32.62993878563136,
+   "hold_ws_ns": 0.10834766723817249,
+   "max_slew_violations": 207,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "w33",
+   "clock_mhz": 33.333,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=2",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=1.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=45",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=45"
+   ],
+   "setup_ws_ns": 0.5515055235262372,
+   "setup_tns_ns": 0,
+   "hold_ws_ns": 0.107752143590921,
+   "max_slew_violations": 70,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "w40",
+   "clock_mhz": 40.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=2",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=1.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=45",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=45"
+   ],
+   "setup_ws_ns": 0.6656773098940081,
+   "setup_tns_ns": 0,
+   "hold_ws_ns": 0.10742429472247698,
+   "max_slew_violations": 89,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "w50",
+   "clock_mhz": 50.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=2",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=1.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=45",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=45"
+   ],
+   "setup_ws_ns": -0.7728253811201462,
+   "setup_tns_ns": -41.923393943000484,
+   "hold_ws_ns": 0.10910894718768843,
+   "max_slew_violations": 65,
+   "drc_lvs_clean": true,
+   "published": false
+  },
+  {
+   "run_tag": "hbci_layout",
+   "clock_mhz": 40.0,
+   "overrides": [
+    "EXTRA_EXCLUDED_CELLS=sky130_fd_sc_hd__clkdlybuf4s*",
+    "RUN_POST_GRT_DESIGN_REPAIR=True",
+    "RUN_POST_GRT_RESIZER_TIMING=True",
+    "PL_RESIZER_SETUP_SLACK_MARGIN=2",
+    "GRT_RESIZER_SETUP_SLACK_MARGIN=1.5",
+    "DESIGN_REPAIR_MAX_SLEW_PCT=45",
+    "GRT_DESIGN_REPAIR_MAX_SLEW_PCT=45"
+   ],
+   "setup_ws_ns": 0.6656773098940081,
+   "setup_tns_ns": 0,
+   "hold_ws_ns": 0.10742429472247698,
+   "max_slew_violations": 89,
+   "drc_lvs_clean": true,
+   "published": true
+  }
+ ],
+ "note": "Genuine placed-and-routed layout produced by an open-source PDK flow. Not fabricated and not measured. Sign-off here means the open-source checks listed (Magic/KLayout DRC, Netgen LVS, OpenROAD antenna and multi-corner STA) only; no foundry sign-off, no IR-drop sign-off, no padframe or packaging."
+}

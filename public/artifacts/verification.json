@@ -1,0 +1,4219 @@
+{
+ "simulator": "Icarus Verilog version 14.0 (devel) (s20260301-617-geed9291c8-dirty)",
+ "ran_at": "2026-10-27T06:22:40+00:00",
+ "suites": [
+  {
+   "name": "tb_hbci_event_core",
+   "status": "pass",
+   "checks": 15,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "V01-01",
+     "name": "ev_valid low during reset",
+     "category": "reset",
+     "status": "pass"
+    },
+    {
+     "id": "V01-02",
+     "name": "timestamp zero during reset",
+     "category": "reset",
+     "status": "pass"
+    },
+    {
+     "id": "V01-03",
+     "name": "threshold 0 disables detection",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-04",
+     "name": "residual one below threshold: no event",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-05",
+     "name": "residual equal to threshold: event",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-06",
+     "name": "event fields at threshold",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-07",
+     "name": "no re-trigger without falling below threshold-hysteresis",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-08",
+     "name": "re-trigger after re-arm",
+     "category": "threshold_boundary",
+     "status": "pass"
+    },
+    {
+     "id": "V01-09",
+     "name": "negative crossing reported with polarity 1",
+     "category": "signed_arithmetic",
+     "status": "pass"
+    },
+    {
+     "id": "V01-10",
+     "name": "refractory blocks events for cfg_refractory samples",
+     "category": "refractory",
+     "status": "pass"
+    },
+    {
+     "id": "V01-11",
+     "name": "per-channel state is independent",
+     "category": "channel_state",
+     "status": "pass"
+    },
+    {
+     "id": "V01-12",
+     "name": "event timestamp equals index of the crossing sample",
+     "category": "timestamp",
+     "status": "pass"
+    },
+    {
+     "id": "V01-13",
+     "name": "sample counter advances once per accepted sample",
+     "category": "timestamp",
+     "status": "pass"
+    },
+    {
+     "id": "V01-14",
+     "name": "input stalls while event slot is full",
+     "category": "backpressure",
+     "status": "pass"
+    },
+    {
+     "id": "V01-15",
+     "name": "no events dropped under back-pressure",
+     "category": "backpressure",
+     "status": "pass"
+    }
+   ]
+  },
+  {
+   "name": "tb_hbci_directed",
+   "status": "pass",
+   "checks": 55,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "RST-01",
+     "name": "outputs and counters stay zero while rst_n is low (with in_valid high)",
+     "category": "reset",
+     "status": "pass",
+     "detail": "ev_valid=0 samples=0 events=0 rejected=0"
+    },
+    {
+     "id": "RST-02",
+     "name": "reset state: every channel unprimed, armed, refractory 0, baseline 0",
+     "category": "reset",
+     "status": "pass",
+     "detail": "primed=00000000 armed=11111111"
+    },
+    {
+     "id": "RST-03",
+     "name": "first sample after reset primes the channel: residual 0, no event, baseline = x*256",
+     "category": "reset",
+     "status": "pass",
+     "detail": "primed_before=0 residual=0 fire=0 baseline_after=1280000"
+    },
+    {
+     "id": "RST-04",
+     "name": "asynchronous mid-run reset immediately clears state, counters and a pending event",
+     "category": "reset",
+     "status": "pass",
+     "detail": "pre: pending/refr/disarmed=1; post: ev_valid=0 samples=0 events=0 primed=00000000 armed=11111111 refr2=0 base2=0"
+    },
+    {
+     "id": "RST-05",
+     "name": "timestamps restart at 0 after reset (second sample -> ts 1)",
+     "category": "reset",
+     "status": "pass",
+     "detail": "events=1 ts=1"
+    },
+    {
+     "id": "INV-01",
+     "name": "in_valid low with garbage on in_channel/in_sample changes no state",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "60 idle cycles with pseudo-random bus; state equal=1 events=0"
+    },
+    {
+     "id": "INV-02",
+     "name": "in_valid low with X on the bus: no state change, no X reaches state or handshake",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "state equal=1 state has X=0 ev_valid=0 in_ready=1"
+    },
+    {
+     "id": "INV-03",
+     "name": "NUM_CH=6: out-of-range handshakes are consumed, counted in stat_rejected, change nothing else",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "10 handshakes to ch6/ch7: rejected=10 samples=6 events=0 state equal=1"
+    },
+    {
+     "id": "INV-04",
+     "name": "NUM_CH=6: rejected handshakes do not advance the timestamp; channel 5 detects normally",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "event ch=5 ts=6 expected ts=6"
+    },
+    {
+     "id": "INV-05",
+     "name": "NUM_CH=6: an out-of-range handshake stalls while the event slot is full, then is consumed",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "stalled cycles=5/5 rejected during stall unchanged=1 after release +1"
+    },
+    {
+     "id": "INV-06",
+     "name": "NUM_CH=6: state read port returns the neutral state for an out-of-range channel",
+     "category": "invalid_input",
+     "status": "pass",
+     "detail": "rd_primed=0 rd_armed=1 rd_refr=0 rd_baseline=0"
+    },
+    {
+     "id": "INV-07",
+     "name": "NUM_CH=8 instance saw none of the NUM_CH=6 traffic (stat_rejected stays 0)",
+     "category": "invalid_input",
+     "status": "pass"
+    },
+    {
+     "id": "THR-01",
+     "name": "|residual| = threshold-1 (99 vs 100): no event",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "residual=99 above=0 fire=0"
+    },
+    {
+     "id": "THR-02",
+     "name": "|residual| = threshold (100): event with magnitude 100, polarity 0",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "residual=100 above=1 fire=1"
+    },
+    {
+     "id": "THR-03",
+     "name": "|residual| = threshold+1 (101): event with magnitude 101",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "residual=101 events=2 mag=101"
+    },
+    {
+     "id": "THR-04",
+     "name": "negative residuals -99 / -100 / -101: no event / event / event, polarity 1",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "-99 quiet=1; events=4 mags=100,101 pols=1,1"
+    },
+    {
+     "id": "THR-05",
+     "name": "threshold 0 disables detection even at |residual| = 65535",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "residual=65535 enable=0 above=0 events=0"
+    },
+    {
+     "id": "THR-06",
+     "name": "threshold 65535: only |residual| = 65535 fires (both polarities)",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "65534 quiet=1 events=2 mag=65535/65535 pol=0/1"
+    },
+    {
+     "id": "THR-07",
+     "name": "hysteresis = threshold clamps the re-arm level to 1 (re-arm only at |residual| 0)",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "sequence ok=1 events=2"
+    },
+    {
+     "id": "THR-08",
+     "name": "hysteresis > threshold (500 vs 100) also clamps the re-arm level to 1",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "rearm(|r|=1)=0 and rearm(|r|=0)=1: 1"
+    },
+    {
+     "id": "THR-09",
+     "name": "re-arm level threshold-hysteresis: hyst 99 -> level 1, hyst 98 -> level 2",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "hyst 99: |r|=1 does not re-arm; hyst 98: |r|=1 re-arms: 1"
+    },
+    {
+     "id": "THR-10",
+     "name": "re-arm boundary at threshold-hysteresis (100-20): 80 stays disarmed, 79 re-arms",
+     "category": "threshold_boundary",
+     "status": "pass",
+     "detail": "|r|=80 -> rearm 0, |r|=79 -> rearm 1: 1"
+    },
+    {
+     "id": "CH-01",
+     "name": "8 interleaved channels keep independent baselines (alpha 0)",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "8 channels, baselines -20000..15000: residuals and stored baselines exact=1"
+    },
+    {
+     "id": "CH-02",
+     "name": "interleaved EMA baselines evolve independently and match the reference formula",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "320 interleaved samples, alpha 3: baselines/residuals match reference=1"
+    },
+    {
+     "id": "CH-03",
+     "name": "an event disarms only its own channel",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "armed=11110111 refr3=0"
+    },
+    {
+     "id": "CH-04",
+     "name": "refractory is per channel: ch2 refractory does not block ch5, and ch5 samples do not count down ch2",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "events=2 (ch 2, ch 5) refr2=5 refr5=5"
+    },
+    {
+     "id": "CH-05",
+     "name": "primed is per channel: the first sample of an unprimed channel never fires",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "primed_before=0 events=0 primed7_after=1"
+    },
+    {
+     "id": "CH-06",
+     "name": "8-channel round-robin: one spike per channel gives exactly the expected (ch, ts, pol, mag) events",
+     "category": "channel_state",
+     "status": "pass",
+     "detail": "expected 8 events, got 8, fields equal=1"
+    },
+    {
+     "id": "REF-01",
+     "name": "refractory 0: next event after re-arm (gap 2 samples), counter stays 0",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=6 gap=2 (expected 2) refr after fire=0"
+    },
+    {
+     "id": "REF-02",
+     "name": "refractory 1: counter 1 then 0, gap 2 samples",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=6 gap=2 (expected 2) refr trace=1,0"
+    },
+    {
+     "id": "REF-03",
+     "name": "refractory 3: exactly 3 same-channel samples blocked (gap 4)",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=5 gap=4 (expected 4) refr trace=3,2,1,0"
+    },
+    {
+     "id": "REF-04",
+     "name": "refractory counter saturates at 0 (never wraps to 2^REFR_W-1)",
+     "category": "refractory",
+     "status": "pass"
+    },
+    {
+     "id": "REF-05",
+     "name": "refractory 7: gap 8 samples",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=4 gap=8 (expected 8)"
+    },
+    {
+     "id": "REF-06",
+     "name": "refractory 255 (maximum): gap 256 samples",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=3 gap=256 (expected 256)"
+    },
+    {
+     "id": "REF-07",
+     "name": "a sub-threshold sample during refractory re-arms the channel (armed=1, counter running)",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "armed=1 refr=9"
+    },
+    {
+     "id": "REF-08",
+     "name": "changing cfg_refractory during a countdown does not reload the running counter",
+     "category": "refractory",
+     "status": "pass",
+     "detail": "events=2 second ts=12 (expected 12)"
+    },
+    {
+     "id": "SGN-01",
+     "name": "residual +65535 (32767 - (-32768)) without overflow",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "residual=65535 magnitude=65535 polarity=0"
+    },
+    {
+     "id": "SGN-02",
+     "name": "residual -65535 (-32768 - 32767) without overflow; magnitude 65535",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "residual=-65535 magnitude=65535 polarity=1"
+    },
+    {
+     "id": "SGN-03",
+     "name": "baseline register holds the Q16.8 extremes -2^23 and 32767*256",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline(-32768)=-8388608 and baseline(32767)=8388352: 1"
+    },
+    {
+     "id": "SGN-04",
+     "name": "negative fractional baseline (-0.5) floors to -1 in the residual",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline=-128 ok=1 residual=1 (expected 1)"
+    },
+    {
+     "id": "SGN-05",
+     "name": "positive fractional baseline (+0.5) floors to 0 in the residual",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline=128 ok=1 residual=0 (expected 0)"
+    },
+    {
+     "id": "SGN-06",
+     "name": "alpha_shift 0: baseline takes the sample value exactly",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline=-3160320 (expected -3160320)"
+    },
+    {
+     "id": "SGN-07",
+     "name": "alpha_shift 15: smallest EMA steps, floor of err/32768 for both signs",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "after +32767: 255 (exp 255); after -32768: -2 (exp -2)"
+    },
+    {
+     "id": "SGN-08",
+     "name": "EMA (alpha 4) converges from below to within 2^alpha LSB of x*256 (floor bias)",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline after 300 samples=255985 target=256000 monotonic=1"
+    },
+    {
+     "id": "SGN-09",
+     "name": "EMA (alpha 4) converges exactly from above (floor steps never stall below zero error)",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "baseline after 300 samples=-256000 target=-256000"
+    },
+    {
+     "id": "SGN-10",
+     "name": "EMA, residual and magnitude match the reference formula over the full signed range",
+     "category": "signed_arithmetic",
+     "status": "pass",
+     "detail": "600 random samples, random alpha 0..15: baseline/residual/magnitude match=1"
+    },
+    {
+     "id": "TS-01",
+     "name": "event timestamp == index of the accepted sample that fired",
+     "category": "timestamp",
+     "status": "pass",
+     "detail": "28 events; ts == index of the firing accepted sample for all=1"
+    },
+    {
+     "id": "TS-02",
+     "name": "event timestamps are strictly increasing",
+     "category": "timestamp",
+     "status": "pass",
+     "detail": "28 events strictly increasing=1"
+    },
+    {
+     "id": "TS-03",
+     "name": "stat_samples == accepted samples; stat_events == event handshakes after drain",
+     "category": "timestamp",
+     "status": "pass",
+     "detail": "stat_samples=408 sent=408 stat_events=28 handshakes=28"
+    },
+    {
+     "id": "TS-04",
+     "name": "idle cycles (in_valid low) do not advance the timestamp",
+     "category": "timestamp",
+     "status": "pass",
+     "detail": "25 idle cycles: stat_samples unchanged=1"
+    },
+    {
+     "id": "BP-01",
+     "name": "pseudo-random ev_ready: event stream equals the expected list (no drop, no duplicate, order kept)",
+     "category": "backpressure",
+     "status": "pass",
+     "detail": "random ev_ready: expected 160 events, got 160, all fields/order equal=1, stall cycles=184"
+    },
+    {
+     "id": "BP-02",
+     "name": "in_ready == !ev_valid || ev_ready on every cycle",
+     "category": "backpressure",
+     "status": "pass",
+     "detail": "violations=0"
+    },
+    {
+     "id": "BP-03",
+     "name": "ev_valid and the event payload stay stable while ev_ready is low",
+     "category": "backpressure",
+     "status": "pass",
+     "detail": "violations=0"
+    },
+    {
+     "id": "BP-04",
+     "name": "drain and push in the same cycle: both events delivered, in order",
+     "category": "backpressure",
+     "status": "pass",
+     "detail": "events=2 (ch 0 then ch 1) slot reloaded in the drain cycle=1"
+    },
+    {
+     "id": "BP-05",
+     "name": "after draining: stat_events == handshakes and the slot is empty",
+     "category": "backpressure",
+     "status": "pass",
+     "detail": "stat_events=162 handshakes since reset=162 ev_valid=0"
+    }
+   ]
+  },
+  {
+   "name": "random_vs_golden",
+   "status": "pass",
+   "checks": 28,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "s1_ch8.completed",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: testbench ran to completion",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "30000 stimulus ops, 68 reset segments"
+    },
+    {
+     "id": "s1_ch8.samples",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: per-sample internal state (ch, x, base, res, mag, above, rearm, armed, refr, primed, fire) matches golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "29933 samples compared"
+    },
+    {
+     "id": "s1_ch8.events",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "907 events compared"
+    },
+    {
+     "id": "s1_ch8.counters",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (726, 20, 0)"
+    },
+    {
+     "id": "s1_ch8.rejected",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "s1_ch8.internal",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: testbench consistency counters are zero",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "accept_vs_handshake=0, guard_bit=0, in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=91154, stall_cycles=882"
+    },
+    {
+     "id": "s1_ch8.causality",
+     "name": "seed 1, NUM_CH=8, 30000 ops, ev_ready 50%: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "s2_ch6.completed",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: testbench ran to completion",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "20000 stimulus ops, 44 reset segments"
+    },
+    {
+     "id": "s2_ch6.samples",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: per-sample internal state (ch, x, base, res, mag, above, rearm, armed, refr, primed, fire) matches golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "15205 samples compared"
+    },
+    {
+     "id": "s2_ch6.events",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "699 events compared"
+    },
+    {
+     "id": "s2_ch6.counters",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (197, 10, 56)"
+    },
+    {
+     "id": "s2_ch6.rejected",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "4752 rejected handshakes"
+    },
+    {
+     "id": "s2_ch6.internal",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: testbench consistency counters are zero",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "accept_vs_handshake=0, guard_bit=0, in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=60000, stall_cycles=649"
+    },
+    {
+     "id": "s2_ch6.causality",
+     "name": "seed 2, NUM_CH=6 (rejects), 20000 ops: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "s3_reduced.completed",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: testbench ran to completion",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "15000 stimulus ops, 24 reset segments"
+    },
+    {
+     "id": "s3_reduced.samples",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: per-sample internal state (ch, x, base, res, mag, above, rearm, armed, refr, primed, fire) matches golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "14977 samples compared"
+    },
+    {
+     "id": "s3_reduced.events",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "909 events compared"
+    },
+    {
+     "id": "s3_reduced.counters",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (10, 4, 0)"
+    },
+    {
+     "id": "s3_reduced.rejected",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "s3_reduced.internal",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: testbench consistency counters are zero",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "accept_vs_handshake=0, guard_bit=0, in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=45287, stall_cycles=919"
+    },
+    {
+     "id": "s3_reduced.causality",
+     "name": "seed 3, reduced widths (TS_W=4 wraps), 15000 ops: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "s4_dense.completed",
+     "name": "seed 4, dense events, ev_ready 30%: testbench ran to completion",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "20000 stimulus ops, 41 reset segments"
+    },
+    {
+     "id": "s4_dense.samples",
+     "name": "seed 4, dense events, ev_ready 30%: per-sample internal state (ch, x, base, res, mag, above, rearm, armed, refr, primed, fire) matches golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "19960 samples compared"
+    },
+    {
+     "id": "s4_dense.events",
+     "name": "seed 4, dense events, ev_ready 30%: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "2987 events compared"
+    },
+    {
+     "id": "s4_dense.counters",
+     "name": "seed 4, dense events, ev_ready 30%: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (161, 8, 0)"
+    },
+    {
+     "id": "s4_dense.rejected",
+     "name": "seed 4, dense events, ev_ready 30%: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "s4_dense.internal",
+     "name": "seed 4, dense events, ev_ready 30%: testbench consistency counters are zero",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "accept_vs_handshake=0, guard_bit=0, in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=65062, stall_cycles=6790"
+    },
+    {
+     "id": "s4_dense.causality",
+     "name": "seed 4, dense events, ev_ready 30%: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "random_regression",
+     "status": "pass",
+     "detail": "0 violations"
+    }
+   ]
+  },
+  {
+   "name": "gate_level_vs_golden",
+   "status": "pass",
+   "checks": 32,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "gate_s1_ch8.completed",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "30000 stimulus ops, 68 reset segments"
+    },
+    {
+     "id": "gate_s1_ch8.samples",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: accepted (index, channel, sample) matches golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "29933 samples compared"
+    },
+    {
+     "id": "gate_s1_ch8.events",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "907 events compared"
+    },
+    {
+     "id": "gate_s1_ch8.counters",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (726, 20, 0)"
+    },
+    {
+     "id": "gate_s1_ch8.rejected",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "gate_s1_ch8.internal",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=91154, stall_cycles=882"
+    },
+    {
+     "id": "gate_s1_ch8.causality",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "gate_s1_ch8.cycle_exact",
+     "name": "synthesised NUM_CH=8 netlist, seed 1: accept/event/reject lines identical (incl. clock cycle) to reference run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: log_s1_ch8.txt"
+    },
+    {
+     "id": "gate_s2_ch6.completed",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "20000 stimulus ops, 44 reset segments"
+    },
+    {
+     "id": "gate_s2_ch6.samples",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: accepted (index, channel, sample) matches golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "15205 samples compared"
+    },
+    {
+     "id": "gate_s2_ch6.events",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "699 events compared"
+    },
+    {
+     "id": "gate_s2_ch6.counters",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (197, 10, 56)"
+    },
+    {
+     "id": "gate_s2_ch6.rejected",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "4752 rejected handshakes"
+    },
+    {
+     "id": "gate_s2_ch6.internal",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=60000, stall_cycles=649"
+    },
+    {
+     "id": "gate_s2_ch6.causality",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "gate_s2_ch6.cycle_exact",
+     "name": "synthesised NUM_CH=6 netlist, seed 2: accept/event/reject lines identical (incl. clock cycle) to reference run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: log_s2_ch6.txt"
+    },
+    {
+     "id": "gate_s3_reduced.completed",
+     "name": "synthesised reduced-width netlist, seed 3: testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "15000 stimulus ops, 24 reset segments"
+    },
+    {
+     "id": "gate_s3_reduced.samples",
+     "name": "synthesised reduced-width netlist, seed 3: accepted (index, channel, sample) matches golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "14977 samples compared"
+    },
+    {
+     "id": "gate_s3_reduced.events",
+     "name": "synthesised reduced-width netlist, seed 3: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "909 events compared"
+    },
+    {
+     "id": "gate_s3_reduced.counters",
+     "name": "synthesised reduced-width netlist, seed 3: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (10, 4, 0)"
+    },
+    {
+     "id": "gate_s3_reduced.rejected",
+     "name": "synthesised reduced-width netlist, seed 3: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "gate_s3_reduced.internal",
+     "name": "synthesised reduced-width netlist, seed 3: testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=45287, stall_cycles=919"
+    },
+    {
+     "id": "gate_s3_reduced.causality",
+     "name": "synthesised reduced-width netlist, seed 3: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "gate_s3_reduced.cycle_exact",
+     "name": "synthesised reduced-width netlist, seed 3: accept/event/reject lines identical (incl. clock cycle) to reference run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: log_s3_red.txt"
+    },
+    {
+     "id": "gate_s4_dense.completed",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "20000 stimulus ops, 41 reset segments"
+    },
+    {
+     "id": "gate_s4_dense.samples",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: accepted (index, channel, sample) matches golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "19960 samples compared"
+    },
+    {
+     "id": "gate_s4_dense.events",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2987 events compared"
+    },
+    {
+     "id": "gate_s4_dense.counters",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (161, 8, 0)"
+    },
+    {
+     "id": "gate_s4_dense.rejected",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: rejected (out-of-range channel) handshakes equal golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "gate_s4_dense.internal",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=65062, stall_cycles=6790"
+    },
+    {
+     "id": "gate_s4_dense.causality",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "gate_s4_dense.cycle_exact",
+     "name": "synthesised NUM_CH=8 netlist, dense events, ev_ready 30%: accept/event/reject lines identical (incl. clock cycle) to reference run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: log_s4_dense.txt"
+    }
+   ]
+  },
+  {
+   "name": "scenario_trace",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "scenario.completed",
+     "name": "testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "3200 stimulus ops, 1 reset segments"
+    },
+    {
+     "id": "scenario.samples",
+     "name": "per-sample internal state (ch, x, base, res, mag, above, rearm, armed, refr, primed, fire) matches golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "3200 samples compared"
+    },
+    {
+     "id": "scenario.events",
+     "name": "event stream (ch, ts, polarity, magnitude) equals golden model, in order",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "66 events compared"
+    },
+    {
+     "id": "scenario.counters",
+     "name": "stat_samples / stat_events / stat_rejected equal golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "final (samples, events, rejected) = (3200, 66, 0)"
+    },
+    {
+     "id": "scenario.rejected",
+     "name": "rejected (out-of-range channel) handshakes equal golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 rejected handshakes"
+    },
+    {
+     "id": "scenario.internal",
+     "name": "testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "accept_vs_handshake=0, guard_bit=0, in_ready_rule=0, stall_hold=0, ts_vs_count=0; cycles=3746, stall_cycles=18"
+    },
+    {
+     "id": "scenario.causality",
+     "name": "each event leaves after its crossing sample was accepted, in cycle order",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 violations"
+    },
+    {
+     "id": "scenario.waves",
+     "name": "VCD waves agree with the log (accepts, events, above, fire at the same cycles)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "3746 clock edges, 3200 VCD handshakes vs 3200 logged samples, 0 mismatches, 0 X values"
+    }
+   ]
+  },
+  {
+   "name": "mutation_sanity",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "mutant.thr_gt",
+     "name": "mutant \"threshold compare >= becomes >\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples, events, counters"
+    },
+    {
+     "id": "mutant.rearm_clamp",
+     "name": "mutant \"re-arm clamp hysteresis >= threshold becomes >\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples, events, counters"
+    },
+    {
+     "id": "mutant.refr_nodec",
+     "name": "mutant \"refractory counter never decrements\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples, events, counters"
+    },
+    {
+     "id": "mutant.ema_logical",
+     "name": "mutant \"EMA step uses a logical instead of an arithmetic shift\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples, events, counters, internal"
+    },
+    {
+     "id": "mutant.ts_plus1",
+     "name": "mutant \"event timestamp is the post-increment counter\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: events, causality"
+    },
+    {
+     "id": "mutant.no_backpressure",
+     "name": "mutant \"input never stalls (output slot overwritten when full)\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: events, internal"
+    },
+    {
+     "id": "mutant.no_prime",
+     "name": "mutant \"first sample of a channel is not treated specially\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples"
+    },
+    {
+     "id": "mutant.reject_counts",
+     "name": "mutant \"out-of-range handshakes advance the timestamp\" is killed by the golden-model regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "detected by: samples, events, counters, internal"
+    }
+   ]
+  },
+  {
+   "name": "yosys_equiv_v01_v02",
+   "status": "pass",
+   "checks": 1,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "equiv.proven",
+     "name": "v0.2 RTL is logically equivalent to the v0.1 baseline RTL (tag v0.1-baseline)",
+     "category": "equivalence",
+     "status": "pass",
+     "detail": "1242 $equiv cells, 1242 proven, 0 unproven; flattened, async reset modelled with async2sync; equiv_simple -seq 2 + equiv_induct"
+    }
+   ]
+  },
+  {
+   "name": "v03_legacy_preserved",
+   "status": "pass",
+   "checks": 3,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "legacy.identical_to_tag",
+     "name": "rtl/hbci_event_core.v is byte-identical to git v0.2",
+     "category": "legacy_preserved",
+     "status": "pass",
+     "detail": "sha256 5bfa8ca9fa44ff8e (working tree) vs 5bfa8ca9fa44ff8e (v0.2)"
+    },
+    {
+     "id": "legacy.identical_to_head",
+     "name": "rtl/hbci_event_core.v is byte-identical to git HEAD",
+     "category": "legacy_preserved",
+     "status": "pass",
+     "detail": "sha256 5bfa8ca9fa44ff8e (working tree) vs 5bfa8ca9fa44ff8e (HEAD)"
+    },
+    {
+     "id": "legacy.instantiated",
+     "name": "hbci_readout_core instantiates the unchanged hbci_event_core as u_event and does not redefine it",
+     "category": "legacy_preserved",
+     "status": "pass",
+     "detail": "instance u_event found; module hbci_event_core defined 0 times in hbci_readout_core.v"
+    }
+   ]
+  },
+  {
+   "name": "v03_raw_reconstruction",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "raw_s11.completed",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: testbench ran to completion",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20369 stimulus words, 91460 cycles, 2 reset segments"
+    },
+    {
+     "id": "raw_s11.stim_applied",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20337 accepted, 0 rejected in 2 segments"
+    },
+    {
+     "id": "raw_s11.feature_internal",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20337 samples, 627 window ends, 112 ysat, 0 esat compared"
+    },
+    {
+     "id": "raw_s11.generated",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20337 generated (RAW 20337, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "raw_s11.records_exact",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20337 records (RAW 20337, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "raw_s11.counters",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "3 drain points; final samples 14783, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 3"
+    },
+    {
+     "id": "raw_s11.accounting",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: generated == emitted + dropped for every record type and reset segment",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "RAW generated 20337 = emitted 20337 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 0 = emitted 0 + dropped 0"
+    },
+    {
+     "id": "raw_s11.seq_gap",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "raw_s11.event_ts",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "raw_s11.internal",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: testbench consistency counters are zero",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=0, gen_raw=20337, records_out=20337"
+    },
+    {
+     "id": "raw_s11.raw_recon",
+     "name": "seed 11, NUM_CH=8, RAW, >=1 idle cycle, rec_ready 75%: every channel reconstructed from RAW records (seq order, ts index) is bit-exact against the stimulus, with zero drops",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "20337 accepted samples, 20337 RAW records, 8 channels, stat_drop_raw 0"
+    },
+    {
+     "id": "raw_s12_ch6.completed",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: testbench ran to completion",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "12191 stimulus words, 54801 cycles, 2 reset segments"
+    },
+    {
+     "id": "raw_s12_ch6.stim_applied",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "10004 accepted, 2155 rejected in 2 segments"
+    },
+    {
+     "id": "raw_s12_ch6.feature_internal",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "10004 samples, 309 window ends, 155 ysat, 0 esat compared"
+    },
+    {
+     "id": "raw_s12_ch6.generated",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "10004 generated (RAW 10004, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "raw_s12_ch6.records_exact",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "10004 records (RAW 10004, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "raw_s12_ch6.counters",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "3 drain points; final samples 5497, rejected 1577, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 3"
+    },
+    {
+     "id": "raw_s12_ch6.accounting",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: generated == emitted + dropped for every record type and reset segment",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "RAW generated 10004 = emitted 10004 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 0 = emitted 0 + dropped 0"
+    },
+    {
+     "id": "raw_s12_ch6.seq_gap",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "raw_s12_ch6.event_ts",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "raw_s12_ch6.internal",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: testbench consistency counters are zero",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=0, gen_raw=10004, records_out=10004"
+    },
+    {
+     "id": "raw_s12_ch6.raw_recon",
+     "name": "seed 12, NUM_CH=6 (out-of-range channels rejected), RAW: every channel reconstructed from RAW records (seq order, ts index) is bit-exact against the stimulus, with zero drops",
+     "category": "raw_reconstruction",
+     "status": "pass",
+     "detail": "10004 accepted samples, 10004 RAW records, 6 channels, stat_drop_raw 0"
+    }
+   ]
+  },
+  {
+   "name": "v03_feature_golden",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "feat_s21.completed",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): testbench ran to completion",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "30257 stimulus words, 74322 cycles, 1 reset segments"
+    },
+    {
+     "id": "feat_s21.stim_applied",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "29998 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "feat_s21.feature_internal",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "29998 samples, 1288 window ends, 12962 ysat, 150 esat compared"
+    },
+    {
+     "id": "feat_s21.generated",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1288 generated (RAW 0, EVENT 0, FEATURE 1288)"
+    },
+    {
+     "id": "feat_s21.records_exact",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1288 records (RAW 0, EVENT 0, FEATURE 1288)"
+    },
+    {
+     "id": "feat_s21.counters",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1 drain points; final samples 29998, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "feat_s21.accounting",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): generated == emitted + dropped for every record type and reset segment",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "RAW generated 0 = emitted 0 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 1288 = emitted 1288 + dropped 0"
+    },
+    {
+     "id": "feat_s21.seq_gap",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "feat_s21.event_ts",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "feat_s21.internal",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): testbench consistency counters are zero",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=1288, gen_raw=0, records_out=1288"
+    },
+    {
+     "id": "feat_s21.feature_cover",
+     "name": "seed 21, FEATURE sweep (win_log2 0..15, shifts 0..63, coefficient extremes): coverage: completed windows for every cfg_win_log2 0..15 (11..15 clamp to WIN_W), filter saturation, energy saturation, +32767/-32768 inputs",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "windows by win_log2 0:512, 1:254, 2:125, 3:248, 4:28, 5:31, 6:32, 7:32, 8:8, 9:4, 10:4, 11:2, 12:2, 13:2, 14:2, 15:2; windows by energy_shift 0:503, 1:160, 8:78, 13:50, 16:34, 31:33, 32:22, 47:274, 63:134; ysat samples 12962; esat windows 150"
+    },
+    {
+     "id": "feat_s22_reduced.completed",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): testbench ran to completion",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "14403 stimulus words, 34941 cycles, 1 reset segments"
+    },
+    {
+     "id": "feat_s22_reduced.stim_applied",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "14144 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "feat_s22_reduced.feature_internal",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "14144 samples, 1266 window ends, 5470 ysat, 0 esat compared"
+    },
+    {
+     "id": "feat_s22_reduced.generated",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1266 generated (RAW 0, EVENT 0, FEATURE 1266)"
+    },
+    {
+     "id": "feat_s22_reduced.records_exact",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1266 records (RAW 0, EVENT 0, FEATURE 1266)"
+    },
+    {
+     "id": "feat_s22_reduced.counters",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "1 drain points; final samples 1856, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "feat_s22_reduced.accounting",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): generated == emitted + dropped for every record type and reset segment",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "RAW generated 0 = emitted 0 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 1266 = emitted 1266 + dropped 0"
+    },
+    {
+     "id": "feat_s22_reduced.seq_gap",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "feat_s22_reduced.event_ts",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "feat_s22_reduced.internal",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): testbench consistency counters are zero",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=1266, gen_raw=0, records_out=1266"
+    },
+    {
+     "id": "feat_s22_reduced.feature_cover",
+     "name": "seed 22, reduced widths (SAMPLE_W=12, WIN_W=6, ACC_W=30): coverage: completed windows for every cfg_win_log2 0..15 (11..15 clamp to WIN_W), filter saturation, energy saturation, +32767/-32768 inputs",
+     "category": "feature_golden",
+     "status": "pass",
+     "detail": "windows by win_log2 0:512, 1:253, 2:126, 3:170, 4:29, 5:20, 6:20, 7:21, 8:20, 9:19, 10:22, 11:11, 12:10, 13:10, 14:11, 15:12; windows by energy_shift 0:438, 1:167, 8:89, 13:50, 16:34, 31:31, 32:32, 47:277, 63:148; ysat samples 5470; esat windows 0 (ACC_W=30 <= 32: energy saturation impossible, not required)"
+    }
+   ]
+  },
+  {
+   "name": "v03_hybrid",
+   "status": "pass",
+   "checks": 13,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "hyb_s31.completed",
+     "name": "seed 31, HYBRID vs RAW on the same samples: testbench ran to completion",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8146 stimulus words, 36731 cycles, 1 reset segments"
+    },
+    {
+     "id": "hyb_s31.stim_applied",
+     "name": "seed 31, HYBRID vs RAW on the same samples: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8131 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "hyb_s31.feature_internal",
+     "name": "seed 31, HYBRID vs RAW on the same samples: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8131 samples, 248 window ends, 119 ysat, 0 esat compared"
+    },
+    {
+     "id": "hyb_s31.generated",
+     "name": "seed 31, HYBRID vs RAW on the same samples: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8379 generated (RAW 8131, EVENT 0, FEATURE 248)"
+    },
+    {
+     "id": "hyb_s31.records_exact",
+     "name": "seed 31, HYBRID vs RAW on the same samples: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8379 records (RAW 8131, EVENT 0, FEATURE 248)"
+    },
+    {
+     "id": "hyb_s31.counters",
+     "name": "seed 31, HYBRID vs RAW on the same samples: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "1 drain points; final samples 8131, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 3"
+    },
+    {
+     "id": "hyb_s31.accounting",
+     "name": "seed 31, HYBRID vs RAW on the same samples: generated == emitted + dropped for every record type and reset segment",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "RAW generated 8131 = emitted 8131 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 248 = emitted 248 + dropped 0"
+    },
+    {
+     "id": "hyb_s31.seq_gap",
+     "name": "seed 31, HYBRID vs RAW on the same samples: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "hyb_s31.event_ts",
+     "name": "seed 31, HYBRID vs RAW on the same samples: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "hyb_s31.internal",
+     "name": "seed 31, HYBRID vs RAW on the same samples: testbench consistency counters are zero",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=248, gen_raw=8131, records_out=8379"
+    },
+    {
+     "id": "hyb_s31.hybrid_raw",
+     "name": "seed 31, HYBRID vs RAW on the same samples: HYBRID RAW records are identical (ch, seq, ts, data, flags) to the RAW-mode run of the same samples",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "8131 RAW records in HYBRID, 8131 in RAW mode"
+    },
+    {
+     "id": "hyb_s31.hybrid_feature",
+     "name": "seed 31, HYBRID vs RAW on the same samples: HYBRID FEATURE records are present and equal the golden model; no drops",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "248 FEATURE records; drops raw/event/feature (0, 0, 0)"
+    },
+    {
+     "id": "hyb_s31.hybrid_payload",
+     "name": "seed 31, HYBRID vs RAW on the same samples: payload bits (records x 89) are reported and HYBRID exceeds RAW alone",
+     "category": "hybrid",
+     "status": "pass",
+     "detail": "HYBRID 8379 records = 745731 bits; RAW 8131 records = 723659 bits (+3.05%)"
+    }
+   ]
+  },
+  {
+   "name": "v03_session_gating",
+   "status": "pass",
+   "checks": 11,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "sess_s41.completed",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: testbench ran to completion",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "10044 stimulus words, 29988 cycles, 1 reset segments"
+    },
+    {
+     "id": "sess_s41.stim_applied",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "10013 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "sess_s41.feature_internal",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "10013 samples, 312 window ends, 0 ysat, 0 esat compared"
+    },
+    {
+     "id": "sess_s41.generated",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "3153 generated (RAW 3000, EVENT 57, FEATURE 96)"
+    },
+    {
+     "id": "sess_s41.records_exact",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "3153 records (RAW 3000, EVENT 57, FEATURE 96)"
+    },
+    {
+     "id": "sess_s41.counters",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "4 drain points; final samples 10013, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "sess_s41.accounting",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: generated == emitted + dropped for every record type and reset segment",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "RAW generated 3000 = emitted 3000 + dropped 0; EVENT generated 57 = emitted 57 + dropped 0; FEATURE generated 96 = emitted 96 + dropped 0"
+    },
+    {
+     "id": "sess_s41.seq_gap",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "sess_s41.event_ts",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "57 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "sess_s41.internal",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: testbench consistency counters are zero",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=57, gen_feature=96, gen_raw=3000, records_out=3153"
+    },
+    {
+     "id": "sess_s41.session",
+     "name": "seed 41, cfg_session_en off/on/off/on/off/on: cfg_session_en=0: zero records, zero drops, no seq advance, state still updates; enabling mid-stream works and first records have seq 0",
+     "category": "session_gating",
+     "status": "pass",
+     "detail": "records generated per phase (off/on/off/on/off/on): [0, 2064, 0, 57, 0, 1032]; 56 windows completed while off; first seq RAW/FEATURE/EVENT [0, 0, 0]; RAW seq after re-enable 2000 (= RAW records in phase 2)"
+    }
+   ]
+  },
+  {
+   "name": "v03_overload_gaps",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "ovl_s51.completed",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: testbench ran to completion",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17035 stimulus words, 18538 cycles, 1 reset segments"
+    },
+    {
+     "id": "ovl_s51.stim_applied",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "ovl_s51.feature_internal",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17000 samples, 6027 window ends, 578 ysat, 0 esat compared"
+    },
+    {
+     "id": "ovl_s51.generated",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "15907 generated (RAW 12000, EVENT 880, FEATURE 3027)"
+    },
+    {
+     "id": "ovl_s51.records_exact",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "6804 records (RAW 5251, EVENT 290, FEATURE 1263)"
+    },
+    {
+     "id": "ovl_s51.counters",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "1 drain points; final samples 17000, rejected 0, drop raw/event/feature 6749/590/1764, event_missed 0, fifo_hwm 16"
+    },
+    {
+     "id": "ovl_s51.accounting",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: generated == emitted + dropped for every record type and reset segment",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "RAW generated 12000 = emitted 5251 + dropped 6749; EVENT generated 880 = emitted 290 + dropped 590; FEATURE generated 3027 = emitted 1263 + dropped 1764"
+    },
+    {
+     "id": "ovl_s51.seq_gap",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "9097 records lost before an emitted record (sum of seq jumps), 2455 records flagged gap"
+    },
+    {
+     "id": "ovl_s51.event_ts",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "290 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "ovl_s51.internal",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: testbench consistency counters are zero",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=880, gen_feature=3027, gen_raw=12000, records_out=6804"
+    },
+    {
+     "id": "ovl_s51.overload",
+     "name": "seed 51, one sample per clock, rec_ready 30/5/100/20/10/50%: overload produces counted drops for RAW/FEATURE/EVENT and fills the FIFO (hwm == 16)",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "drops RAW 6749, EVENT 590, FEATURE 1764; fifo_hwm 16"
+    },
+    {
+     "id": "ovl_s52_reduced.completed",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): testbench ran to completion",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17035 stimulus words, 18506 cycles, 1 reset segments"
+    },
+    {
+     "id": "ovl_s52_reduced.stim_applied",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "ovl_s52_reduced.feature_internal",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "17000 samples, 6028 window ends, 586 ysat, 0 esat compared"
+    },
+    {
+     "id": "ovl_s52_reduced.generated",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "15934 generated (RAW 12000, EVENT 906, FEATURE 3028)"
+    },
+    {
+     "id": "ovl_s52_reduced.records_exact",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "6774 records (RAW 5218, EVENT 284, FEATURE 1272)"
+    },
+    {
+     "id": "ovl_s52_reduced.counters",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "1 drain points; final samples 616, rejected 0, drop raw/event/feature 6782/622/1756, event_missed 0, fifo_hwm 4"
+    },
+    {
+     "id": "ovl_s52_reduced.accounting",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): generated == emitted + dropped for every record type and reset segment",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "RAW generated 12000 = emitted 5218 + dropped 6782; EVENT generated 906 = emitted 284 + dropped 622; FEATURE generated 3028 = emitted 1272 + dropped 1756"
+    },
+    {
+     "id": "ovl_s52_reduced.seq_gap",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "9151 records lost before an emitted record (sum of seq jumps), 2472 records flagged gap"
+    },
+    {
+     "id": "ovl_s52_reduced.event_ts",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "284 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "ovl_s52_reduced.internal",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): testbench consistency counters are zero",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=906, gen_feature=3028, gen_raw=12000, records_out=6774"
+    },
+    {
+     "id": "ovl_s52_reduced.overload",
+     "name": "seed 52, reduced widths (FIFO depth 4, SEQ_W=8 and TS_W=12 wrap): overload produces counted drops for RAW/FEATURE/EVENT and fills the FIFO (hwm == 4)",
+     "category": "overload_gaps",
+     "status": "pass",
+     "detail": "drops RAW 6782, EVENT 622, FEATURE 1756; fifo_hwm 4"
+    }
+   ]
+  },
+  {
+   "name": "v03_modes_reset_ts",
+   "status": "pass",
+   "checks": 22,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "mode_s61.completed",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: testbench ran to completion",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "15503 stimulus words, 35303 cycles, 5 reset segments"
+    },
+    {
+     "id": "mode_s61.stim_applied",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "15306 accepted, 0 rejected in 5 segments"
+    },
+    {
+     "id": "mode_s61.feature_internal",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "15306 samples, 2690 window ends, 0 ysat, 0 esat compared"
+    },
+    {
+     "id": "mode_s61.generated",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "5477 generated (RAW 4903, EVENT 229, FEATURE 345)"
+    },
+    {
+     "id": "mode_s61.records_exact",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "4782 records (RAW 4208, EVENT 229, FEATURE 345)"
+    },
+    {
+     "id": "mode_s61.counters",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "12 drain points; final samples 1414, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "mode_s61.accounting",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: generated == emitted + dropped for every record type and reset segment",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "RAW generated 4903 = emitted 4208 + dropped 695; EVENT generated 229 = emitted 229 + dropped 0; FEATURE generated 345 = emitted 345 + dropped 0"
+    },
+    {
+     "id": "mode_s61.seq_gap",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "695 records lost before an emitted record (sum of seq jumps), 347 records flagged gap"
+    },
+    {
+     "id": "mode_s61.event_ts",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "229 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "mode_s61.internal",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: testbench consistency counters are zero",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=229, gen_feature=345, gen_raw=4903, records_out=4782"
+    },
+    {
+     "id": "mode_s61.modes",
+     "name": "seed 61, NUM_CH=8, random modes/sessions, resets: record types follow the mode/session in force at generation; all four modes exercised; seq restarts at 0 after every reset; out-of-range channels rejected",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "modes with records ['EVENT', 'RAW', 'FEATURE', 'HYBRID']; 4 resets; 0 rejected samples; 5477 generated records"
+    },
+    {
+     "id": "mode_s62_ch6.completed",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: testbench ran to completion",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "10308 stimulus words, 26794 cycles, 3 reset segments"
+    },
+    {
+     "id": "mode_s62_ch6.stim_applied",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "8568 accepted, 1617 rejected in 3 segments"
+    },
+    {
+     "id": "mode_s62_ch6.feature_internal",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "8568 samples, 1354 window ends, 0 ysat, 0 esat compared"
+    },
+    {
+     "id": "mode_s62_ch6.generated",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "4692 generated (RAW 4339, EVENT 18, FEATURE 335)"
+    },
+    {
+     "id": "mode_s62_ch6.records_exact",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "4258 records (RAW 3905, EVENT 18, FEATURE 335)"
+    },
+    {
+     "id": "mode_s62_ch6.counters",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "8 drain points; final samples 2501, rejected 383, drop raw/event/feature 35/0/0, event_missed 0, fifo_hwm 16"
+    },
+    {
+     "id": "mode_s62_ch6.accounting",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: generated == emitted + dropped for every record type and reset segment",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "RAW generated 4339 = emitted 3905 + dropped 434; EVENT generated 18 = emitted 18 + dropped 0; FEATURE generated 335 = emitted 335 + dropped 0"
+    },
+    {
+     "id": "mode_s62_ch6.seq_gap",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "434 records lost before an emitted record (sum of seq jumps), 203 records flagged gap"
+    },
+    {
+     "id": "mode_s62_ch6.event_ts",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "18 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "mode_s62_ch6.internal",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: testbench consistency counters are zero",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=18, gen_feature=335, gen_raw=4339, records_out=4258"
+    },
+    {
+     "id": "mode_s62_ch6.modes",
+     "name": "seed 62, NUM_CH=6 (out-of-range channels), random modes, resets: record types follow the mode/session in force at generation; all four modes exercised; seq restarts at 0 after every reset; out-of-range channels rejected",
+     "category": "modes_reset_ts",
+     "status": "pass",
+     "detail": "modes with records ['EVENT', 'RAW', 'FEATURE', 'HYBRID']; 2 resets; 1617 rejected samples; 4692 generated records"
+    }
+   ]
+  },
+  {
+   "name": "v03_gate_level",
+   "status": "pass",
+   "checks": 29,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "gate_feat_s23.completed",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2362 stimulus words, 5406 cycles, 1 reset segments"
+    },
+    {
+     "id": "gate_feat_s23.stim_applied",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2263 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "gate_feat_s23.records_exact",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "559 records (RAW 0, EVENT 0, FEATURE 559)"
+    },
+    {
+     "id": "gate_feat_s23.counters",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1 drain points; final samples 2263, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "gate_feat_s23.accounting",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): generated == emitted + dropped for every record type and reset segment (generated from the golden model: gate level has no internal nets)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "RAW generated 0 = emitted 0 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 559 = emitted 559 + dropped 0"
+    },
+    {
+     "id": "gate_feat_s23.seq_gap",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "gate_feat_s23.event_ts",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "gate_feat_s23.internal",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "ts_vs_count=0, x_on_outputs=0; records_out=559"
+    },
+    {
+     "id": "gate_feat_s23.cycle_exact",
+     "name": "synthesised netlist, compact FEATURE sweep (seed 23): accepts, records, rejects, counters and reset edges identical (incl. clock cycle) to the RTL run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: rtl_feat_s23.log (559 records)"
+    },
+    {
+     "id": "gate_mode_s63.completed",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2852 stimulus words, 6007 cycles, 3 reset segments"
+    },
+    {
+     "id": "gate_mode_s63.stim_applied",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2783 accepted, 0 rejected in 3 segments"
+    },
+    {
+     "id": "gate_mode_s63.records_exact",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1195 records (RAW 1031, EVENT 66, FEATURE 98)"
+    },
+    {
+     "id": "gate_mode_s63.counters",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "4 drain points; final samples 470, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 0"
+    },
+    {
+     "id": "gate_mode_s63.accounting",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): generated == emitted + dropped for every record type and reset segment (generated from the golden model: gate level has no internal nets)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "RAW generated 1090 = emitted 1031 + dropped 59; EVENT generated 66 = emitted 66 + dropped 0; FEATURE generated 98 = emitted 98 + dropped 0"
+    },
+    {
+     "id": "gate_mode_s63.seq_gap",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "58 records lost before an emitted record (sum of seq jumps), 39 records flagged gap"
+    },
+    {
+     "id": "gate_mode_s63.event_ts",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "66 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "gate_mode_s63.internal",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "ts_vs_count=0, x_on_outputs=0; records_out=1195"
+    },
+    {
+     "id": "gate_mode_s63.modes",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): record types follow the mode/session in force at generation; all four modes exercised; seq restarts at 0 after every reset; out-of-range channels rejected",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "modes with records ['EVENT', 'RAW', 'FEATURE', 'HYBRID']; 2 resets; 0 rejected samples; 1254 generated records"
+    },
+    {
+     "id": "gate_mode_s63.cycle_exact",
+     "name": "synthesised netlist, modes/sessions/resets (seed 63): accepts, records, rejects, counters and reset edges identical (incl. clock cycle) to the RTL run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: rtl_mode_s63.log (1195 records)"
+    },
+    {
+     "id": "gate_ovl_s53.completed",
+     "name": "synthesised netlist, full-rate overload (seed 53): testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "3435 stimulus words, 3729 cycles, 1 reset segments"
+    },
+    {
+     "id": "gate_ovl_s53.stim_applied",
+     "name": "synthesised netlist, full-rate overload (seed 53): accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "3400 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "gate_ovl_s53.records_exact",
+     "name": "synthesised netlist, full-rate overload (seed 53): emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1365 records (RAW 1045, EVENT 62, FEATURE 258)"
+    },
+    {
+     "id": "gate_ovl_s53.counters",
+     "name": "synthesised netlist, full-rate overload (seed 53): status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1 drain points; final samples 3400, rejected 0, drop raw/event/feature 1355/34/345, event_missed 0, fifo_hwm 16"
+    },
+    {
+     "id": "gate_ovl_s53.accounting",
+     "name": "synthesised netlist, full-rate overload (seed 53): generated == emitted + dropped for every record type and reset segment (generated from the golden model: gate level has no internal nets)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "RAW generated 2400 = emitted 1045 + dropped 1355; EVENT generated 96 = emitted 62 + dropped 34; FEATURE generated 603 = emitted 258 + dropped 345"
+    },
+    {
+     "id": "gate_ovl_s53.seq_gap",
+     "name": "synthesised netlist, full-rate overload (seed 53): seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1731 records lost before an emitted record (sum of seq jumps), 466 records flagged gap"
+    },
+    {
+     "id": "gate_ovl_s53.event_ts",
+     "name": "synthesised netlist, full-rate overload (seed 53): EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "62 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "gate_ovl_s53.internal",
+     "name": "synthesised netlist, full-rate overload (seed 53): testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "ts_vs_count=0, x_on_outputs=0; records_out=1365"
+    },
+    {
+     "id": "gate_ovl_s53.overload",
+     "name": "synthesised netlist, full-rate overload (seed 53): overload produces counted drops for RAW/FEATURE/EVENT and fills the FIFO (hwm == 16)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "drops RAW 1355, EVENT 34, FEATURE 345; fifo_hwm 16"
+    },
+    {
+     "id": "gate_ovl_s53.cycle_exact",
+     "name": "synthesised netlist, full-rate overload (seed 53): accepts, records, rejects, counters and reset edges identical (incl. clock cycle) to the RTL run",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "reference: rtl_ovl_s53.log (1365 records)"
+    }
+   ]
+  },
+  {
+   "name": "v03_mutation",
+   "status": "pass",
+   "checks": 10,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "mutant.no_rounding",
+     "name": "mutant \"biquad drops the rounding constant (truncates instead of rounding)\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus feat_s21.hex; detected by: feature_internal, generated, records_exact"
+    },
+    {
+     "id": "mutant.no_ysat",
+     "name": "mutant \"biquad wraps instead of saturating\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus feat_s21.hex; detected by: feature_internal, generated, records_exact"
+    },
+    {
+     "id": "mutant.win_eq",
+     "name": "mutant \"window done uses == instead of >=\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus feat_s21.hex; detected by: feature_internal, generated, records_exact"
+    },
+    {
+     "id": "mutant.sat_no_esat",
+     "name": "mutant \"FEATURE flags.sat ignores energy saturation\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus feat_s21.hex; detected by: feature_internal, generated, records_exact"
+    },
+    {
+     "id": "mutant.raw_zero_ext",
+     "name": "mutant \"RAW payload zero-extended instead of sign-extended\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus raw_s11.hex; detected by: generated, records_exact, raw_recon"
+    },
+    {
+     "id": "mutant.raw_no_session",
+     "name": "mutant \"RAW records generated with the session disabled\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus sess_s41.hex; detected by: generated, records_exact, counters, session"
+    },
+    {
+     "id": "mutant.prio_raw_first",
+     "name": "mutant \"arbiter gives RAW priority over FEATURE\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus ovl_s51.hex; detected by: records_exact, counters"
+    },
+    {
+     "id": "mutant.gap_at_move",
+     "name": "mutant \"gap flag taken at the FIFO move (flags the record before the loss)\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus ovl_s51.hex; detected by: records_exact, seq_gap"
+    },
+    {
+     "id": "mutant.seq_skip_drop",
+     "name": "mutant \"RAW seq does not advance for dropped records\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus ovl_s51.hex; detected by: records_exact, seq_gap"
+    },
+    {
+     "id": "mutant.drop_overwrite",
+     "name": "mutant \"a full FEATURE pending register is overwritten instead of dropping the new record\" is killed by the v0.3 regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "stimulus ovl_s51.hex; detected by: records_exact, counters, accounting, seq_gap"
+    }
+   ]
+  },
+  {
+   "name": "v03_scenario_trace",
+   "status": "pass",
+   "checks": 47,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "scenario.event.completed",
+     "name": "EVENT run: testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4015 stimulus words, 16007 cycles, 1 reset segments"
+    },
+    {
+     "id": "scenario.event.stim_applied",
+     "name": "EVENT run: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "scenario.event.feature_internal",
+     "name": "EVENT run: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 samples, 120 window ends, 14 ysat, 0 esat compared"
+    },
+    {
+     "id": "scenario.event.generated",
+     "name": "EVENT run: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "208 generated (RAW 0, EVENT 208, FEATURE 0)"
+    },
+    {
+     "id": "scenario.event.records_exact",
+     "name": "EVENT run: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "208 records (RAW 0, EVENT 208, FEATURE 0)"
+    },
+    {
+     "id": "scenario.event.counters",
+     "name": "EVENT run: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "1 drain points; final samples 4000, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "scenario.event.accounting",
+     "name": "EVENT run: generated == emitted + dropped for every record type and reset segment",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "RAW generated 0 = emitted 0 + dropped 0; EVENT generated 208 = emitted 208 + dropped 0; FEATURE generated 0 = emitted 0 + dropped 0"
+    },
+    {
+     "id": "scenario.event.seq_gap",
+     "name": "EVENT run: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "scenario.event.event_ts",
+     "name": "EVENT run: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "208 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "scenario.event.internal",
+     "name": "EVENT run: testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=208, gen_feature=0, gen_raw=0, records_out=208"
+    },
+    {
+     "id": "scenario.raw.completed",
+     "name": "RAW run: testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4015 stimulus words, 16008 cycles, 1 reset segments"
+    },
+    {
+     "id": "scenario.raw.stim_applied",
+     "name": "RAW run: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "scenario.raw.feature_internal",
+     "name": "RAW run: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 samples, 120 window ends, 14 ysat, 0 esat compared"
+    },
+    {
+     "id": "scenario.raw.generated",
+     "name": "RAW run: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 generated (RAW 4000, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "scenario.raw.records_exact",
+     "name": "RAW run: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 records (RAW 4000, EVENT 0, FEATURE 0)"
+    },
+    {
+     "id": "scenario.raw.counters",
+     "name": "RAW run: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "1 drain points; final samples 4000, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "scenario.raw.accounting",
+     "name": "RAW run: generated == emitted + dropped for every record type and reset segment",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "RAW generated 4000 = emitted 4000 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 0 = emitted 0 + dropped 0"
+    },
+    {
+     "id": "scenario.raw.seq_gap",
+     "name": "RAW run: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "scenario.raw.event_ts",
+     "name": "RAW run: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "scenario.raw.internal",
+     "name": "RAW run: testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=0, gen_raw=4000, records_out=4000"
+    },
+    {
+     "id": "scenario.feature.completed",
+     "name": "FEATURE run: testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4015 stimulus words, 16007 cycles, 1 reset segments"
+    },
+    {
+     "id": "scenario.feature.stim_applied",
+     "name": "FEATURE run: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "scenario.feature.feature_internal",
+     "name": "FEATURE run: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 samples, 120 window ends, 14 ysat, 0 esat compared"
+    },
+    {
+     "id": "scenario.feature.generated",
+     "name": "FEATURE run: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "120 generated (RAW 0, EVENT 0, FEATURE 120)"
+    },
+    {
+     "id": "scenario.feature.records_exact",
+     "name": "FEATURE run: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "120 records (RAW 0, EVENT 0, FEATURE 120)"
+    },
+    {
+     "id": "scenario.feature.counters",
+     "name": "FEATURE run: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "1 drain points; final samples 4000, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "scenario.feature.accounting",
+     "name": "FEATURE run: generated == emitted + dropped for every record type and reset segment",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "RAW generated 0 = emitted 0 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 120 = emitted 120 + dropped 0"
+    },
+    {
+     "id": "scenario.feature.seq_gap",
+     "name": "FEATURE run: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "scenario.feature.event_ts",
+     "name": "FEATURE run: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "scenario.feature.internal",
+     "name": "FEATURE run: testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=120, gen_raw=0, records_out=120"
+    },
+    {
+     "id": "scenario.hybrid.completed",
+     "name": "HYBRID run: testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4015 stimulus words, 16008 cycles, 1 reset segments"
+    },
+    {
+     "id": "scenario.hybrid.stim_applied",
+     "name": "HYBRID run: accepted samples and rejected count per reset segment equal the stimulus",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 accepted, 0 rejected in 1 segments"
+    },
+    {
+     "id": "scenario.hybrid.feature_internal",
+     "name": "HYBRID run: feature path internals (y, ysat, acc, cnt, done, x1/x2/y1/y2, sat, energy, esat, flags.sat) equal the golden model at every accepted sample",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 samples, 120 window ends, 14 ysat, 0 esat compared"
+    },
+    {
+     "id": "scenario.hybrid.generated",
+     "name": "HYBRID run: generated records (raw_gen/event_gen/feat_gen with cycle and payload) equal the golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4120 generated (RAW 4000, EVENT 0, FEATURE 120)"
+    },
+    {
+     "id": "scenario.hybrid.records_exact",
+     "name": "HYBRID run: emitted records (cycle, type, ch, flags, seq, ts, data) equal the cycle-accurate golden model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4120 records (RAW 4000, EVENT 0, FEATURE 120)"
+    },
+    {
+     "id": "scenario.hybrid.counters",
+     "name": "HYBRID run: status counters (samples, rejected, drops per type, event_missed, fifo_hwm) equal the golden model at every drain point",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "1 drain points; final samples 4000, rejected 0, drop raw/event/feature 0/0/0, event_missed 0, fifo_hwm 1"
+    },
+    {
+     "id": "scenario.hybrid.accounting",
+     "name": "HYBRID run: generated == emitted + dropped for every record type and reset segment",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "RAW generated 4000 = emitted 4000 + dropped 0; EVENT generated 0 = emitted 0 + dropped 0; FEATURE generated 120 = emitted 120 + dropped 0"
+    },
+    {
+     "id": "scenario.hybrid.seq_gap",
+     "name": "HYBRID run: seq == generation index, seq jumps sum to the drop counters, flags.gap exactly on the first emitted record after each loss",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 records lost before an emitted record (sum of seq jumps), 0 records flagged gap"
+    },
+    {
+     "id": "scenario.hybrid.event_ts",
+     "name": "HYBRID run: EVENT records carry the top-level index of their crossing sample (legacy golden model) and stat_event_missed == 0",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "0 EVENT records checked; stat_event_missed max 0"
+    },
+    {
+     "id": "scenario.hybrid.internal",
+     "name": "HYBRID run: testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "accept_vs_tb=0, event_core_not_ready=0, event_ts_vs_index=0, ts_vs_count=0, x_on_outputs=0; gen_event=0, gen_feature=120, gen_raw=4000, records_out=4120"
+    },
+    {
+     "id": "scenario.modes.same_samples",
+     "name": "the four mode runs accepted identical samples at identical cycles",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 samples per run"
+    },
+    {
+     "id": "scenario.modes.no_drops",
+     "name": "no records dropped in any mode (one sample every 4 cycles does not overload)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "EVENT (0, 0, 0), RAW (0, 0, 0), FEATURE (0, 0, 0), HYBRID (0, 0, 0)"
+    },
+    {
+     "id": "scenario.modes.hybrid_eq_raw",
+     "name": "HYBRID RAW records equal the RAW-mode run (ch, seq, ts, data, flags)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4000 RAW records"
+    },
+    {
+     "id": "scenario.modes.hybrid_eq_feature",
+     "name": "HYBRID FEATURE records equal the FEATURE-mode run (ch, seq, ts, data, flags)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "120 FEATURE records"
+    },
+    {
+     "id": "scenario.modes.payload",
+     "name": "payload: HYBRID > RAW > FEATURE and EVENT (record bits = records x 89)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "EVENT 18512 bits, RAW 356000 bits, FEATURE 10680 bits, HYBRID 366680 bits"
+    },
+    {
+     "id": "scenario.waves",
+     "name": "HYBRID VCD waves agree with the log (samples, y, ysat, done, record handshakes at the same cycles)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "16008 clock edges, 4000 VCD accepts vs 4000 logged, 4120 VCD handshakes vs 4120 logged, 0 mismatches, 0 X values"
+    },
+    {
+     "id": "scenario.size",
+     "name": "rtl_trace_v03.json stays within the 3 MB budget",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "1678 kB"
+    }
+   ]
+  },
+  {
+   "name": "ai_model",
+   "status": "pass",
+   "checks": 32,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "2206 stimulus words, 1480 features, 10799 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "145 predictions compared, 36 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "27 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1104 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=145, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_model",
+     "name": "coverage: CRC error, rejected write, busy status, nomodel frames and valid models all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "error reads 2, rejected reads 18, busy reads 2, nomodel 6, valid reads 20, predictions 145"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "2218 stimulus words, 1480 features, 10847 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "117 predictions compared, 36 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "27 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1104 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=117, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_model",
+     "name": "coverage: CRC error, rejected write, busy status, nomodel frames and valid models all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "error reads 2, rejected reads 18, busy reads 2, nomodel 16, valid reads 20, predictions 117"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1830 stimulus words, 1112 features, 8207 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "117 predictions compared, 27 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "27 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1104 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=117, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_model",
+     "name": "coverage: CRC error, rejected write, busy status, nomodel frames and valid models all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "error reads 2, rejected reads 18, busy reads 2, nomodel 20, valid reads 20, predictions 117"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1839 stimulus words, 1112 features, 9168 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "84 predictions compared, 27 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "27 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1104 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "24 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=84, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_model",
+     "name": "coverage: CRC error, rejected write, busy status, nomodel frames and valid models all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "error reads 2, rejected reads 18, busy reads 2, nomodel 17, valid reads 20, predictions 84"
+    }
+   ]
+  },
+  {
+   "name": "ai_protocol",
+   "status": "pass",
+   "checks": 16,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1524 stimulus words, 1359 features, 3468 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "47 predictions compared, 124 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "368 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=47, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_protocol",
+     "name": "coverage: incomplete, duplicate, late and span-abandoned frames, masked channels and predictions all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "incomplete 24, dup 7, late 2, span 10, frames 124, predictions 47"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "1069 stimulus words, 932 features, 2227 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "58 predictions compared, 90 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "368 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "8 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=58, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_protocol",
+     "name": "coverage: incomplete, duplicate, late and span-abandoned frames, masked channels and predictions all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "incomplete 15, dup 3, late 3, span 2, frames 90, predictions 58"
+    }
+   ]
+  },
+  {
+   "name": "ai_stress",
+   "status": "pass",
+   "checks": 24,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "3392 stimulus words, 1888 features, 10765 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "70 predictions compared, 44 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "598 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=70, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_stress",
+     "name": "coverage: engine-busy drops, FIFO-full drops with gap flags, saturated frames and resets during inference/verification all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "busy drops 109, pred drops 35, gap-flagged 3, sat-flagged 32, resets 25, predictions 70"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "3081 stimulus words, 1560 features, 10309 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "50 predictions compared, 32 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "598 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=50, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_stress",
+     "name": "coverage: engine-busy drops, FIFO-full drops with gap flags, saturated frames and resets during inference/verification all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "busy drops 110, pred drops 14, gap-flagged 1, sat-flagged 23, resets 25, predictions 50"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "3072 stimulus words, 1560 features, 9984 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "40 predictions compared, 32 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "598 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "13 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "pops_info=40, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_stress",
+     "name": "coverage: engine-busy drops, FIFO-full drops with gap flags, saturated frames and resets during inference/verification all observed",
+     "category": "ai_decoder",
+     "status": "pass",
+     "detail": "busy drops 36, pred drops 70, gap-flagged 8, sat-flagged 18, resets 25, predictions 40"
+    }
+   ]
+  },
+  {
+   "name": "ai_gate_level",
+   "status": "pass",
+   "checks": 16,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2206 stimulus words, 1480 features, 24236 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "145 predictions compared, 36 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "24 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "27 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1104 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "24 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "pops_info=145, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_model",
+     "name": "coverage: CRC error, rejected write, busy status, nomodel frames and valid models all observed",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "error reads 2, rejected reads 18, busy reads 2, nomodel 6, valid reads 20, predictions 145"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "3392 stimulus words, 1888 features, 18361 cycles"
+    },
+    {
+     "id": "predictions",
+     "name": "every popped prediction (cycle, class, margin, ts, frame id, seq, flags, count) equals the cycle-accurate model with the bit-exact forward pass",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "69 predictions compared, 44 frames completed"
+    },
+    {
+     "id": "counters",
+     "name": "status counters (frames, pred, incomplete, dup, late, span, busy, pred_drop, nomodel, sat_frames, wr_rej) equal the model at every drain",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "13 drain points"
+    },
+    {
+     "id": "model_status",
+     "name": "valid/error/busy/rejected/model_id equal the model at every status read",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "13 status reads"
+    },
+    {
+     "id": "readback",
+     "name": "all 46 model words read back equal the stored words the model predicts",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "598 words read"
+    },
+    {
+     "id": "last_frame",
+     "name": "last inferred frame: frame id, ts, sat mask, missing mask, x, h and logits equal the model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "13 reads"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero (strobes == predictions, no X on outputs)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "pops_info=69, strobe_vs_pred=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_stress",
+     "name": "coverage: engine-busy drops, FIFO-full drops with gap flags, saturated frames and resets during inference/verification all observed",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "busy drops 109, pred drops 36, gap-flagged 4, sat-flagged 32, resets 25, predictions 69"
+    }
+   ]
+  },
+  {
+   "name": "ai_mutation",
+   "status": "pass",
+   "checks": 13,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "mutant.log_mantissa",
+     "name": "mutant \"quantiser takes 5 mantissa bits instead of 6 (wrong log scale)\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, last_frame"
+    },
+    {
+     "id": "mutant.quant_no_sat",
+     "name": "mutant \"quantiser wraps instead of saturating to int8\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, last_frame"
+    },
+    {
+     "id": "mutant.late_stored",
+     "name": "mutant \"a late feature (older window index) is stored instead of discarded\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters"
+    },
+    {
+     "id": "mutant.dup_ignored",
+     "name": "mutant \"a duplicate channel is overwritten instead of abandoning the frame\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters, last_frame"
+    },
+    {
+     "id": "mutant.span_ignored",
+     "name": "mutant \"frame span limit ignored\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters, last_frame"
+    },
+    {
+     "id": "mutant.crc_poly",
+     "name": "mutant \"CRC-32 polynomial bit flipped (every verification fails or passes wrongly)\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters, model_status, last_frame, cov_model"
+    },
+    {
+     "id": "mutant.write_when_enabled",
+     "name": "mutant \"model writes accepted while inference is enabled\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: counters, model_status, readback, last_frame"
+    },
+    {
+     "id": "mutant.valid_sticky",
+     "name": "mutant \"a model write no longer clears model_valid\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters, model_status, last_frame"
+    },
+    {
+     "id": "mutant.relu_no_clamp",
+     "name": "mutant \"hidden activation not clamped to 127\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, last_frame"
+    },
+    {
+     "id": "mutant.mac_unsigned",
+     "name": "mutant \"MAC treats the weight as unsigned\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, last_frame"
+    },
+    {
+     "id": "mutant.argmax_ties",
+     "name": "mutant \"argmax prefers the higher index on ties (>= instead of >)\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions"
+    },
+    {
+     "id": "mutant.fifo_overwrite",
+     "name": "mutant \"a full prediction FIFO is overwritten instead of dropping the new prediction\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters"
+    },
+    {
+     "id": "mutant.nomodel_inferred",
+     "name": "mutant \"frames are inferred with an unverified model\" is killed by the decoder regression",
+     "category": "negative_control",
+     "status": "pass",
+     "detail": "killed by: predictions, counters, last_frame"
+    }
+   ]
+  },
+  {
+   "name": "top_e2e",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "9444 stimulus words, 8812 samples accepted, 28154 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "7054 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1080 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1192 reads (92 model words, 646 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "120 predictions popped, 11 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=7054, strobes_info=11, x_on_outputs=0"
+    },
+    {
+     "id": "cov_e2e",
+     "name": "coverage: RAW, EVENT and FEATURE records, predictions in several modes, masked channels, span-abandoned frames and a readback after reset all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "record types [0, 1, 2], predictions 120, span abandons 3, resets 4"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "7630 stimulus words, 7050 samples accepted, 22807 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "5638 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "864 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1071 reads (92 model words, 525 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "97 predictions popped, 9 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=5638, strobes_info=9, x_on_outputs=0"
+    },
+    {
+     "id": "cov_e2e",
+     "name": "coverage: RAW, EVENT and FEATURE records, predictions in several modes, masked channels, span-abandoned frames and a readback after reset all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "record types [0, 1, 2], predictions 97, span abandons 2, resets 4"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "6418 stimulus words, 5875 samples accepted, 19342 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "4725 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "725 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1088 reads (92 model words, 542 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "115 predictions popped, 12 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=4725, strobes_info=12, x_on_outputs=0"
+    },
+    {
+     "id": "cov_e2e",
+     "name": "coverage: RAW, EVENT and FEATURE records, predictions in several modes, masked channels, span-abandoned frames and a readback after reset all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "record types [0, 1, 2], predictions 115, span abandons 3, resets 4"
+    }
+   ]
+  },
+  {
+   "name": "top_bist",
+   "status": "pass",
+   "checks": 14,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "766 stimulus words, 395 samples accepted, 20500 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "415 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "596 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "317 reads (46 model words, 25 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "46 predictions popped, 51 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=415, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_bist",
+     "name": "coverage: BIST signatures read after completed runs are non-zero, identical for the same procedure from reset and different for another configuration; records and predictions folded",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "signatures ['0xfe63db23', '0xfe63db23', '0x8fb566e0', '0x76d0bb24', '0x76d0bb24', '0x76d0bb24', '0x76d0bb24'], counts [1707, 1707, 750, 92, 92, 92, 92], predictions folded 46"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "636 stimulus words, 270 samples accepted, 14111 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "276 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "394 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "312 reads (46 model words, 20 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "30 predictions popped, 34 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=276, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_bist",
+     "name": "coverage: BIST signatures read after completed runs are non-zero, identical for the same procedure from reset and different for another configuration; records and predictions folded",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "signatures ['0x2ad80d5d', '0x2ad80d5d', '0xd495e040', '0x28b36e36', '0x28b36e36', '0x28b36e36', '0x28b36e36'], counts [1135, 1135, 500, 64, 64, 64, 64], predictions folded 30"
+    }
+   ]
+  },
+  {
+   "name": "top_adverse",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "7555 stimulus words, 6464 samples accepted, 16559 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "4783 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1561 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "938 reads (46 model words, 575 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "101 predictions popped, 23 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=4783, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_adverse",
+     "name": "coverage: record drops under overload, prediction-FIFO drops with gap flags, rejected model writes, nomodel frames, misaligned windows (incomplete/late), resets during inference and predictions all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "resets 11, predictions 101, raw drops 1640, pred drops 35, nomodel 5, gap-flagged 12, incomplete 1, late 0"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "6742 stimulus words, 5612 samples accepted, 15031 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "4502 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1108 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "896 reads (46 model words, 533 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "99 predictions popped, 24 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=4502, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_adverse",
+     "name": "coverage: record drops under overload, prediction-FIFO drops with gap flags, rejected model writes, nomodel frames, misaligned windows (incomplete/late), resets during inference and predictions all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "resets 11, predictions 99, raw drops 1386, pred drops 31, nomodel 6, gap-flagged 9, incomplete 1, late 0"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "5853 stimulus words, 4739 samples accepted, 13233 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "3476 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "1132 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "896 reads (46 model words, 533 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "110 predictions popped, 38 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "records_out_info=3476, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_adverse",
+     "name": "coverage: record drops under overload, prediction-FIFO drops with gap flags, rejected model writes, nomodel frames, misaligned windows (incomplete/late), resets during inference and predictions all observed",
+     "category": "integrated_top",
+     "status": "pass",
+     "detail": "resets 11, predictions 110, raw drops 1122, pred drops 60, nomodel 6, gap-flagged 15, incomplete 2, late 0"
+    }
+   ]
+  },
+  {
+   "name": "top_gate_level",
+   "status": "pass",
+   "checks": 12,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "454 stimulus words, 95 samples accepted, 19611 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "83 records"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "305 reads (46 model words, 13 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "8 predictions popped, 10 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "records_out_info=83, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_bist",
+     "name": "coverage: BIST signatures read after completed runs are non-zero, identical for the same procedure from reset and different for another configuration; records and predictions folded",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "signatures ['0xd2762aaf', '0xd2762aaf', '0xca969161', '0xa99e5553', '0xa99e5553', '0xa99e5553', '0xa99e5553'], counts [336, 336, 150, 18, 18, 18, 18], predictions folded 8"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "2185 stimulus words, 1762 samples accepted, 39531 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "1395 records"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "692 reads (92 model words, 146 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "23 predictions popped, 2 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "records_out_info=1395, strobes_info=2, x_on_outputs=0"
+    },
+    {
+     "id": "cov_e2e",
+     "name": "coverage: RAW, EVENT and FEATURE records, predictions in several modes, masked channels, span-abandoned frames and a readback after reset all observed",
+     "category": "gate_level",
+     "status": "pass",
+     "detail": "record types [0, 1, 2], predictions 23, span abandons 0, resets 4"
+    }
+   ]
+  },
+  {
+   "name": "top_stream",
+   "status": "pass",
+   "checks": 8,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "225167 stimulus words, 200000 samples accepted, 826208 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "201560 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "1560 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "25751 reads (46 model words, 25591 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "195 predictions popped, 195 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "records_out_info=201560, strobes_info=0, x_on_outputs=0"
+    },
+    {
+     "id": "ml_predictions",
+     "name": "predictions on the recorded stream equal the ML pipeline's independent expectation (window index -> class, margin)",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "195 frames compared, 0 mismatches, 195 predictions popped"
+    },
+    {
+     "id": "ml_energies",
+     "name": "every FEATURE energy the RTL delivered to the decoder equals the ML pipeline's numpy chip model of the DSP (independent of the Verilog and of golden_v03)",
+     "category": "real_data",
+     "status": "pass",
+     "detail": "1560 window energies compared, 0 mismatches"
+    }
+   ]
+  },
+  {
+   "name": "v04_real_trace",
+   "status": "pass",
+   "checks": 6,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "37034 stimulus words, 32768 samples accepted, 135748 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "33024 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "256 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4365 reads (46 model words, 4205 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "32 predictions popped, 32 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "records_out_info=33024, strobes_info=0, x_on_outputs=0"
+    }
+   ]
+  },
+  {
+   "name": "v04_scenario_trace",
+   "status": "pass",
+   "checks": 6,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4670 stimulus words, 4000 samples accepted, 16943 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "4024 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "24 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "679 reads (46 model words, 519 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "3 predictions popped, 3 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "scenario_trace",
+     "status": "pass",
+     "detail": "records_out_info=4024, strobes_info=0, x_on_outputs=0"
+    }
+   ]
+  },
+  {
+   "name": "ai_formal",
+   "status": "pass",
+   "checks": 10,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "bmc",
+     "name": "bounded model check of all properties (depth 24)",
+     "category": "formal",
+     "status": "pass",
+     "detail": "sby status: PASS"
+    },
+    {
+     "id": "induction",
+     "name": "k-induction proof of all properties (k = 12)",
+     "category": "formal",
+     "status": "pass",
+     "detail": "sby status: PASS"
+    },
+    {
+     "id": "P1",
+     "name": "prediction FIFO never exceeds its depth; pred_valid == (count != 0)",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P2",
+     "name": "an open frame is never already complete; seen never includes an unmasked channel",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P3",
+     "name": "a completed frame carries x = 0 for every channel outside the mask",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P4",
+     "name": "an accepted model write or CRC write clears model_valid; valid excludes error and busy",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P5",
+     "name": "a frame is only queued while the model is valid; the engine only starts from a queued frame while enabled",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P6",
+     "name": "with cfg_ai_en low: engine idle, no open frame, no pending frame",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P7",
+     "name": "a prediction strobe implies the FIFO was not full (or was being popped)",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    },
+    {
+     "id": "P8",
+     "name": "a feature with an older window index leaves the open frame unchanged and increments stat_late",
+     "category": "formal",
+     "status": "pass",
+     "detail": "proven (bmc + induction)"
+    }
+   ]
+  },
+  {
+   "name": "chip_serial",
+   "status": "pass",
+   "checks": 21,
+   "errors": 0,
+   "tests": [
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "chip",
+     "status": "pass",
+     "detail": "4652 stimulus words, 3680 samples accepted, 1215906 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "3375 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "634 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "649 reads (46 model words, 270 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "chip",
+     "status": "pass",
+     "detail": "39 predictions popped, 8 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "chip",
+     "status": "pass",
+     "detail": "miso_vs_bus=0, reads_info=649, records_out_info=3375, serial_records_pending=0, serial_records_vs_fifo=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_adverse",
+     "name": "coverage: record drops under overload, prediction-FIFO drops with gap flags, rejected model writes, nomodel frames, misaligned windows (incomplete/late), resets during inference and predictions all observed",
+     "category": "chip",
+     "status": "pass",
+     "detail": "resets 29, predictions 39, raw drops 0, pred drops 12, nomodel 2, gap-flagged 5, incomplete 1, late 0"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "chip",
+     "status": "pass",
+     "detail": "480 stimulus words, 120 samples accepted, 219750 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "108 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "152 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "318 reads (46 model words, 14 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "chip",
+     "status": "pass",
+     "detail": "12 predictions popped, 13 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "chip",
+     "status": "pass",
+     "detail": "miso_vs_bus=0, reads_info=318, records_out_info=108, serial_records_pending=0, serial_records_vs_fifo=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_bist",
+     "name": "coverage: BIST signatures read after completed runs are non-zero, identical for the same procedure from reset and different for another configuration; records and predictions folded",
+     "category": "chip",
+     "status": "pass",
+     "detail": "signatures ['0x9f39b9b3', '0x9f39b9b3', '0x16cbab64', '0xf620113b', '0xf620113b', '0xf620113b', '0xf620113b'], counts [454, 454, 200, 24, 24, 24, 24], predictions folded 12"
+    },
+    {
+     "id": "completed",
+     "name": "testbench ran to completion",
+     "category": "chip",
+     "status": "pass",
+     "detail": "4599 stimulus words, 4112 samples accepted, 1172013 cycles"
+    },
+    {
+     "id": "records",
+     "name": "every external record handshake equals the cycle-accurate v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "3103 records"
+    },
+    {
+     "id": "feature_tap",
+     "name": "every feature delivered to the decoder (cycle, ch, energy, ts, sat, window index) equals the v0.3 model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "264 features"
+    },
+    {
+     "id": "reads",
+     "name": "every register read equals the model",
+     "category": "chip",
+     "status": "pass",
+     "detail": "796 reads (92 model words, 228 prediction words)"
+    },
+    {
+     "id": "predictions",
+     "name": "predictions popped by the host equal the decoder model (content checked through the PRED_* register reads above)",
+     "category": "chip",
+     "status": "pass",
+     "detail": "29 predictions popped, 5 frames completed"
+    },
+    {
+     "id": "internal",
+     "name": "testbench consistency counters are zero",
+     "category": "chip",
+     "status": "pass",
+     "detail": "miso_vs_bus=0, reads_info=796, records_out_info=3103, serial_records_pending=0, serial_records_vs_fifo=0, x_on_outputs=0"
+    },
+    {
+     "id": "cov_e2e",
+     "name": "coverage: RAW, EVENT and FEATURE records, predictions in several modes, masked channels, span-abandoned frames and a readback after reset all observed",
+     "category": "chip",
+     "status": "pass",
+     "detail": "record types [0, 1, 2], predictions 29, span abandons 1, resets 8"
+    }
+   ]
+  }
+ ],
+ "lint": {
+  "tool": "Verilator 5.053 devel rev v5.052-501-g770b7d009 (mod)",
+  "warnings": 0,
+  "errors": 0,
+  "messages": []
+ }
+}
