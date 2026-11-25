@@ -57,7 +57,41 @@ test('threshold behaviour: a weak step gives at most one spike, a stronger one f
   assert.ok(f8 > 40 && f12 > f8 && f20 > f12, `${f8} < ${f12} < ${f20}`);
 });
 
-test('the integration is deterministic and converged', () => {
+test('the integration converges: refining the time step changes the result at the rate a 4th-order method should, and an independent integrator agrees', () => {
+  // the same model at 0.02, 0.01 (the app's step), 0.005 and 0.00125 ms; stored samples are 0.02 ms apart in all of them
+  const at = (dt: number) => simulateHH({ currentUaCm2: 10, onMs: 10, offMs: 45, durationMs: 50 }, dt);
+  const ref = at(0.00125), coarse = at(0.02), used = at(0.01), fine = at(0.005);
+  assert.equal(ref.v.length, used.v.length);
+  const err = (r: typeof ref) => { let m = 0; for (let i = 0; i < r.v.length; i++) m = Math.max(m, Math.abs(r.v[i] - ref.v[i])); return m; };
+  const e2 = err(coarse), e1 = err(used), e05 = err(fine);
+  // fourth order: halving the step should cut the error about sixteen-fold; ask for at least eight
+  assert.ok(e2 / e1 > 8 && e1 / e05 > 8, `max |ΔV|: ${e2.toExponential(2)} (0.02) → ${e1.toExponential(2)} (0.01) → ${e05.toExponential(2)} (0.005)`);
+  assert.ok(e1 < 0.01, `at the app's step the membrane potential is within ${e1.toExponential(2)} mV of the refined solution`);
+  assert.equal(used.spikesMs.length, ref.spikesMs.length);
+  used.spikesMs.forEach((t, i) => assert.ok(Math.abs(t - ref.spikesMs[i]) < 0.002, `spike ${i}: ${t} vs ${ref.spikesMs[i]} ms`));
+  // an independent implementation: forward Euler for V with exponential (Rush–Larsen) gate updates, step 0.0005 ms
+  const rl = (() => {
+    const dt = 0.0005, n = Math.round(50 / dt); let v: number = HH.rest, { m, h, n: nn } = steady(v); const spikes: number[] = [], out: number[] = [];
+    for (let s = 0; s < n; s++) {
+      const t = s * dt, r = rates(v), I = t >= 10 && t < 45 ? 10 : 0;
+      if (s % 40 === 0) out.push(v);
+      const dv = (I - HH.gNa * m ** 3 * h * (v - HH.ENa) - HH.gK * nn ** 4 * (v - HH.EK) - HH.gL * (v - HH.EL)) / HH.C;
+      const gate = (x: number, a: number, b: number) => { const inf = a / (a + b), tau = 1 / (a + b); return inf + (x - inf) * Math.exp(-dt / tau); };
+      const v1 = v + dt * dv; m = gate(m, r.am, r.bm); h = gate(h, r.ah, r.bh); nn = gate(nn, r.an, r.bn);
+      if (v < 0 && v1 >= 0) spikes.push(t + (dt * -v) / (v1 - v));
+      v = v1;
+    }
+    return { spikes, out };
+  })();
+  assert.equal(rl.spikes.length, used.spikesMs.length, 'the same number of action potentials');
+  rl.spikes.forEach((t, i) => assert.ok(Math.abs(t - used.spikesMs[i]) < 0.02, `spike ${i}: independent ${t.toFixed(4)} vs RK4 ${used.spikesMs[i].toFixed(4)} ms`));
+  let worst = 0; for (let i = 0; i < rl.out.length; i++) worst = Math.max(worst, Math.abs(rl.out[i] - used.v[i]));
+  assert.ok(worst < 1.5, `the two integrators stay within ${worst.toFixed(2)} mV of each other everywhere (the gap is the first-order method's)`);
+  const pk = (a: ArrayLike<number>) => { let m = -Infinity; for (let i = 0; i < a.length; i++) m = Math.max(m, a[i]); return m; };
+  assert.ok(Math.abs(pk(rl.out) - pk(used.v)) < 0.3, 'and agree on the peak of the action potential');
+});
+
+test('the integration is deterministic; stored samples, interpolation and input clamping', () => {
   const a = run(10), b = run(10);
   assert.deepEqual(a.spikesMs, b.spikesMs);
   assert.deepEqual(Array.from(a.v.subarray(0, 500)), Array.from(b.v.subarray(0, 500)));

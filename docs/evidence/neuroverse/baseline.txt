@@ -1,0 +1,29 @@
+Neuroverse build — stage 0 baseline, run on 2026-11-25 before the first edit
+Branch feature/bci-experiment @ c605e3f (clean, identical to origin). Apple M5 Ultra, macOS 27.0.1, Node v24.22.0.
+
+$ npm run typecheck
+> bci-studio@0.5.0 typecheck
+> tsc -b --noEmit
+npm run typecheck  6.31s user 0.42s system 153% cpu 4.391 total
+
+$ npm test        (last lines)
+ℹ tests 111
+ℹ suites 0
+ℹ pass 111
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12647.028458
+npm test  21.44s user 0.88s system 174% cpu 12.760 total
+
+$ npm run check:rtl        (last lines)
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 3/3
+  rtl_trace_v04_real.json: trained model · 32 frames
+    quantiser (L, x): 256/256 features agree
+    MLP (h, logits, class, margin): 32/32 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 32/32
+npm run check:rtl  0.21s user 0.05s system 96% cpu 0.275 total

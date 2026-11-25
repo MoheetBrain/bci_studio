@@ -2,10 +2,11 @@
 // workspaces, so moving along the journey never loses "where in the brain" the learner is.
 import { create } from 'zustand';
 
-export type Workspace = 'brain' | 'experiment' | 'interface' | 'signal' | 'chip' | 'decoder' | 'research';
+export type Workspace = 'world' | 'brain' | 'experiment' | 'interface' | 'signal' | 'chip' | 'decoder' | 'research';
 
 /** The scenes of the studio, ordered by physical scale: tissue → cells → electronics → silicon → computation → evidence. */
 export const WORKSPACES: Array<{ id: Workspace; label: string; scale: string; hint: string }> = [
+  { id: 'world', label: 'World', scale: 'cm → µm', hint: 'The world: from the whole brain into a block of cortex you can fly through, experiment on and decode from' },
   { id: 'brain', label: 'Brain', scale: '15 cm', hint: 'The whole brain: find and select a region' },
   { id: 'experiment', label: 'Experiment', scale: 'BCI · live', hint: 'Attach the virtual BCI, record simulated signals and follow them to a decoded output' },
   { id: 'interface', label: 'Neurons', scale: '1 mm', hint: 'Neurons and one electrode contact beneath the selected region' },
@@ -42,7 +43,12 @@ export const useShell = create<ShellState>((set) => ({
   paletteOpen: false,
   setPalette: (open) => set({ paletteOpen: open }),
   go: (w) => {
-    if (typeof location !== 'undefined' && location.hash !== `#/${w}`) history.replaceState(null, '', `#/${w}`);
+    // the world keeps its own sub-path (#/world/dev, #/world/<prototype>) only while one is already showing
+    if (typeof location !== 'undefined' && location.hash !== `#/${w}` && !(w === 'world' && location.hash.startsWith('#/world'))) {
+      history.replaceState(null, '', `#/${w}`);
+      // the world's own router follows the address
+      if (w === 'world') window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
     set({ workspace: w });
   },
   openResearch: (query) => {

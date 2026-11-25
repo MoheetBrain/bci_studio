@@ -8,6 +8,7 @@ import { AtlasSearch, AtlasTree } from '../atlas/AtlasTree';
 import { applyDocumentPrefs, loadPrefs } from '../state/prefs';
 import './shell.css';
 
+const WorldWorkspace = lazy(() => import('../world/WorldWorkspace'));
 const ExperimentWorkspace = lazy(() => import('../experiment/ExperimentWorkspace'));
 const InterfaceWorkspace = lazy(() => import('../neuro/InterfaceWorkspace'));
 const SignalWorkspace = lazy(() => import('../journey/SignalWorkspace'));
@@ -50,7 +51,7 @@ function Finder() {
       const t = e.target as HTMLElement | null;
       const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setPalette(!useShell.getState().paletteOpen); }
-      else if (e.key === '/' && !typing && !useShell.getState().paletteOpen) { e.preventDefault(); setPalette(true); }
+      else if (e.key === '/' && !typing && !useShell.getState().paletteOpen && useShell.getState().workspace !== 'world') { e.preventDefault(); setPalette(true); }
       else if (e.key === 'Escape' && useShell.getState().paletteOpen) { e.stopPropagation(); setPalette(false); useAtlas.getState().hover(null); }
     };
     window.addEventListener('keydown', onKey, true);
@@ -122,6 +123,7 @@ export default function Root() {
         <div className="shell-pane" data-workspace="brain" style={{ display: workspace === 'brain' ? undefined : 'none' }}>
           <AtlasWorkspace />
         </div>
+        {pane('world', <WorldWorkspace />)}
         {pane('experiment', <ExperimentWorkspace />)}
         {pane('interface', <InterfaceWorkspace />)}
         {pane('signal', <SignalWorkspace />)}

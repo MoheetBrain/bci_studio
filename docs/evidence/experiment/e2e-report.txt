@@ -1,38 +1,38 @@
 # Interactive BCI experiment — end-to-end acceptance test
-# 2026-11-19T12:33:24.184Z · production build · ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
-# Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36
+# 2026-11-25T20:14:11.646Z · production build · ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+# Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36
 
-✓ the brain fills the stage, at a large and at a small window size  (3.4 s)
+✓ the brain fills the stage, at a large and at a small window size  (3.5 s)
     1440 × 900: 67 % of the height, 52 % of the width · 820 × 620: 61 % / 57 % (the old opening shot was about 30 % in a small pane)
-✓ acceptance 1 — Add BCI: the device follows the pointer over the surface, names the region, and attaches on a click  (2.5 s)
+✓ acceptance 1 — Add BCI: the device follows the pointer over the surface, names the region, and attaches on a click  (2.7 s)
     attached at R -18.1, A -29.5, S 57.2 mm on the left precentral gyrus; the cerebellum was refused
-✓ acceptance 2 — the device stays on its spot of cortex while the brain is turned  (4.6 s)
+✓ acceptance 2 — the device stays on its spot of cortex while the brain is turned  (4.7 s)
     turned through 8 views and a drag: the device never left its placement (< 0.01 mm); in the 6 views where its spot faces the camera, the surface picked under it is the same point of the left precentral gyrus (within 0.00 mm); on screen it travelled up to 37 px
 ✓ the device can be dragged to another place, removed, re-attached from the card, and survives a reload  (3.3 s)
     dragged precentral → postcentral (no experiment offered there), removed, re-attached from the card, kept across a reload
 ✓ acceptance 3 — motor and occipital cortex give different, sourced explanations; other regions say what is not known  (1.9 s)
     precentral: 22 distinct linked sources, 7 bordering regions · lateral occipital: 16 sources, 7 borders · supramarginal gyrus: atlas-derived anatomy only, “no reviewed text” for the rest
 ✓ acceptance 4 — Start experiment: a simulated recording that plays, pauses and scrubs  (6.5 s)
-    played 2.20 → 3.36 s, paused, scrubbed to 6.400 s; Simulated in 930 ms · seed 11
+    played 2.20 → 3.36 s, paused, scrubbed to 6.400 s; Simulated in 944 ms · seed 11
 ✓ acceptance 5 — moving the electrode away or adding noise changes the computed waveform  (5.2 s)
-    44 → 119 µm: nearest spike 81 → 30 µV, spike ÷ noise 18.7 → 7.6, detected spikes on this contact 350 → 11 · noise 7 → 21 µV: estimate 4.3 → 11.7 µV
-✓ acceptance 6 — amplification, sampling, quantisation and digital processing can each be inspected and broken  (7.1 s)
-    DC coupling saturates the amplifier; a 12-bit code and its bits match the sampled voltage; 3 kS/s with a 7.5 kHz filter is flagged as aliasing; threshold −19.4 µV; false crossings on this contact 7 with the common average, 13 without
+    44 → 119 µm: nearest spike 81 → 30 µV, spike ÷ noise 18.7 → 7.6, detected spikes on this contact 322 → 20 · noise 7 → 21 µV: estimate 4.3 → 11.7 µV
+✓ acceptance 6 — amplification, sampling, quantisation and digital processing can each be inspected and broken  (7.2 s)
+    DC coupling saturates the amplifier; a 12-bit code and its bits match the sampled voltage; 3 kS/s with a 7.5 kHz filter is flagged as aliasing; threshold −19.4 µV; false crossings on this contact 3 with the common average, 10 without
 ✓ acceptance 7 — the decoder produces numbers from the features, and they add up  (2.5 s)
-    at 6.40 s the linear decoder’s nine terms sum to (-0.621, 0.454) = the decoded velocity; Kalman gives -0.002 for x from the same counts; held-out R² 0.69
-✓ acceptance 8 — a prediction can be traced back: decoder → detector → samples → amplifier → electrode → neuron  (5.0 s)
-    bin at 6.55 s → crossing at 6.5973 s (“spike of the nearest neuron (81 µV at the contact)”) → detector below −19.4 µV → ADC code -48 → amplifier -0.023 V → contact -148.4 µV, of which the neuron -74.5 µV → membrane potential 20.7 mV
-✓ acceptance 9 — provenance and assumptions are visible at every stage, in three synchronised representations  (6.2 s)
+    at 6.40 s the linear decoder’s nine terms sum to (-0.02, 0.17) = the decoded velocity; Kalman gives -0.55 for x from the same counts; held-out R² 0.69
+✓ acceptance 8 — a prediction can be traced back: decoder → detector → samples → amplifier → electrode → neuron  (4.5 s)
+    bin at 6.4 s → crossing at 6.4045 s (“spike of the nearest neuron (81 µV at the contact)”) → detector below −19.4 µV → ADC code -50 → amplifier -0.024 V → contact -56.9 µV, of which the neuron -76.9 µV → membrane potential 0 mV
+✓ acceptance 9 — provenance and assumptions are visible at every stage, in three synchronised representations  (6.3 s)
     labels seen across the eight stages: illustrative, simulated, inferred; a gain change made in the engineering view is the number in the maths view
 ✓ the cursor reaches its targets, and a broken recording stops it  (4.7 s)
-    as calibrated: 9 of 9 targets · electrode at 200 µm: 0 of 2, held-out R² -0.08 · recalibrated there: R² -0.23
-✓ Follow signal: the tour plays and moves on through the stages by itself  (14.4 s)
+    as calibrated: 10 of 10 targets · electrode at 200 µm: 0 of 2, held-out R² -0.08 · recalibrated there: R² -0.29
+✓ Follow signal: the tour plays and moves on through the stages by itself  (14.5 s)
     tissue → neuron → electrode in sequence, slowing to 1/100 of real time for the spike; stopped on request
-✓ milestone 4 — on occipital cortex the same device records a different signal for a different task  (8.4 s)
+✓ milestone 4 — on occipital cortex the same device records a different signal for a different task  (8.5 s)
     intact objects 5 of 5, scrambled 3 of 6, false alarms 0 of 63 bins, which object 2 of 5 (chance 1 in 4); with the hum left in only 4 pictures are detected
-✓ milestone 6 — decoder comparison: held-out scores, costs, a Pareto frontier, and a preference that follows the constraints  (2.9 s)
+✓ milestone 6 — decoder comparison: held-out scores, costs, a Pareto frontier, and a preference that follows the constraints  (3.0 s)
     no budget: wiener5 · 30 cycles: linear · 30 cycles and four channels lost: kalman
-✓ no device, an unsupported region, a phone-sized window  (5.3 s)
+✓ no device, an unsupported region, a phone-sized window  (5.4 s)
     empty state offers a one-click attachment; on a 390-px phone a tap attached the device to the left precentral gyrus and the experiment fits the width
 ✓ nothing was logged as an error  (0.0 s)
     0 graphics-driver notices ignored

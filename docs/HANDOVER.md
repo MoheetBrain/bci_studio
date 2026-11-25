@@ -4,7 +4,85 @@ Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed 
 owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
-## 0 · Interactive BCI experiment — 2026-11-19 (read this first)
+## 0 · The integrated world — 2026-11-25 (read this first)
+
+Branch `feature/neuroverse-world`, on top of the prototype checkpoint `6b33806` (`feature/neuroverse-toys`), which is
+itself cut from `feature/bci-experiment` @ `c605e3f`. **Not pushed; no pull request; nothing merged, published or
+deployed.** One engineering agent; no sub-agents, no second model, no paid or generative service, no new dependency.
+Record of the build, its limits and its measurements: `docs/WORLD.md`. Evidence: `docs/evidence/world/`.
+
+What changed, in one paragraph: `#/world` is no longer a chooser. It opens on the whole brain (the atlas surface,
+relit) and leads by a reversible dive into one flyable block of illustrative cortex. In it the three prototypes'
+mechanisms are one journey: fly and select (from A), change one cause in the five-cell circuit and replay, compare,
+undo (from B), look from outside through a recording probe (A's observation model), then run the decoder task at an
+electrode array and break and recover it (from C). The prototypes themselves are kept at `#/world/dev`. The classic
+studio is behind a “Studio” menu in the world and is otherwise unchanged.
+
+Things to know before touching it:
+
+- **Two models share the block and are never joined.** The five-cell circuit and the array's 24-unit population are
+  different models; only one advances at a time, the status line says which, and a statement is shown the first time
+  the array is reached. Keep it that way — do not wire the circuit into the decoder to make a nicer story.
+- **Input ownership is one rule** (`docs/WORLD.md` §5, `controller.strictOwnership`): keys act while the world has the
+  focus; a pointer-pressed HUD button does not take the focus (`keepKeys` in `journey/Journey.tsx`); sliders, fields
+  and lists do; Escape returns it. Do not add blur-after-click fixes.
+- **The brain look is rendering on top of unchanged anatomy.** `journey/brainLook.ts` adds vertex attributes to the
+  shared specimen geometry (`aCurv`, `aWSel`, `aWEntry`) and never touches positions, normals or region ids; the
+  classic atlas view keeps its own material.
+- **Cell positions of the five-cell circuit were moved** (`model/circuits.ts`) so that only T is near the probe. They
+  do not enter the dynamics; they do enter the probe's amplitudes (`model/layout.ts`, tested).
+- **Leaving the world for the studio returns you to the entrance** with “Return to where you were”; the experiment's
+  history, baseline and the observer's pose are kept in `localStorage` (`hbci.world.journey.v1`).
+- **Pointer capture** cannot be granted in headless Chrome (the browser suite simulates the grant and says so);
+  `docs/evidence/world/performance.txt` records the real one. The Claude app's browser pane refused it when last tried.
+- Enjoyment, learning and biological validity are **untested**. Do not write otherwise.
+
+Open decisions for the owner: whether to push this branch (and the prototype checkpoint under it) · the open
+decisions already listed under §0b below.
+
+## 0-prototypes · Neuroverse toys — 2026-11-25 (superseded as the current state; kept as written)
+
+Branch `feature/neuroverse-toys`, cut from `feature/bci-experiment` @ `c605e3f`. **Not pushed; no pull request; nothing merged,
+published or deployed.** One engineering agent; no sub-agents, no second model, no paid or
+generative service, no new dependency. Decision record, models, limits and measurements: `docs/NEUROVERSE.md`.
+
+What changed, in one paragraph: there is a new route, `#/world` (also “Enter the neural world →” on the brain and a
+“World” dock entry). It holds **three small competing toys** in one flyable representative circuit with one controller
+(W A S D / E Q flight, drag or captured mouse look, brake, focus with exact return, overview, remappable keys):
+**A · Instrument flight** (place a virtual contact, silence a cell, find the cell that leads), **B · Time workshop**
+(move two inputs in time in a five-cell LIF circuit, switch connections, freeze, step, replay, compare) and
+**C · Decoder pilot** (your keys are a synthetic intended velocity; a fitted decoder moves the cursor; break the loop
+and recover it by switching decoder or recalibrating). The classic studio is unchanged and one click away.
+
+Verified on this branch: typecheck clean · 141 unit tests (30 new) · model-versus-RTL checks pass · production build ·
+`tests/e2e/neuroverse.mjs` 29 of 29 · `tests/e2e/walkthrough.mjs` 27 of 27 · `tests/e2e/experiment.mjs` 17 of 17 ·
+a performance sample in a visible window (`docs/evidence/neuroverse/performance.txt`).
+
+**Not verified, and the reason this stage exists:** nobody has played the toys. Whether any of them is enjoyable,
+teaches anything, or should be kept is the owner's stage 3 — `docs/NEUROVERSE_PLAYTEST.md`. No expert has reviewed
+the models.
+
+Things to know before touching it:
+
+- **Everything in the world is model output or illustration.** The LIF circuits, the contact's recording and Toy C's
+  population are computed; the cell shapes are generated; nothing is a recording and nothing is atlas anatomy. The
+  breadcrumb, “What is this?” and the chooser say so — keep it that way.
+- **Toy C is a feature-level surrogate** of the Experiment scene's motor chain (waveform stages bypassed). The full
+  chain is still the Experiment scene; `tests/world-pilot.test.ts` states how far the surrogate is from it.
+- **The rig never touches a model.** `controller.ts` moves an observer; models change only through logged commands.
+  `src/world/model/*` is pure (no DOM, no three.js) and is where the science lives.
+- **One fix was made to existing science code:** `simulateHH` was first-order accurate at the edges of its current
+  step; it is now fourth-order (`docs/NEUROVERSE.md` §7). Every spike in the older scenes moved by 1.7 µs.
+- **Pointer capture cannot be granted in headless Chrome.** The browser suite simulates the grant and says so; the
+  visible performance run checks the real one.
+  In the Claude desktop app's browser pane the request was refused in my check (drag-to-look works there);
+  Chrome grants it.
+- A mouse-clicked button gives the keyboard back to the world (so Space pauses the model); a Tab-focused one does not.
+
+Open decisions for the owner: which toy to keep (after playing) · whether to push this branch · the open decisions
+already listed under §0b below.
+
+## 0a · Interactive BCI experiment — 2026-11-19
 
 Branch `feature/bci-experiment`, cut from `feature/cinematic-rebuild` @ `be65709`. **Pushed to GitHub on 2026-11-19 at
 the owner’s request (plain push, no force); no pull request, nothing merged, published or deployed.** One engineering agent; no sub-agents, no second model, no paid or
