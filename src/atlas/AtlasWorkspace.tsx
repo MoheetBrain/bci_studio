@@ -161,6 +161,9 @@ function BciBar() {
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="9" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.7" /><circle cx="12" cy="9" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.3" opacity=".7" /><path d="M9 15.5v5M12 15.8v6M15 15.5v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
           Add BCI
         </button>
+        <button type="button" className="bci-add world-enter" onClick={() => go('world')} data-testid="enter-world" title="Leave the atlas for a representative circuit you can fly through and experiment on">
+          Enter the neural world →
+        </button>
       </div>
     );
   }

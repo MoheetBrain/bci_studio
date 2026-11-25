@@ -1,0 +1,55 @@
+Neuroverse build — checks on branch feature/neuroverse-toys, run on 2026-11-25T17:25Z
+Apple M5 Ultra, macOS 27.0.1, Node v24.22.0.
+
+$ npm run check
+> bci-studio@0.5.0 check
+> npm run typecheck && npm test && npm run check:rtl
+> bci-studio@0.5.0 typecheck
+> tsc -b --noEmit
+> bci-studio@0.5.0 test
+> node --test --disable-warning=ExperimentalWarning "tests/*.test.ts"
+✔ chunk files match the recorded size and sha256 (1.779583ms)
+✔ hierarchy: one root, every parent resolves, no cycles, path matches the ancestors (0.740708ms)
+✔ left / right naming agrees with geometry (RAS: left is −x of the fitted mid-sagittal plane) (1.221542ms)
+✔ source model hashes still match the reference clone (skipped when it is absent) (31.083792ms)
+✔ search by name: exact and prefix matches rank first (7.932958ms)
+✔ search: nothing matches nonsense or an empty query; results are bounded (1.797708ms)
+✔ input-referred noise: the simulated in-band noise matches √(thermal² + amplifier²) (11.880667ms)
+✔ recorded model-vs-RTL checks: all passing, for this snapshot, and each path that claims a check has one (0.288708ms)
+✔ snapshot integrity: every chip/ file matches the hash recorded at import, and the RTL hash is the recorded one (3.281125ms)
+✔ index: stable document ids, hashes that match the files, and every kind of source present (1.407875ms)
+✔ the trace is the linear, two-output decoder this scene draws, with the latency its formula gives (1.351708ms)
+✔ picture schedule: balanced kinds, fixed for a seed; the response starts after the latency and decays after the picture goes (1.180208ms)
+✔ the integration converges: refining the time step changes the result at the rate a 4th-order method should, and an independent integrator agrees (21.739167ms)
+✔ specimen.bin matches the recorded size and sha256, and decodes to the recorded counts (5.66825ms)
+✔ left is the subject’s left: hemisphere flags agree with the structure and with the mid-sagittal plane (3.828ms)
+✔ slice volumes: recorded hashes and sizes; the region volume agrees with the surface labels (46.039667ms)
+✔ bindings: keys are matched by position, either Shift brakes, arrows always move, a key with no code falls back to its character, and a rebind swaps (0.190625ms)
+✔ LIF: threshold time under a constant current matches τ·ln((V∞ − E_L)/(V∞ − V_th)); a sub-threshold asymptote never fires (10.803583ms)
+✔ live field run: camera-free by construction; rewind replays the same spikes; a command while replaying starts a child run; export → import matches (11.578708ms)
+ℹ tests 141
+ℹ suites 0
+ℹ pass 141
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12408.839166
+> bci-studio@0.5.0 check:rtl
+> node scripts/run-checks.mjs
+  DEMO model vs RTL trace: 3200/3200 samples agree on all 9 fields; demo events=66, rtl events=66
+  PASS
+  FEATURE internals: 4000/4000 samples agree on y, ysat, acc, cnt, done
+  FEATURE records: rtl=120 demo=120 all match (ch, ts, energy, sat)
+  rtl_trace_v04.json: trained model · 3 frames
+    quantiser (L, x): 24/24 features agree
+    MLP (h, logits, class, margin): 3/3 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 3/3
+  rtl_trace_v04_real.json: trained model · 32 frames
+    quantiser (L, x): 256/256 features agree
+    MLP (h, logits, class, margin): 32/32 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
+    engine latency = 18 cycles for every completed inference: yes
+    predictions matching an inference (frame, ts, class, margin): 32/32

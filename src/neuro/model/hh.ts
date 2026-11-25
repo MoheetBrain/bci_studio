@@ -64,14 +64,17 @@ export interface HHResult {
 
 export const HH_LIMITS = { currentUaCm2: [0, 30] as [number, number], durationMs: [20, 400] as [number, number] };
 
-const DT = 0.01;          // integration step, ms
-const OUT_EVERY = 2;      // keep every 2nd step → 50 samples per ms
+const DT = 0.01;          // integration step, ms (every 2nd step is kept → 50 samples per ms)
 
 /**
  * Integrate the model with a fixed-step fourth-order Runge–Kutta scheme, starting at rest with the gates at their
  * steady state. Same inputs always give the same arrays (no randomness, no wall-clock time).
+ *
+ * `dtMs` exists so that the integration can be checked by refining it (tests/hh.test.ts); the app always uses the
+ * default. It must divide 0.02 ms, the spacing of the stored samples.
  */
-export function simulateHH(p: HHParams): HHResult {
+export function simulateHH(p: HHParams, dtMs: number = DT): HHResult {
+  const OUT_EVERY = Math.max(1, Math.round(0.02 / dtMs)), DT = 0.02 / OUT_EVERY;
   const I = Math.max(HH_LIMITS.currentUaCm2[0], Math.min(HH_LIMITS.currentUaCm2[1], Number.isFinite(p.currentUaCm2) ? p.currentUaCm2 : 0));
   const T = Math.max(HH_LIMITS.durationMs[0], Math.min(HH_LIMITS.durationMs[1], Number.isFinite(p.durationMs) ? p.durationMs : 100));
   const steps = Math.round(T / DT), nOut = Math.floor(steps / OUT_EVERY) + 1;
@@ -80,27 +83,30 @@ export function simulateHH(p: HHParams): HHResult {
     iNa: new Float32Array(nOut), iK: new Float32Array(nOut), iInj: new Float32Array(nOut), dvdt: new Float32Array(nOut),
   };
   const inj = (t: number) => (t >= p.onMs && t < p.offMs ? I : 0);
-  const f = (t: number, v: number, m: number, h: number, n: number): [number, number, number, number] => {
+  // `i` is the injected current during the step being taken. The current is piecewise constant and changes only at
+  // step boundaries, so every stage of a step must see the same value: sampling it at the stage times instead lets
+  // the last stage of the step before an edge see the new value, which makes the whole scheme first-order.
+  const f = (i: number, v: number, m: number, h: number, n: number): [number, number, number, number] => {
     const r = rates(v);
     const iNa = HH.gNa * m * m * m * h * (v - HH.ENa), iK = HH.gK * n * n * n * n * (v - HH.EK), iL = HH.gL * (v - HH.EL);
-    return [(inj(t) - iNa - iK - iL) / HH.C, r.am * (1 - m) - r.bm * m, r.ah * (1 - h) - r.bh * h, r.an * (1 - n) - r.bn * n];
+    return [(i - iNa - iK - iL) / HH.C, r.am * (1 - m) - r.bm * m, r.ah * (1 - h) - r.bh * h, r.an * (1 - n) - r.bn * n];
   };
   let v: number = HH.rest;
   let { m, h, n } = steady(v);
   const spikesMs: number[] = [];
   for (let s = 0; s <= steps; s++) {
-    const t = s * DT;
-    const k1 = f(t, v, m, h, n);
+    const t = s * DT, iStep = inj(t + DT / 2);
+    const k1 = f(iStep, v, m, h, n);
     if (s % OUT_EVERY === 0) {
       const o = s / OUT_EVERY;
       out.v[o] = v; out.m[o] = m; out.h[o] = h; out.n[o] = n;
       out.iNa[o] = HH.gNa * m * m * m * h * (v - HH.ENa); out.iK[o] = HH.gK * n * n * n * n * (v - HH.EK);
-      out.iInj[o] = inj(t); out.dvdt[o] = k1[0];
+      out.iInj[o] = iStep; out.dvdt[o] = k1[0];
     }
     if (s === steps) break;
-    const k2 = f(t + DT / 2, v + (DT / 2) * k1[0], m + (DT / 2) * k1[1], h + (DT / 2) * k1[2], n + (DT / 2) * k1[3]);
-    const k3 = f(t + DT / 2, v + (DT / 2) * k2[0], m + (DT / 2) * k2[1], h + (DT / 2) * k2[2], n + (DT / 2) * k2[3]);
-    const k4 = f(t + DT, v + DT * k3[0], m + DT * k3[1], h + DT * k3[2], n + DT * k3[3]);
+    const k2 = f(iStep, v + (DT / 2) * k1[0], m + (DT / 2) * k1[1], h + (DT / 2) * k1[2], n + (DT / 2) * k1[3]);
+    const k3 = f(iStep, v + (DT / 2) * k2[0], m + (DT / 2) * k2[1], h + (DT / 2) * k2[2], n + (DT / 2) * k2[3]);
+    const k4 = f(iStep, v + DT * k3[0], m + DT * k3[1], h + DT * k3[2], n + DT * k3[3]);
     const v1 = v + (DT / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
     m += (DT / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
     h += (DT / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);

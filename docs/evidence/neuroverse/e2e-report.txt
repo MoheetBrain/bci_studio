@@ -1,0 +1,73 @@
+Neuroverse toys — end-to-end acceptance test
+Run: 2026-11-25T17:27:36.874Z   Build: production (vite preview)   Viewport: 1440 × 900, device pixel ratio 1, headless
+Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36
+Graphics: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+
+29 of 29 steps passed.
+
+PASS   1. entry: the chooser offers three toys; the classic studio is one click away and unchanged; the brain has a way in
+          chooser ↔ classic studio; all seven classic scenes still in the dock  [0.6 s]
+PASS   2. B · agency within ten seconds: the scene is ready and a key moves the rig
+          ready 626 ms after opening; first key press moved the rig 33 µm; the world takes 77 % of the screen height  [1.1 s]
+PASS   3. B · flight: forward follows the view, keys released means stopped, Shift brakes sooner, E rises, the wheel changes speed not scale
+          stop without drift; braking distance 4 µm vs 9 µm; speed levels bounded (15–480 µm/s)  [4.6 s]
+PASS   4. B · looking and selecting without capture: a drag turns the view and selects nothing; a click selects the cell under the pointer
+          drag = look, click = select (cell and connection)  [0.8 s]
+PASS   5. B · the camera never changes the model: with the model paused, flying and looking leave its clock and fingerprint untouched
+          paused at step 40; moved the rig; fingerprint 315cb9f2 unchanged  [1.9 s]
+PASS   6. B · mouse capture: the capturing click selects nothing, the mouse turns the view, a click selects what is under the centre mark, release clears held keys
+          capture (simulated grant) → look → select through the centre mark → release clears held keys  [2.8 s]
+PASS   7. B · focus and return: F looks at the selection from outside it on a stable pivot; Return restores the exact pose; neither touches the model clock
+          pivot = cell centre; pose restored exactly; model clock untouched  [4.1 s]
+PASS   8. B · reduced motion and the near-surface cutaway: no camera glide when asked; inside a cell body the view is cut away, says so, and Overview still works
+          reduced motion respected; cutaway announced; recoverable from inside a cell  [2.1 s]
+PASS   9. B · keys can be remapped, every key has a button, and typing in a field never flies the rig
+          remap W → I and back; on-screen pad works; text entry is left alone  [2.5 s]
+PASS  10. B · cause and consequence: two inputs fire the target only when close in time; the baseline stays on the same axes
+          B 4.0 ms after A: T reached threshold and fired at 17.6 ms; D followed at 21.0 ms. Baseline: T stayed 0.7 mV short.  [8.5 s]
+PASS  11. B · a second cause: with the inhibitory connection on, order matters; the leak narrows the window; any connection can be cut
+          inhibition makes order matter; leak narrows the window; T → D can be cut  [1.4 s]
+PASS  12. B · time control: step moves the model 0.25 ms and stays paused; the timeline can be scrubbed and its handles dragged; a pulse at the playhead branches a run
+          step 0.25 ms; scrub; drag B; pulse at 12 ms → child run, shared past, T fired at 15.7 ms  [2.5 s]
+PASS  13. B · optional challenge, predict-first on a new condition, and a run that survives export → import
+          challenge goals checked by the model (edge 10 ms); variant 6 predicted first; export → import fingerprint 00dd8e77  [2.5 s]
+PASS  14. B · what is this: every representation states its class, what it leaves out, and its source
+          model card, limits, source link, legend  [0.2 s]
+PASS  15. A · a live field: the model runs on its own, nothing is recorded until a contact is placed, and the wiring is not shown
+          10 cells, seed 1; the world takes 79 % of the screen height  [1.2 s]
+PASS  16. A · the recording comes from where the contact is: flying and looking do not change it; placing the contact does
+          contact 1 placed 22 µm from a cell body: largest spike 164 µV (rule: 163 µV); camera movement changed nothing  [5.2 s]
+PASS  17. A · a second contact elsewhere hears the same cells at other sizes; generator truth is one click away and says what it is
+          contact 1 largest 168 µV, contact 2 largest 155 µV  [3.1 s]
+PASS  18. A · intervention and comparison: keep a window, silence the leading cell, and the wave stops at the contact; waking it brings it back
+          largest spike at the contact 168 µV → 0 µV with the leader silenced → 165 µV after waking it  [6.3 s]
+PASS  19. A · virtual state inspection, stepping, and an exact replay of the last 200 ms
+          step 1 ms; replayed to step 7366: fingerprint e2902a84 reproduced  [9.0 s]
+PASS  20. A · the question: a wrong answer reveals nothing; the right one draws the wiring; a new field has a new leader; the run exports and replays
+          wrong guess counted, right guess reveals 6 connections; export → import matches; new field seed 11 (leader differs: true)  [3.0 s]
+PASS  21. C · calibration is an explicit job off the main thread, with three separate sets of reaches; without it the cursor cannot move
+          held-out R² linear 0.62, Kalman 0.58, MLP 0.57; the world takes 80 % of the screen height  [0.6 s]
+PASS  22. C · two input contexts, never both: in Explore the keys fly the rig and intend nothing; in Pilot they are the intent and the rig stays put; switching forgets held keys
+          Explore: rig moves, intent 0. Pilot: intent set, rig still. Held keys cleared on switch and on blur  [4.5 s]
+PASS  23. C · piloting: the cursor follows the decoded velocity, not the keys; targets are reached
+          8 targets in 12 s (scripted player), tracking R² 0.59; mean |decoded − intended| 0.64  [12.9 s]
+PASS  24. C · break the loop and recover it two ways: lost contacts cripple the linear decoder; the Kalman filter still tracks; recalibration restores the score
+          lost contacts, linear: 2 targets / 12 s, tracking R² -1.37 → Kalman (no refit): 6 targets, R² 0.36 → linear recalibrated: 8 targets, R² 0.69 (held-out R² 0.17 → 0.65)  [37.6 s]
+PASS  25. C · noise is not fully recoverable, and the app says only what its model supports
+          held-out R² (linear): clean 0.65 → noise with old thresholds -77.6 → recalibrated 0.22  [1.2 s]
+PASS  26. C · pause, step, a stoppable calibration, and a replay of the whole session from its log
+          Replayed all 1139 bins from the command log: the cursor path is identical.  [1.9 s]
+PASS  27. C · the full recording chain is still there: the link opens the Experiment scene of the classic studio
+          Pilot ↔ Experiment (full chain) ↔ Pilot  [0.4 s]
+PASS  28. all toys: every control has a name, the keyboard focus is visible, and switching toys many times does not pile up memory
+          all controls named; focus ring on t-step; heap 62 → 62 MB over 12 further scene changes  [7.4 s]
+PASS  29. no errors were written to the browser console during the whole run
+          0 pointer-lock notices ignored  [0.0 s]
+
+Notes
+  · Pointer capture: headless Chrome does not grant pointer lock, so the browser’s grant was simulated (lock element + pointerlockchange) and the page’s own handling — look, centre-mark selection, release, forgetting held keys — was tested against that. The real grant is checked in a visible window by tests/e2e/neuroverse-perf.mjs.
+  · The calibration finished before the Stop click could land (it takes well under a second on this machine); the stop path is covered by the unit test instead.
+  · JS heap after 1 cycle of the three toys: 62.1 MB; after 5 cycles: 61.8 MB (no forced garbage collection, so this is an upper bound on growth).
+
+What this does not show: that anyone enjoys a toy, understands more after playing, or that the models are biologically valid.
+Those need the playtest (docs/NEUROVERSE_PLAYTEST.md) and an expert review; neither has been done.

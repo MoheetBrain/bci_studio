@@ -1,0 +1,77 @@
+Neuroverse toys — interactive performance sample
+Run: 2026-11-25T17:18:11.211Z   Build: production (vite preview), visible Chrome window
+Machine: Apple M5 Ultra, macOS 27.0.1, 'AC Power'
+Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36
+Graphics: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+Window: 1920 × 1080 CSS pixels; detail setting “high”. Two pixel densities were measured (below).
+
+Method: a scripted player holds movement keys in turn, drags to look every second step, and uses the toy every few
+seconds, for 60 s per toy (180 s in all) in profile 1. Keys and pointer are sent to the browser as real input events.
+Response = input event → start of the next rendered frame; it is not a hardware input-to-photon latency.
+
+PROFILE 1 — 1920 × 1080 CSS pixels at device pixel ratio 1 (3D canvas 1920 × 878 physical pixels), 60 s per toy
+
+Toy B · Time workshop
+  frames 7225 in 60.2 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.5 ms  (target ≤ 20 ms: met) · p99 9.2 ms  (target ≤ 33.3 ms: met) · worst 10.7 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     768 inputs · median 7.2 ms · p95 8 ms  (target ≤ 50 ms: met)
+  JS heap      43.9 MB at the end
+
+Toy A · Instrument flight
+  frames 7247 in 60.4 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.4 ms  (target ≤ 20 ms: met) · p99 9.1 ms  (target ≤ 33.3 ms: met) · worst 13.5 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     746 inputs · median 7.4 ms · p95 8 ms  (target ≤ 50 ms: met)
+  JS heap      49.7 MB at the end
+
+Toy C · Decoder pilot (with two recalibrations per 10 actions)
+  frames 7247 in 60.4 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.5 ms  (target ≤ 20 ms: met) · p99 9.1 ms  (target ≤ 33.3 ms: met) · worst 9.5 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     735 inputs · median 7.3 ms · p95 8 ms  (target ≤ 50 ms: met)
+  JS heap      46.5 MB at the end
+
+PROFILE 2 — the same window at device pixel ratio 2 (3D canvas 3840 × 1756 physical pixels), 30 s per toy
+
+Toy B · Time workshop
+  frames 3643 in 30.4 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.6 ms  (target ≤ 20 ms: met) · p99 9.1 ms  (target ≤ 33.3 ms: met) · worst 9.4 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     384 inputs · median 7.2 ms · p95 8 ms  (target ≤ 50 ms: met)
+  JS heap      42.6 MB at the end
+
+Toy A · Instrument flight
+  frames 3637 in 30.3 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.7 ms  (target ≤ 20 ms: met) · p99 9.3 ms  (target ≤ 33.3 ms: met) · worst 11.5 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     373 inputs · median 7.2 ms · p95 8.1 ms  (target ≤ 50 ms: met)
+  JS heap      44.6 MB at the end
+
+Toy C · Decoder pilot (with two recalibrations per 10 actions)
+  frames 3619 in 30.2 s; page visible 100 % of the time
+  frame time   median 8.3 ms · p95 8.9 ms  (target ≤ 20 ms: met) · p99 9.3 ms  (target ≤ 33.3 ms: met) · worst 9.5 ms
+  stalls       frames over 100 ms: 0  (target: none)
+  response     374 inputs · median 7.2 ms · p95 7.9 ms  (target ≤ 50 ms: met)
+  JS heap      53.3 MB at the end
+
+Loading (to “scene ready”, Toy B)
+  cold (new browser profile) 458 ms · warm (reload) 210 ms   — from a local server; no network is involved
+  agency: the rig answers the first key press as soon as the scene is ready (target: within 10 s) — met by 9.5 s
+
+Payload (production build, dist/assets)
+  all JavaScript 2837 kB raw, 888 kB gzip · all CSS 196 kB raw
+  the world's own chunks: Flight.js 22 kB, Pilot.js 31 kB, Workshop.js 21 kB, WorldFrame.js 53 kB, WorldWorkspace.css 13 kB, WorldWorkspace.js 5 kB, pilot.worker.js 24 kB
+  the toys download no mesh, texture or dataset: every shape is generated in the browser
+
+Memory over repeated scene changes
+  JS heap after one round of the three toys: 48.3 MB; after five more rounds: 48.7 MB (+0.5 MB).
+  No garbage collection was forced, so this is an upper bound on growth. GPU memory is not exposed by the browser and was not measured.
+
+Pointer capture (real browser grant)
+  window in front: yes
+  requested by the “Mouse look” button: granted; that click selected nothing; mouse movement turned the view: yes; L released it and held keys were forgotten: yes
+
+Not measured: a slower Mac, a phone or tablet, a browser other than Chrome, battery power, a 60 Hz display (this one
+refreshed at about 120 Hz, which is what a median frame time of 8.3 ms means),
+GPU memory, and anything a person feels. Model time steps and sample rates do not depend on any of the above.

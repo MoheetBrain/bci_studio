@@ -25,9 +25,10 @@ npm run preview      # http://127.0.0.1:5181  (also serves the search service)
 ## Test it
 
 ```sh
-npm run check        # typecheck + 111 unit tests + the three model-versus-RTL checks
+npm run check        # typecheck + 141 unit tests + the three model-versus-RTL checks
 npm run test:e2e     # production build, then the 27-step walkthrough in headless Chrome (also captures the screens)
 npm run test:e2e:experiment   # production build, then the 17-step acceptance test of the BCI experiment
+npm run test:e2e:neuroverse   # production build, then the 29-step test of the three Neuroverse toys
 node tests/e2e/perf.mjs      # opens a visible Chrome window for ~40 s; writes docs/evidence/performance.txt
 node tests/e2e/capture-looks.mjs && node tests/e2e/compare.mjs   # same-camera look captures + before/after sheets (dev server running)
 node tests/e2e/record.mjs    # 30 s screen recording of real interaction (needs ffmpeg on the PATH)
@@ -35,6 +36,22 @@ npm run check:sources        # verifies every cited DOI against Crossref (needs 
 ```
 
 The browser tests drive the Chrome already installed on the machine (`playwright-core`, no browser download).
+
+## The neural world (development build)
+
+`http://127.0.0.1:5180/#/world` — or “Enter the neural world →” on the brain. Three small playable toys in one
+representative circuit you can fly through, built to find out which kind of play is worth developing:
+
+| | Toy | You |
+|---|---|---|
+| A | Instrument flight | fly, place a virtual contact, silence a cell, find the cell that leads |
+| B | Time workshop | move two inputs in time, switch a connection, freeze, step, replay, compare |
+| C | Decoder pilot | steer a cursor through a fitted decoder, break the loop, recover it two ways |
+
+W A S D to fly, drag to look (L for mouse look), Shift to brake, F / R / M to focus, return and see the overview, Space
+to pause the model. Every signal there is computed by a stated model and every cell shape is an illustration; nothing
+is a recording. Decision record: [`docs/NEUROVERSE.md`](docs/NEUROVERSE.md). Playtest sheet:
+[`docs/NEUROVERSE_PLAYTEST.md`](docs/NEUROVERSE_PLAYTEST.md). Whether any of it is enjoyable has not been tested.
 
 ## The seven scenes
 
@@ -84,6 +101,7 @@ public/atlas/   atlas + specimen assets + licence                            doc
 ## Read next
 
 - `docs/HANDOVER.md` — what was built, what was reused, test results, limitations, next task.
+- `docs/NEUROVERSE.md` — the three Neuroverse toys: what was built, the models and their limits, what the checks found, what is still untested; `docs/NEUROVERSE_PLAYTEST.md` is the sheet for playing them; `docs/evidence/neuroverse/` holds the test report, performance sample, screenshots and recordings.
 - `docs/BCI_EXPERIMENT.md` — the interactive BCI experiment: models, sources, assumptions, acceptance results, limits; `docs/evidence/experiment/` holds its test report and screenshots.
 - `docs/CINEMATIC_REBUILD.md` — the cinematic rebuild: what was decided and why; `docs/evidence/cinematic/README.md` indexes its evidence.
 - `docs/DECISION_ATLAS_FOUNDATION.md` — why this atlas and this architecture.

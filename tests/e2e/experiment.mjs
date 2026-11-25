@@ -361,7 +361,9 @@ await step('acceptance 8 — a prediction can be traced back: decoder → detect
   await shot('18-trace-panel');
   await item.locator(T('trace-to-6')).click();
   await page.waitForSelector(`${T('experiment-signal')}[data-stage="6"]`); await settle(300);
-  eq(num(await txt('tp-clock')), +evT.toFixed(3), 'the playhead is on the crossing');
+  // both numbers are three-decimal displays of the same sample time; a sample that falls on a half millisecond
+  // (one in fifteen does at 30 kHz) can round either way, so they may differ by one unit of the last digit
+  assert(Math.abs(num(await txt('tp-clock')) - evT) <= 0.0011, `the playhead is on the crossing: clock ${await txt('tp-clock')}, crossing ${evT}`);
   const thr = num(await readout('dsp-readouts', 'Threshold'));
   assert(num(await txt('wave-dsp-out-now')) < -thr, 'the detector input is below threshold there');
   await shot('19-trace-detector');
