@@ -486,6 +486,7 @@ export function Hud({ act, studio, setStudio }: { act: HudActions; studio: boole
               ? <><button type="button" className="j-btn hero" onClick={act.resume} data-testid="resume">Return to where you were →</button><button type="button" className="j-btn" onClick={act.enter} data-testid="enter">Enter from the surface</button></>
               : <button type="button" className="j-btn hero" onClick={act.enter} data-testid="enter">Enter the left precentral gyrus →</button>}
           </div>
+          <p className="j-fine j-narrow" data-testid="narrow-hint">This view is narrow. Everything works, but the world is built for a wide one — widen the pane if you can.</p>
         </div>
       )}
       {place === 'brain' && <RegionCard act={act} />}

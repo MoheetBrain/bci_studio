@@ -106,6 +106,8 @@
   .j-cta { align-self: end; justify-self: center; display: grid; justify-items: center; gap: 10px; padding: 0 16px 34px; text-align: center; pointer-events: none; }
   .j-cta > * { pointer-events: auto; }
   .j-cta h1 { font: 600 11px/1 var(--mono); letter-spacing: .26em; text-transform: uppercase; color: #C9A8C0; }
+  .j-narrow { display: none; }
+  @media (max-width: 620px) { .j-narrow { display: block; max-width: 300px; } }
 
   /* the route's next step */
   .j-mid { align-self: end; justify-self: center; display: grid; justify-items: center; gap: 6px; padding: 0 12px 12px; max-width: min(720px, calc(100% - 420px)); pointer-events: none; }
@@ -228,6 +230,36 @@
     .j-cursor canvas { max-height: 128px; width: auto; margin: 0 auto; }
     .j-cursor { padding: 8px 10px; gap: 3px; } .j-cursor header .j-fine { display: none; }
     .j-move { margin-bottom: 146px; }
+  }
+  /* a narrow pane (the Claude app's browser strip, a phone held upright): everything stays reachable, stacked */
+  @media (max-width: 620px) {
+    .j-top { flex-direction: column; align-items: stretch; gap: 5px; padding: 8px 8px 0; }
+    .j-right { order: -1; justify-content: flex-start; gap: 5px; } .j-right kbd { display: none; }
+    .j-left { gap: 5px; }
+    .j-where { padding: 3px 4px; flex-wrap: nowrap; overflow: hidden; } .j-source span { display: none; }
+    .j-where [data-testid='crumb-region'], .j-where [data-testid='crumb-region'] + i { display: none; }
+    .j-running { font-size: 10.5px; padding: 3px 8px; flex-wrap: nowrap; max-width: 100%; }
+    .j-running > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .j-running > b { display: none; }
+    .j-seg button { padding: 4px 8px; }
+    .j-mid { max-width: 100%; padding: 0 8px 8px; justify-self: stretch; }
+    .place-brain .j-mid { padding-bottom: 132px; }
+    .j-guide { flex-wrap: wrap; gap: 6px 8px; padding: 8px 10px; }
+    .j-guide p { flex: 1 1 100%; order: -1; }
+    .j-steps { flex: 1; }
+    .j-cta { padding: 0 10px 22px; } .j-btn.hero { font-size: 14px; padding: 0 14px; }
+    .j-card, .j-rightcol { justify-self: stretch; width: auto; margin: 150px 8px 0; max-height: 40%; }
+    .place-brain .j-card { margin-top: 84px; }
+    .j-panel, .j-panel.wide { justify-self: stretch; width: auto; margin: 84px 8px 0; z-index: 12; }
+    .j-keys { grid-template-columns: 1fr; }
+    .j-move { width: 132px; margin: 0 0 204px 8px; } .j-move .j-goto span { display: none; }
+    .jb-layer.as-map { width: 108px; height: 78px; margin: 0 0 112px 8px; } .jb-mapbtn span { font-size: 9.5px; }
+    .j-cursor canvas { max-height: 150px; width: auto; margin: 0 auto; }
+    .j-dock { padding: 6px 8px 8px; } .j-dock .j-btn { padding: 0 7px; min-height: 28px; }
+    .jd-trace { height: 150px; } .jd-trace.scope { height: 196px; }
+    .jd-main { font-size: 12.5px; } .jd-chainrow { font-size: 11px; }
+    .j-declare { padding: 14px; font-size: 13px; }
+    .j-veil-text { font-size: 13px; }
   }
   @media (prefers-reduced-motion: reduce) { .jc-layer, .jb-layer, .j-veil::before, .j-veil-text { transition-duration: .01s; transition-delay: 0s; } }
 }

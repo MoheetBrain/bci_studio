@@ -1,5 +1,5 @@
 The integrated world (#/world) — end-to-end test
-Run: 2026-11-25T20:16:20.425Z   Build: production (vite preview)   Viewport: 1440 × 900, device pixel ratio 1, headless
+Run: 2026-11-25T20:33:34.736Z   Build: production (vite preview)   Viewport: 1440 × 900, device pixel ratio 1, headless
 Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36
 Graphics: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
 
@@ -10,7 +10,7 @@ PASS  1 entrance: #/world opens on the whole brain with one obvious action — n
 PASS  2 whole brain: drag turns it, hover names the atlas region, a click selects it; the precentral gyrus is not passed off as M1
           drag turned the view -1.19 rad; hover and click resolve atlas structures (also left superior temporal gyrus, which offers no circuit)  [3.8 s]
 PASS  3 going in: a reversible dive with a statement of what changes; the tissue fills the view and the brain stays as a map
-          3D view 92 % of the window height; status: “Five-cell circuit · replaying two input events · 7.6 ms of 60 · slow motion ×1/200 · run 1 model…”  [3.9 s]
+          3D view 92 % of the window height; status: “Five-cell circuit · replaying two input events · 7.7 ms of 60 · slow motion ×1/200 · run 1 model…”  [3.9 s]
 PASS  4 flight: keys move the observer and it stops by itself; drag looks without selecting; the wheel glides; the model is untouched
           W 0.5 s → 70 µm, stops dead; drag turned 0.37 rad; wheel glide 61 µm; with Shift 12 µm; model fingerprint unchanged (315cb9f2)  [3.4 s]
 PASS  5 mouse capture: the capturing click selects nothing; then the centre mark selects; Escape gives the pointer back and drops held keys
@@ -18,7 +18,7 @@ PASS  5 mouse capture: the capturing click selects nothing; then the centre mark
 PASS  6 selection: a click selects the cell under the pointer; its readout is the model’s value at the playhead; focus and exact return
           card −62.4 mV = run value -62.4 mV at the playhead; F focuses, R returns to the exact pose  [2.3 s]
 PASS  7 pause: the model stops, the observer does not; Step advances a quarter of a millisecond
-          paused at 3.00 ms: observer moved 54 µm, model time unchanged; Step = +0.25 ms  [2.2 s]
+          paused at 2.95 ms: observer moved 54 µm, model time unchanged; Step = +0.25 ms  [2.2 s]
 PASS  8 one cause: making input B fire 8 ms earlier is the only change — and the target fires; the screen’s numbers are the model’s
           B 22 → 14 ms: T fires at 17.61 ms, D at 21.04 ms; fingerprint 77f75184 equals an independent run; A contributes 9.9 mV and B 6.0 mV at that moment  [2.4 s]
 PASS  9 replay and compare: replaying is the same recording (not a new experiment); baseline, undo and reset restore exactly
@@ -26,23 +26,23 @@ PASS  9 replay and compare: replaying is the same recording (not a new experimen
 PASS  10 outside the cells: the probe is a different quantity (µV, not mV) and counts the target’s spike and little else
           probe counts 1 crossing(s) in this run; T’s is 109 µV (threshold 27 µV), independent computation agrees  [1.8 s]
 PASS  11 input ownership: a clicked button does not take the keys; a list or slider does, until Escape; a button reached with Tab behaves as a button
-          clicked button → world keeps the keys (Space pauses); list and slider own their keys until Esc; Tab-focused button is pressed by Space  [4.1 s]
+          clicked button → world keeps the keys (Space pauses); list and slider own their keys until Esc; Tab-focused button is pressed by Space  [4.2 s]
 PASS  12 a different model, declared: at the array the circuit stops, a statement says what does and does not carry over, then the task starts
-          statement shown; task waits for it; circuit frozen and untouched; then the task runs in real time with zero intent  [2.6 s]
+          statement shown; task waits for it; circuit frozen and untouched; then the task runs in real time with zero intent  [2.7 s]
 PASS  13 piloting: the keys become the intent and nothing else — the observer does not move; the cursor moves by the decoder’s own terms
           observer pose identical before and after piloting; cursor +1.15 for “right”; base + Σ contact terms = decoded to 1e-9; Esc returns the keys  [3.6 s]
 PASS  14 break and recover: three contacts lost → control degrades; a different decoder (no refit) and a recalibration (refit) both bring it back
-          targets in 12 s — reference 8; contacts lost 2; Kalman (no refit) 6; recalibrated linear 8; replay from the log: identical path  [51.4 s]
+          targets in 12 s — reference 8; contacts lost 2; Kalman (no refit) 6; recalibrated linear 8; replay from the log: identical path  [51.6 s]
 PASS  15 the engineering behind it stays reachable and honest: the bypassed stages are named, and the full chain is one click away
           chain strip and panel name the bypassed stages; the Experiment scene opens from the panel  [3.0 s]
 PASS  16 return: out to the brain and back in without losing the experiment — also after closing the page
           history of 3 runs and fingerprint 77f75184 survive a page reload and a trip out and back; the observer returns to its pose  [11.8 s]
 PASS  17 smaller windows: nothing essential is covered, the page never scrolls, and the world keeps most of the height
-          share of the window height taken by the 3D view — 1280×720 observe 90 %; 1280×720 understand 73 %; 1024×768 observe 91 %; 1024×768 understand 71 %  [3.1 s]
+          share of the window height taken by the 3D view — 1280×720 observe 90 %; 1280×720 understand 73 %; 1024×768 observe 91 %; 1024×768 understand 71 %  [3.0 s]
 PASS  18 the studio is still there: a discreet menu opens the atlas, and the three earlier prototypes are kept as development aids
-          Studio menu → classic atlas → back; #/world/dev → chooser → Time-workshop prototype  [1.9 s]
+          Studio menu → classic atlas → back; #/world/dev → chooser → Time-workshop prototype  [2.0 s]
 PASS  19 reduced motion: going in is a cut, not a flight
-          with “Reduce motion” on, the tissue is on screen 869 ms after the click and no camera glide runs  [1.7 s]
+          with “Reduce motion” on, the tissue is on screen 863 ms after the click and no camera glide runs  [1.6 s]
 
 Notes
   · Pointer capture: headless Chrome does not grant pointer lock. The refusal message was checked, then the browser’s grant was simulated (lock element + pointerlockchange) and the page’s own handling — reticle, centre-mark selection, release, forgetting held keys — was tested against that. The real grant, in a visible Chrome window, is recorded in docs/evidence/world/performance.txt; the embedded browser pane of the Claude app refused it when it was last tried there.

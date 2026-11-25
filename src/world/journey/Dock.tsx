@@ -149,9 +149,11 @@ function drawScope(cv: HTMLCanvasElement): void {
   const { ctx, w, h } = fitCanvas(cv), cur = task.cur, info = useTask.getState().info;
   ctx.clearRect(0, 0, w, h);
   ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace'; ctx.textBaseline = 'middle';
-  const sumW = Math.min(170, w * 0.2), barsW = Math.min(220, w * 0.26), x0 = 74, x1 = w - barsW - sumW - 40, n = Math.min(TASK_HIST, task.histN);
+  // wide: velocity traces | contact bars | sum, side by side. Narrow: traces on top, bars and sum underneath.
+  const narrow = w < 560, hT = narrow ? Math.round(h * 0.52) : h, yB = narrow ? hT + 6 : 0, hB = h - yB;
+  const sumW = narrow ? Math.min(120, w * 0.36) : Math.min(170, w * 0.2), barsW = narrow ? w - sumW - 16 : Math.min(220, w * 0.26), x0 = 74, x1 = narrow ? w - 8 : w - barsW - sumW - 40, n = Math.min(TASK_HIST, task.histN);
   (['x', 'y'] as const).forEach((axis, a) => {
-    const top = 14 + a * ((h - 32) / 2), bot = top + (h - 32) / 2 - 6, mid = (top + bot) / 2, y = (v: number) => mid - Math.max(-1.3, Math.min(1.3, v)) * ((bot - top) / 2.6);
+    const top = 14 + a * ((hT - 32) / 2), bot = top + (hT - 32) / 2 - 6, mid = (top + bot) / 2, y = (v: number) => mid - Math.max(-1.3, Math.min(1.3, v)) * ((bot - top) / 2.6);
     ctx.fillStyle = '#B4C0D8'; ctx.textAlign = 'left'; ctx.fillText(`velocity ${axis}`, 4, mid - 7); ctx.fillStyle = '#8FA0BF'; ctx.fillText(axis === 'x' ? '→ right' : '↑ up', 4, mid + 7);
     ctx.strokeStyle = 'rgba(150,185,245,.16)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0, y(0)); ctx.lineTo(x1, y(0)); ctx.stroke();
     for (const [off, col, dash, lw] of [[0, '#8FB7FF', [5, 4], 1.4], [2, '#FFD9A8', [], 1.9]] as Array<[number, string, number[], number]>) {
@@ -162,11 +164,11 @@ function drawScope(cv: HTMLCanvasElement): void {
     ctx.setLineDash([]); ctx.lineWidth = 1;
   });
   ctx.fillStyle = '#8FA0BF'; ctx.textAlign = 'center';
-  for (let s = 0; s <= 8; s += 2) ctx.fillText(s === 0 ? 'now' : `−${s} s`, x1 - (s / 8) * (x1 - x0), h - 6);
-  ctx.textAlign = 'left'; ctx.fillStyle = '#8FB7FF'; ctx.fillText('- - intended (your keys)', x0 + 4, 6); ctx.fillStyle = '#FFD9A8'; ctx.fillText('— decoded (moves the cursor)', x0 + 178, 6);
+  for (let s = 0; s <= 8; s += narrow ? 4 : 2) ctx.fillText(s === 0 ? 'now' : `−${s} s`, x1 - (s / 8) * (x1 - x0) - (s === 0 && narrow ? 10 : 0), hT - 6);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#8FB7FF'; ctx.fillText(narrow ? '- - intended' : '- - intended (your keys)', x0 + 4, 6); ctx.fillStyle = '#FFD9A8'; ctx.fillText(narrow ? '— decoded' : '— decoded (moves the cursor)', x0 + (narrow ? 104 : 178), 6);
   // what each contact reports: the decoder's only input
-  const bx = x1 + 22, bw = (barsW - 8) / PILOT_CH, base = h - 20, top = 20;
-  ctx.fillStyle = '#B4C0D8'; ctx.textAlign = 'left'; ctx.fillText('counted rate per contact, spikes/s', bx, 6);
+  const bx = narrow ? 6 : x1 + 22, bw = (barsW - 8) / PILOT_CH, base = h - 20, top = yB + 20;
+  ctx.fillStyle = '#B4C0D8'; ctx.textAlign = 'left'; ctx.fillText(narrow ? 'rate per contact' : 'counted rate per contact, spikes/s', bx, yB + 6);
   for (let c = 0; c < PILOT_CH; c++) {
     const x = bx + c * bw, lost = !!info?.cond.lost.includes(c), r = cur ? cur.rates[c] : 0, hh = Math.min(1, r / 90) * (base - top);
     ctx.fillStyle = 'rgba(150,185,245,.10)'; ctx.fillRect(x + 2, top, bw - 4, base - top);
@@ -175,8 +177,8 @@ function drawScope(cv: HTMLCanvasElement): void {
     ctx.fillStyle = lost ? '#FF9CA8' : '#8FA0BF'; ctx.textAlign = 'center'; ctx.fillText(lost ? '✕' : `${c + 1}`, x + bw / 2, h - 8);
   }
   // how the decoder added it up in this bin: its own base and per-contact terms, tip to tail = the decoded velocity
-  const sx = w - sumW, cx = sx + sumW / 2, cy = (h + 8) / 2, R = Math.min(sumW, h - 30) / 2 - 4, sc = R / 1.25;
-  ctx.textAlign = 'left'; ctx.fillStyle = '#B4C0D8'; ctx.fillText('how the decoder adds it up', sx, 6);
+  const sx = w - sumW, cx = sx + sumW / 2, cy = yB + (hB + 8) / 2, R = Math.min(sumW, hB - 30) / 2 - 4, sc = R / 1.25;
+  ctx.textAlign = 'left'; ctx.fillStyle = '#B4C0D8'; ctx.fillText(narrow ? 'the sum' : 'how the decoder adds it up', sx, yB + 6);
   ctx.strokeStyle = 'rgba(150,185,245,.2)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.3); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
   if (cur && cur.termOf === 'channel' && cur.terms.length === 2) {
     let px = cx + cur.base[0] * sc, py = cy - cur.base[1] * sc;
@@ -197,7 +199,7 @@ function drawScope(cv: HTMLCanvasElement): void {
 function Scope() {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => { const cv = ref.current; if (!cv) return; dock.draw = () => drawScope(cv); return () => { dock.draw = null; }; }, []);
-  return <canvas ref={ref} className="jd-trace" data-testid="scope" role="img" aria-label="Intended and decoded velocity over the last eight seconds; the smoothed spike rate each of the eight contacts reports; and the decoder's own base and per-contact terms added tip to tail to give the decoded velocity." />;
+  return <canvas ref={ref} className="jd-trace scope" data-testid="scope" role="img" aria-label="Intended and decoded velocity over the last eight seconds; the smoothed spike rate each of the eight contacts reports; and the decoder's own base and per-contact terms added tip to tail to give the decoded velocity." />;
 }
 
 // ── the dock ────────────────────────────────────────────────────────────────────────────────────────────────────

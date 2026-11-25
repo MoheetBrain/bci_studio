@@ -27,4 +27,9 @@ Things to know when reading these:
   decoders.
 - **The recording** is a screencast of the page (headless), with a ring drawn where the pointer is. It runs at
   whatever rate the screencast delivered frames, so it is not evidence of frame rate — `performance.txt` is.
+- **`performance.txt` and the recording are from the commit before the last one.** The last commit only adds a
+  stacked layout for views narrower than 620 px (CSS, a two-row arrangement of the decoder scope on narrow canvases,
+  one hint line); the unit tests and the browser test were re-run after it (150 of 150, 19 of 19).
+- **`performance.txt` took three attempts.** One attempt stopped before measuring (the Enter button was not found
+  within 30 s after the brain segment); it did not recur and the cause was not found.
 - **One run each.** Nothing here is an average over runs or machines.

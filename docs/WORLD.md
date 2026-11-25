@@ -253,6 +253,10 @@ Not measured: any other computer, phone or tablet, another browser, battery powe
 - **The tissue is generated, not reconstructed.** Shapes are procedural; no morphology dataset was added (that would
   need a licence and provenance review and, if large, your permission to download).
 - **Small windows.** At 1024 × 768 with the trace open the 3D view has 71 % of the height (91 % with it closed).
+- **A narrow pane.** The Claude app's browser pane was 322 px wide when this was handed over. Below 620 px the
+  overlay stacks and the whole route was run once at 322 × 1314 without a covered control, but at that width panels
+  cover most of the 3D view: it is usable, not good. The entrance says so and asks for a wider pane. No phone
+  layout or touch flight was designed, and this size is not in the automated suite.
 - **The chip is reachable, not integrated.** The dock's chain strip and the Inspect panel lead to the Experiment,
   Signal, Chip and Decoder scenes; the world itself does not open the chip.
 - **No sound.**
