@@ -4,7 +4,43 @@ Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed 
 owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
-## 0 · Neuroverse toys — 2026-11-25 (read this first)
+## 0 · The integrated world — 2026-11-25 (read this first)
+
+Branch `feature/neuroverse-world`, on top of the prototype checkpoint `6b33806` (`feature/neuroverse-toys`), which is
+itself cut from `feature/bci-experiment` @ `c605e3f`. **Not pushed; no pull request; nothing merged, published or
+deployed.** One engineering agent; no sub-agents, no second model, no paid or generative service, no new dependency.
+Record of the build, its limits and its measurements: `docs/WORLD.md`. Evidence: `docs/evidence/world/`.
+
+What changed, in one paragraph: `#/world` is no longer a chooser. It opens on the whole brain (the atlas surface,
+relit) and leads by a reversible dive into one flyable block of illustrative cortex. In it the three prototypes'
+mechanisms are one journey: fly and select (from A), change one cause in the five-cell circuit and replay, compare,
+undo (from B), look from outside through a recording probe (A's observation model), then run the decoder task at an
+electrode array and break and recover it (from C). The prototypes themselves are kept at `#/world/dev`. The classic
+studio is behind a “Studio” menu in the world and is otherwise unchanged.
+
+Things to know before touching it:
+
+- **Two models share the block and are never joined.** The five-cell circuit and the array's 24-unit population are
+  different models; only one advances at a time, the status line says which, and a statement is shown the first time
+  the array is reached. Keep it that way — do not wire the circuit into the decoder to make a nicer story.
+- **Input ownership is one rule** (`docs/WORLD.md` §5, `controller.strictOwnership`): keys act while the world has the
+  focus; a pointer-pressed HUD button does not take the focus (`keepKeys` in `journey/Journey.tsx`); sliders, fields
+  and lists do; Escape returns it. Do not add blur-after-click fixes.
+- **The brain look is rendering on top of unchanged anatomy.** `journey/brainLook.ts` adds vertex attributes to the
+  shared specimen geometry (`aCurv`, `aWSel`, `aWEntry`) and never touches positions, normals or region ids; the
+  classic atlas view keeps its own material.
+- **Cell positions of the five-cell circuit were moved** (`model/circuits.ts`) so that only T is near the probe. They
+  do not enter the dynamics; they do enter the probe's amplitudes (`model/layout.ts`, tested).
+- **Leaving the world for the studio returns you to the entrance** with “Return to where you were”; the experiment's
+  history, baseline and the observer's pose are kept in `localStorage` (`hbci.world.journey.v1`).
+- **Pointer capture** cannot be granted in headless Chrome (the browser suite simulates the grant and says so);
+  `docs/evidence/world/performance.txt` records the real one. The Claude app's browser pane refused it when last tried.
+- Enjoyment, learning and biological validity are **untested**. Do not write otherwise.
+
+Open decisions for the owner: whether to push this branch (and the prototype checkpoint under it) · the open
+decisions already listed under §0b below.
+
+## 0-prototypes · Neuroverse toys — 2026-11-25 (superseded as the current state; kept as written)
 
 Branch `feature/neuroverse-toys`, cut from `feature/bci-experiment` @ `c605e3f`. **Not pushed; no pull request; nothing merged,
 published or deployed.** One engineering agent; no sub-agents, no second model, no paid or

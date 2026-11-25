@@ -64,7 +64,7 @@ await page.evaluate(() => document.exitPointerLock()); await wait(200);
 
 /** A scripted player for one toy: flies and looks the whole time, and uses the toy every few seconds. */
 async function play(toy, seconds, act) {
-  await page.goto(`${BASE}/#/world`); await page.click(T(`toy-${toy}`)); await ready();
+  await page.goto(`${BASE}/#/world/dev`); await page.click(T(`toy-${toy}`)); await ready();
   if (toy === 'pilot') await page.waitForSelector(`${T('pilot')}[data-status="ready"][data-calibration="1"]`, { timeout: 30000 });
   await wait(800);
   await page.evaluate(() => { document.activeElement?.blur?.(); window.__vis = { ok: 0, n: 0 }; window.__visTimer = setInterval(() => { window.__vis.n++; if (document.visibilityState === 'visible') window.__vis.ok++; }, 250); window.__world.perf.start(); });

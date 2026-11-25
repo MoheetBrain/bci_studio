@@ -112,3 +112,16 @@ test('bindings: keys are matched by position, either Shift brakes, arrows always
   assert.equal(rebind(DEFAULT_KEYS, 'forward', 'Escape'), null, 'Esc cannot be bound');
   assert.equal(rebind(DEFAULT_KEYS, 'forward', 'ArrowUp'), null, 'nor the arrow keys, which always move');
 });
+
+test('aiming: a body the ray hits wins over a thin connection passing in front of it — unless the body is small and far behind', () => {
+  const link = (z: number): Pickable => ({ kind: 'link', id: 'wire', points: [[-40, 0, z], [40, 0, z]], radius: 3.2 });
+  const body = (z: number): Pickable => ({ kind: 'cell', id: 'body', centre: [0, 0, z], radius: 11 });
+  const site = (z: number): Pickable => ({ kind: 'site', id: 'tip', centre: [0, 0, z], radius: 10 });
+  // a connection 90 µm in front of a body 340 µm away: the body looks about 2.7 times as wide as the connection's pick zone
+  assert.equal(pick([0, 0, 0], [0, 0, -1], [link(-250), body(-340)])?.id, 'body');
+  assert.equal(pick([0, 0, 0], [0, 0, -1], [link(-250), site(-340)])?.kind, 'site', 'a recording site is aimed at in the same way');
+  // the same connection close to the eye, the body far behind it: the connection is what is being aimed at
+  assert.equal(pick([0, 0, 0], [0, 0, -1], [link(-60), body(-900)])?.id, 'wire');
+  // off the body, the connection is picked as before
+  assert.equal(pick([0, 0, 0], lookDir(Math.atan2(-30, 250), 0), [link(-250), body(-340)])?.id, 'wire');
+});

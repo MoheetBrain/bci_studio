@@ -1,5 +1,10 @@
 # Evidence — Neuroverse toys (branch `feature/neuroverse-toys`, 2026-11-25)
 
+> These are the three **prototypes**, now development aids at `#/world/dev`. `e2e-report.txt` was re-run on
+> `feature/neuroverse-world` after the shared renderer and the route changed; the screenshots, the performance sample
+> and the three recordings are from the prototype checkpoint (`6b33806`) and show the prototypes as they looked then.
+> The integrated world's own evidence is in `docs/evidence/world/`.
+
 Everything here was produced by running the code on this machine (Apple M5 Ultra, macOS 27.0.1, Chrome). It shows that
 the software does what `docs/NEUROVERSE.md` says. It does **not** show that anyone enjoys a toy, learns from it, or
 that the models are biologically right: no one has played them and no expert has reviewed them.

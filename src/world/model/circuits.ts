@@ -23,11 +23,13 @@ function buildWorkshop(v: number, attempt: number): LifCircuit {
   const f = (slot: number, lo: number, hi: number, ref: number) => (v === 0 ? ref : pick(key, slot, lo, hi));
   const glT = f(1, 1 / 85, 1 / 42, 1 / 60);
   const cells: LifCellDef[] = [
-    cell('A', 'Input cell A', 'exc', [-118, 34, 46]),
-    cell('B', 'Input cell B', 'exc', [-96, -62, -52]),
-    cell('I', 'Inhibitory cell I', 'inh', [-14, 86, -38], { cm: 0.15, gl: 1 / 40, trefMs: 1.5 }),
+    // Positions do not enter the circuit's dynamics. They matter to the recording probe of the journey (model/layout.ts):
+    // only T is close to it; the other four are at least ~240 µm away, so their spikes are small there.
+    cell('A', 'Input cell A', 'exc', [-186, 58, 74]),
+    cell('B', 'Input cell B', 'exc', [-168, -92, -78]),
+    cell('I', 'Inhibitory cell I', 'inh', [-58, 186, -96], { cm: 0.15, gl: 1 / 40, trefMs: 1.5 }),
     cell('T', 'Target cell T', 'exc', [44, 0, 0], { gl: glT }),
-    cell('D', 'Follower cell D', 'exc', [168, -26, 30]),
+    cell('D', 'Follower cell D', 'exc', [272, -48, 62]),
   ];
   const conns: LifConnDef[] = [
     { id: 'A>T', from: 'A', to: 'T', w: f(2, 1.45, 2.0, 1.7), delayMs: 1.5 },

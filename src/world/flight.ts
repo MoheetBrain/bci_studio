@@ -135,25 +135,31 @@ export function raySegment(o: V3, d: V3, a: V3, b: V3): { dist: number; t: numbe
   return { dist: Math.hypot(px, py, pz), t };
 }
 
-export interface PickSphere { kind: 'cell'; id: string; centre: V3; radius: number }
+/** A cell body, or a recording site (an electrode contact): both are picked as spheres. */
+export interface PickSphere { kind: 'cell' | 'site'; id: string; centre: V3; radius: number }
 export interface PickPath { kind: 'link'; id: string; points: V3[]; radius: number }
 export type Pickable = PickSphere | PickPath;
-export interface Hit { kind: 'cell' | 'link'; id: string; t: number }
-/** The nearest thing a ray meets. A cell wins over a link that is hit less than 4 µm in front of it (links are thin and end on cells). */
+export interface Hit { kind: 'cell' | 'site' | 'link'; id: string; t: number }
+/**
+ * What a ray is aimed at. Normally the nearest thing it meets — but a body (cell or recording site) that the ray hits
+ * wins over a thin connection passing in front of it, as long as the body looks at least 1.5 times as wide from here
+ * as the connection's pick zone: someone aiming at the middle of a body means the body. A connection that is much
+ * nearer than a small, distant body still wins.
+ */
 export function pick(o: V3, d: V3, things: readonly Pickable[], maxDist = Infinity): Hit | null {
-  let cell: Hit | null = null, link: Hit | null = null;
+  let cell: Hit | null = null, link: Hit | null = null, cellR = 0, linkR = 0;
   for (const p of things) {
-    if (p.kind === 'cell') {
+    if (p.kind !== 'link') {
       const t = raySphere(o, d, p.centre, p.radius);
-      if (t > 0 && t < maxDist && (!cell || t < cell.t)) cell = { kind: 'cell', id: p.id, t };
+      if (t > 0 && t < maxDist && (!cell || t < cell.t)) { cell = { kind: p.kind, id: p.id, t }; cellR = p.radius; }
     } else {
       for (let i = 0; i + 1 < p.points.length; i++) {
         const h = raySegment(o, d, p.points[i], p.points[i + 1]);
-        if (h && h.dist <= p.radius && h.t < maxDist && (!link || h.t < link.t)) link = { kind: 'link', id: p.id, t: h.t };
+        if (h && h.dist <= p.radius && h.t < maxDist && (!link || h.t < link.t)) { link = { kind: 'link', id: p.id, t: h.t }; linkR = p.radius; }
       }
     }
   }
-  if (cell && (!link || cell.t <= link.t + 4)) return cell;
+  if (cell && (!link || cell.t <= link.t + Math.max(4, cellR) || cellR / cell.t >= (1.5 * linkR) / Math.max(1e-6, link.t))) return cell;
   return link;
 }
 

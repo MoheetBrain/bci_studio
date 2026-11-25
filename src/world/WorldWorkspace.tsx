@@ -1,6 +1,6 @@
 // The neural world's entry: a development chooser for the three competing toys, then the chosen toy.
 // The chooser is a comparison aid for a playtest — it is not a new set of permanent tabs.
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useShell } from '../shell/shellStore';
 import { TOYS, useWorld, type ToyId } from './worldStore';
 import './world.css';
@@ -8,6 +8,7 @@ import './world.css';
 const Workshop = lazy(() => import('./toys/Workshop'));
 const Flight = lazy(() => import('./toys/Flight'));
 const Pilot = lazy(() => import('./toys/Pilot'));
+const Journey = lazy(() => import('./journey/Journey'));
 
 /** A different order each day, so that the first toy played is not always the same one. */
 function todaysOrder(): ToyId[] {
@@ -35,15 +36,21 @@ function Chooser() {
           ))}
         </div>
         <p className="w-fine" data-testid="world-order">Suggested order for today: {order.map((id) => TOYS.find((t) => t.id === id)!.letter).join(' → ')} (it rotates daily, so no toy is always first).</p>
-        <p className="w-fine"><button type="button" className="w-link" onClick={() => go('brain')} data-testid="chooser-classic">← Classic studio</button> — the brain atlas, the BCI experiment, the chip and the decoder trace are unchanged.</p>
+        <p className="w-fine"><button type="button" className="w-link" onClick={() => { location.hash = '#/world'; }} data-testid="chooser-world">← The world</button> · <button type="button" className="w-link" onClick={() => go('brain')} data-testid="chooser-classic">Classic studio</button> — these three prototypes are kept as development aids; the world at #/world is built from them.</p>
       </div>
     </div>
   );
 }
 
+/** `#/world` is the world itself; `#/world/dev` is the development chooser for the three earlier prototypes. */
+const isDev = () => typeof location !== 'undefined' && /^#\/world\/dev\b/.test(location.hash);
+
 export default function WorldWorkspace() {
   const toy = useWorld((s) => s.toy);
-  useEffect(() => { const want = toy ? `#/world/${toy}` : '#/world'; if (location.hash !== want) history.replaceState(null, '', want); }, [toy]);
+  const [dev, setDev] = useState(isDev);
+  useEffect(() => { const on = () => setDev(isDev()); window.addEventListener('hashchange', on); return () => window.removeEventListener('hashchange', on); }, []);
+  useEffect(() => { if (toy && location.hash !== `#/world/${toy}`) history.replaceState(null, '', `#/world/${toy}`); }, [toy]);
+  if (!toy && !dev) return <Suspense fallback={<div className="shell-loading cine" role="status">Opening the world…</div>}><div className="cine world-host"><Journey /></div></Suspense>;
   if (!toy) return <Chooser />;
   return (
     <Suspense fallback={<div className="shell-loading cine" role="status">Entering the circuit…</div>}>

@@ -1,53 +1,53 @@
-# End-to-end walkthrough — 2026-11-25T17:01:45.094Z
+# End-to-end walkthrough — 2026-11-25T20:12:46.464Z
 Build: production (vite preview, http://127.0.0.1:5197). Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36
 Mode: headless; WebGL renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version); canvas 1440×900 at devicePixelRatio 1.
 Result: 27/27 steps passed.
 ✓ open the studio: the first screen is a large, continuous 3D brain
-    251 structures behind one surface of 459,996 triangles; 201 regions reach it; fills 67 % of the height; ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)  (2061 ms)
+    251 structures behind one surface of 459,996 triangles; 201 regions reach it; fills 67 % of the height; ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)  (1890 ms)
 ✓ hover names the exact atlas region under the pointer; nothing is labelled until then
-    4 regions hovered as themselves  (305 ms)
+    4 regions hovered as themselves  (207 ms)
 ✓ left is the subject’s left: mirrored structures are picked on opposite sides of the mid-plane
-    227 left-named and 199 right-named picks on their own side of the fitted mid-plane (1 between 2 and 5 mm across it, at the curved fissure; none further)  (2306 ms)
+    227 left-named and 199 right-named picks on their own side of the fitted mid-plane (1 between 2 and 5 mm across it, at the curved fissure; none further)  (2288 ms)
 ✓ click selects: the camera reframes, the rest recedes, and one card opens with one invitation
-    3631 surface vertices inside the selection, 3843 on its border  (1619 ms)
+    3631 surface vertices inside the selection, 3843 on its border  (1570 ms)
 ✓ view modes: X-ray shows the atlas bodies inside a glass shell; Regions draws borders; Solid restores
-    X-ray pick: left_putamen  (2677 ms)
+    X-ray pick: left_putamen  (2668 ms)
 ✓ slice: the cut face shows the subject’s MRI, faces the viewer, and names what is under the pointer
-    25 structures named on the cut face (e.g. left_cuneus, left_lingual_gyrus, white_matter_of_left_cerebral_hemisphere); flip → keep -  (2497 ms)
+    25 structures named on the cut face (e.g. left_cuneus, left_lingual_gyrus, white_matter_of_left_cerebral_hemisphere); flip → keep -  (2432 ms)
 ✓ finder (⌘K): a deep structure is found by name and revealed inside the glass shell; its invitation is a real MRI slice
-    coronal cut at A -15 mm through the hippocampus  (3648 ms)
+    coronal cut at A -15 mm through the hippocampus  (3577 ms)
 ✓ isolate, hide, hemisphere and restore keep picking honest
-    27 regions pickable with one hidden; 51 with the left hemisphere off (none of them left)  (2292 ms)
+    27 regions pickable with one hidden; 51 with the left hemisphere off (none of them left)  (2290 ms)
 ✓ keyboard: orbit, zoom, step, frame, clear — and user input interrupts a camera move
-    n stepped to left_straight_gyrus  (1152 ms)
-✓ About this brain states what is measured, what is rendering, the limits and the licence  (107 ms)
+    n stepped to left_straight_gyrus  (1147 ms)
+✓ About this brain states what is measured, what is rendering, the limits and the licence  (128 ms)
 ✓ dive: the invitation flies into the region and hands over to the Neurons scene
-    camera 0.36 m → 0.13 m, then the Neurons scene  (2213 ms)
+    camera 0.36 m → 0.14 m, then the Neurons scene  (2212 ms)
 ✓ neurons: the timeline plays in stated slow motion, pauses, and scrubbing reproduces the same numbers
-    clock 4.00 ms; at 12.30 ms: membrane 36.8 mV, contact 14 µV  (1512 ms)
+    clock 4.60 ms; at 12.30 ms: membrane 36.8 mV, contact 14 µV  (1489 ms)
 ✓ neurons: changing a variable changes the 3D scene and the plots — distance scales the contact’s spike, not the neuron
-    30 µm → 120 µV, 120 µm → 30 µV; 0 current → silence; 10 µA/cm² → about 68 spikes a second  (1039 ms)
-✓ detail levels: Mathematical shows the equations and gates; Engineering shows the numbers the electronics get  (304 ms)
+    30 µm → 120 µV, 120 µm → 30 µV; 0 current → silence; 10 µA/cm² → about 68 spikes a second  (1052 ms)
+✓ detail levels: Mathematical shows the equations and gates; Engineering shows the numbers the electronics get  (298 ms)
 ✓ prediction 1 (all-or-nothing): commit to an answer, get feedback, then the scene shows the model’s result
-    Model, 10 → 20 µA/cm²: rate 68 → 86 spikes a second. The first spike peaks at 40 → 41 mV; later ones at 30 → 24 mV.  (631 ms)
+    Model, 10 → 20 µA/cm²: rate 68 → 86 spikes a second. The first spike peaks at 40 → 41 mV; later ones at 30 → 24 mV.  (583 ms)
 ✓ signal: the rail leads on; stages are labelled by who implements them; prediction 2 (aliasing) runs the model
-    Model: a 7 kHz tone sampled at 10 kS/s appears at 3.0 kHz. Lower the low-pass corner in the controls and it fades.  (1099 ms)
+    Model: a 7 kHz tone sampled at 10 kS/s appears at 3.0 kHz. Lower the low-pass corner in the controls and it fades.  (1031 ms)
 ✓ chip: source-traced map, honest milestones, and the original chip studio still runs inside the new shell
-    7 milestones; original studio 1440×791 px with 166 controls  (2926 ms)
+    7 milestones; original studio 1440×791 px with 166 controls  (1841 ms)
 ✓ decoder: every frame’s totals are re-added in the page and match the RTL trace
-    0: class 1 wins; 1: class 0 wins; 11: class 1 wins; 31: class 0 wins  (1428 ms)
+    0: class 1 wins; 1: class 0 wins; 11: class 1 wins; 31: class 0 wins  (1274 ms)
 ✓ prediction 3 (one dominant channel) and the what-if control, clearly marked as a software re-run
-    Channel 7: 127 → 0. Answer: class 0 — flipped from the RTL’s class 1, margin 11,097.  (584 ms)
+    Channel 7: 127 → 0. Answer: class 0 — flipped from the RTL’s class 1, margin 11,097.  (587 ms)
 ✓ research: cited passages with exact locations; unsupported questions are refused
-    12 passages; first: src/journey/stages.ts#adc  (269 ms)
-✓ return to the brain: the region and the view survived the whole journey, and a reload keeps the region  (1354 ms)
+    12 passages; first: src/journey/stages.ts#adc  (272 ms)
+✓ return to the brain: the region and the view survived the whole journey, and a reload keeps the region  (1302 ms)
 ✓ accessibility: named controls, landmarks, visible focus, and text contrast on the dark stage
-    contrast: .dock-label 10.81, .dock-scale 6, .insight-summary 15.59, .insight-kicker 7.13, .region-chip-name 18.28, .seg-btn 17.3; focus ring on nav-experiment  (18 ms)
-✓ reduced motion: nothing plays by itself and camera moves are instant  (2280 ms)
-✓ load failure: when the atlas cannot be fetched the app says so and shows no substitute  (389 ms)
-✓ WebGL unavailable: an explicit message and working non-3D scenes, no fake brain  (793 ms)
+    contrast: .dock-label 10.81, .dock-scale 6, .insight-summary 15.59, .insight-kicker 7.13, .region-chip-name 18.28, .seg-btn 17.3; focus ring on nav-experiment  (39 ms)
+✓ reduced motion: nothing plays by itself and camera moves are instant  (2130 ms)
+✓ load failure: when the atlas cannot be fetched the app says so and shows no substitute  (255 ms)
+✓ WebGL unavailable: an explicit message and working non-3D scenes, no fake brain  (766 ms)
 ✓ phone viewport (390 × 844, touch): the brain fills the screen, a tap selects, every scene fits the width
-    brain fills 88 % of the width; no horizontal overflow in any of the six scenes  (9272 ms)
+    brain fills 88 % of the width; no horizontal overflow in any of the six scenes  (8975 ms)
 ✓ no console errors during the whole desktop walkthrough  (0 ms)
 This was a headless run: frame pacing without a display is not representative. Interactive timings are measured separately, in a visible window, by tests/e2e/perf.mjs.
 Screenshots: docs/evidence/cinematic/screens/ (captured from the running application in this run).

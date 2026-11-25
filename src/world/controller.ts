@@ -8,9 +8,13 @@
 //   · held keys are forgotten on window blur, on a change of context, and when the mouse is released;
 //   · nothing happens while a text or number field has the focus;
 //   · focus keeps the pose it left and Return restores exactly that pose.
+//
+// Who owns the keyboard (the integrated world sets `strictOwnership`): the world's shortcuts act only while the
+// keyboard focus is on the page itself or on the world's own view. A slider, field, list or button that has the focus
+// keeps every key for itself, as controls do; pressing on the scene (or Escape) gives the focus back to the world.
 import { ACTIONS, MOVE, actionFor, codeOf, isTyping, loadKeys, type Action } from './bindings';
 import {
-  NO_INPUT, applyLook, changeSpeedLevel, focusOrbit, lookAt, newFlight, nearSurface, orbitBy, orbitPose, pick, stepFlight, viewRay,
+  NO_INPUT, SPEEDS_UM_S, applyLook, changeSpeedLevel, focusOrbit, lookAt, newFlight, nearSurface, orbitBy, orbitPose, pick, stepFlight, viewRay,
   type FlightInput, type FlightState, type Hit, type Orbit, type Pickable, type V3,
 } from './flight';
 
@@ -20,9 +24,15 @@ export interface Pose { pos: V3; yaw: number; pitch: number }
 export interface ControllerView { mode: Mode; captured: boolean; context: InputContext; speedLevel: number; canReturn: boolean; orbitLabel: string; cutaway: boolean; moving: boolean }
 
 const FOV = (58 * Math.PI) / 180;
-const BOUND = 760;        // the rig cannot leave a cube of this half-size (µm) around the scene
+const BOUND = 760;        // by default the rig cannot leave a cube of this half-size (µm) around the scene
 const CUTAWAY_UM = 14;    // a cell body closer than this is faded so the view never fills with its inside
 const TWEEN_MS = 260;
+/** Something on the page other than the world's view has the keyboard focus. */
+export function focusIsElsewhere(target?: EventTarget | null): boolean {
+  const el = (target as Element | null) ?? (typeof document === 'undefined' ? null : document.activeElement);
+  if (!el || el === document.body || el === document.documentElement) return false;
+  return !(el instanceof Element && el.closest('[data-world-view]'));
+}
 const angle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class FlightController {
@@ -51,6 +61,22 @@ export class FlightController {
   /** Remapping: the next key press is handed here instead of acting. */
   captureKey: ((code: string) => void) | null = null;
   readonly fovY = FOV;
+  /** The box the rig stays in, µm. */
+  bounds: { min: V3; max: V3 } = { min: [-BOUND, -BOUND, -BOUND], max: [BOUND, BOUND, BOUND] };
+  /** See the header: keys act only while the world has the keyboard focus. */
+  strictOwnership = false;
+  /** False while the scene is mounted but not shown: no key reaches the rig or its actions. */
+  enabled = true;
+  /** What the wheel does while flying: change the travel speed, or move along the line of sight. */
+  wheelMode: 'speed' | 'dolly' = 'speed';
+  /** Camera glides take longer for longer moves (the integrated world); otherwise they are short and fixed. */
+  scaledGlides = false;
+  /** Dragging turns the view the way the pointer moves ("look") instead of pulling the scene with it ("grab"). */
+  dragLooks = false;
+  /** Multiplier on the turn rate of both drag and captured mouse. */
+  lookScale = 1;
+  /** A double click on the scene (not a drag): what was under it. */
+  onDouble: ((h: Hit | null) => void) | null = null;
 
   private dom: HTMLElement | null = null;
   private tween: { t0: number; ms: number; from: Pose; to: Pose; then: () => void } | null = null;
@@ -72,7 +98,10 @@ export class FlightController {
     on(document, 'visibilitychange', () => { if (document.hidden) this.clearHeld(); });
     on(document, 'pointerlockchange', () => this.lockChanged());
     on(document, 'pointerlockerror', () => this.refused());
-    on(document, 'mousemove', (e: MouseEvent) => { if (this.captured) { applyLook(this.s, e.movementX, e.movementY); this.onInput?.(e.timeStamp); } });
+    on(document, 'mousemove', (e: MouseEvent) => { if (this.captured) { applyLook(this.s, e.movementX * this.lookScale, e.movementY * this.lookScale); this.onInput?.(e.timeStamp); } });
+    // a control that takes the keyboard focus also takes the keys: let go of whatever was held
+    on(document, 'focusin', (e: FocusEvent) => { if (this.strictOwnership && focusIsElsewhere(e.target)) this.clearHeld(); });
+    on(dom, 'dblclick', (e: MouseEvent) => { if (this.captured || !this.dom) return; const r = this.dom.getBoundingClientRect(); this.onDouble?.(this.hitAt(((e.clientX - r.left) / r.width) * 2 - 1, 1 - ((e.clientY - r.top) / r.height) * 2)); });
     on(dom, 'pointerdown', (e: PointerEvent) => this.pointerDown(e));
     on(dom, 'pointermove', (e: PointerEvent) => this.pointerMove(e));
     on(dom, 'pointerup', (e: PointerEvent) => this.pointerUp(e));
@@ -108,7 +137,8 @@ export class FlightController {
   // ── keyboard ────────────────────────────────────────────────────────────────────────────────────────────────
   private keyDown(e: KeyboardEvent): void {
     if (this.captureKey) { e.preventDefault(); e.stopPropagation(); if (e.code !== 'Escape') this.captureKey(codeOf(e)); else this.captureKey(''); return; }
-    if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!this.enabled || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (this.strictOwnership && focusIsElsewhere(e.target)) return;
     const a = actionFor(this.keys, codeOf(e));
     if (!a) return;
     // a focused button keeps Space and Enter for itself
@@ -169,6 +199,8 @@ export class FlightController {
   private pointerDown(e: PointerEvent): void {
     if (e.button !== 0) return;
     this.onInput?.(e.timeStamp);
+    // pressing on the scene hands the keyboard back to the world
+    (this.dom?.closest('[data-world-view]') as HTMLElement | null)?.focus({ preventScroll: true });
     if (this.captured) { if (performance.now() >= this.noPickUntil) this.pickAt(0, 0); return; }
     this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     try { this.dom?.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
@@ -181,8 +213,9 @@ export class FlightController {
     d.moved = true; d.x = e.clientX; d.y = e.clientY;
     this.finishTween();
     this.onInput?.(e.timeStamp);
-    // "grab the scene": dragging right turns the view left, as in a map
-    if (this.mode === 'orbit' && this.orbit) orbitBy(this.orbit, dx, dy); else applyLook(this.s, -dx * 1.4, -dy * 1.4);
+    // "grab the scene": dragging right turns the view left, as in a map (or the other way round, if the player prefers)
+    const k = (this.dragLooks ? 1.4 : -1.4) * this.lookScale;
+    if (this.mode === 'orbit' && this.orbit) orbitBy(this.orbit, dx, dy); else applyLook(this.s, dx * k, dy * k);
   }
   private pointerUp(e: PointerEvent): void {
     const d = this.drag;
@@ -197,6 +230,14 @@ export class FlightController {
     e.preventDefault();
     this.onInput?.(e.timeStamp);
     if (this.mode === 'orbit' && this.orbit) { this.orbit.dist = Math.max(18, Math.min(1400, this.orbit.dist * Math.exp(e.deltaY * 0.0016))); return; }
+    if (this.wheelMode === 'dolly') {
+      // a push along the line of sight; the flight response turns it into a short, smooth glide that stops by itself
+      if (this.mode !== 'fly' || this.context !== 'explore') return;
+      this.finishTween();
+      const f = viewRay(this.s.yaw, this.s.pitch, this.fovY, this.aspect, 0, 0), dv = -Math.max(-240, Math.min(240, e.deltaY)) * 3.2 * (SPEEDS_UM_S[this.s.speedLevel] / 120);
+      for (let a = 0; a < 3; a++) this.s.vel[a] = Math.max(-1400, Math.min(1400, this.s.vel[a] + f[a] * dv));
+      return;
+    }
     this.wheelAcc += e.deltaY;
     while (Math.abs(this.wheelAcc) >= 60) { changeSpeedLevel(this.s, this.wheelAcc < 0 ? 1 : -1); this.wheelAcc -= Math.sign(this.wheelAcc) * 60; }
     this.push();
@@ -224,10 +265,11 @@ export class FlightController {
     if (to) this.startTween(to, () => this.setPose(to));
     this.push();
   }
-  /** Glide to a given flight pose (used when a toy takes the camera to its working view). The pose left is kept for Return. */
-  glideTo(p: Pose): void {
+  /** Glide to a given flight pose (used when a toy takes the camera to its working view). The pose left is kept for Return, unless `keep` is false. */
+  glideTo(p: Pose, keep = true): void {
     this.finishTween();
-    if (!this.saved) this.saved = this.pose();
+    if (keep && !this.saved) this.saved = this.pose();
+    if (!keep) this.saved = null;
     this.release(); this.clearHeld();
     this.mode = 'fly'; this.orbit = null; this.orbitLabel = ''; this.s.vel = [0, 0, 0];
     this.startTween(p, () => this.setPose(p));
@@ -238,7 +280,8 @@ export class FlightController {
 
   private startTween(to: Pose, then: () => void): void {
     if (this.reducedMotion) { this.tween = null; this.setPose(to); then(); return; }
-    this.tween = { t0: performance.now(), ms: TWEEN_MS, from: this.pose(), to, then };
+    const from = this.pose(), d = Math.hypot(to.pos[0] - from.pos[0], to.pos[1] - from.pos[1], to.pos[2] - from.pos[2]);
+    this.tween = { t0: performance.now(), ms: this.scaledGlides ? Math.max(320, Math.min(1500, 300 + d * 1.05)) : TWEEN_MS, from, to, then };
   }
   /** Any input ends a guided movement at once (at its destination, so that modes stay consistent). */
   private finishTween(): void { const t = this.tween; if (t) { this.tween = null; this.setPose(t.to); t.then(); } }
@@ -248,7 +291,8 @@ export class FlightController {
   update(dt: number): void {
     const t = this.tween;
     if (t) {
-      const k = Math.min(1, (performance.now() - t.t0) / t.ms), e = 1 - Math.pow(1 - k, 3);
+      // short moves ease out; long ones ease in as well, so that a long glide never starts with a jolt
+      const k = Math.min(1, (performance.now() - t.t0) / t.ms), e = t.ms > 520 ? k * k * k * (k * (6 * k - 15) + 10) : 1 - Math.pow(1 - k, 3);
       for (let a = 0; a < 3; a++) this.s.pos[a] = t.from.pos[a] + (t.to.pos[a] - t.from.pos[a]) * e;
       this.s.yaw = t.from.yaw + angle(t.to.yaw - t.from.yaw) * e; this.s.pitch = t.from.pitch + (t.to.pitch - t.from.pitch) * e;
       if (k >= 1) this.finishTween();
@@ -256,7 +300,10 @@ export class FlightController {
       this.setPose(orbitPose(this.orbit));
     } else {
       stepFlight(this.s, this.flightInput(), Math.min(dt, 0.1));
-      for (let a = 0; a < 3; a++) if (Math.abs(this.s.pos[a]) > BOUND) { this.s.pos[a] = Math.sign(this.s.pos[a]) * BOUND; this.s.vel[a] = 0; }
+      for (let a = 0; a < 3; a++) {
+        if (this.s.pos[a] < this.bounds.min[a]) { this.s.pos[a] = this.bounds.min[a]; this.s.vel[a] = 0; }
+        else if (this.s.pos[a] > this.bounds.max[a]) { this.s.pos[a] = this.bounds.max[a]; this.s.vel[a] = 0; }
+      }
     }
     const near = nearSurface(this.s.pos, this.pickables.flatMap((p) => (p.kind === 'cell' ? [{ centre: p.centre, radius: p.radius }] : [])), CUTAWAY_UM);
     if (near !== this.cutaway) { this.cutaway = near; this.push(); }

@@ -1,4 +1,5 @@
-// End-to-end acceptance test of the Neuroverse toys, in a real Chrome against the production build.
+// End-to-end acceptance test of the three Neuroverse PROTOTYPE toys (now development aids at #/world/dev), in a real
+// Chrome against the production build. The integrated world at #/world has its own suite: tests/e2e/world.mjs.
 //
 //   npm run build && node tests/e2e/neuroverse.mjs            (HEADED=1 to watch)
 //
@@ -62,7 +63,7 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const hold = async (key, ms) => { await page.keyboard.down(key); await wait(ms); await page.keyboard.up(key); };
 /** Back to the default keys and travel speed, so that a failed step cannot spoil the next. */
 const resetControls = () => page.evaluate(() => { const w = window.__world; if (!w) return; w.controller.setKeys({ ...w.defaultKeys }); w.controller.s.speedLevel = 3; w.controller.s.vel = [0, 0, 0]; if (w.controller.context !== 'explore') w.controller.setContext('explore'); w.store.getState().setPanel(null); });
-const openToy = async (id, ready) => { await resetControls(); await page.goto(`${BASE}/#/world`); await page.waitForSelector(T('world-chooser')); await page.click(T(`toy-${id}`)); await page.waitForSelector(ready, { timeout: 20000 }); await page.waitForFunction(() => window.__world?.store.getState().ready && window.__world.rt.frames > 5, null, { timeout: 20000 }); await wait(400); };
+const openToy = async (id, ready) => { await resetControls(); await page.goto(`${BASE}/#/world/dev`); await page.waitForSelector(T('world-chooser')); await page.click(T(`toy-${id}`)); await page.waitForSelector(ready, { timeout: 20000 }); await page.waitForFunction(() => window.__world?.store.getState().ready && window.__world.rt.frames > 5, null, { timeout: 20000 }); await wait(400); };
 /** Click on empty scene so that the page (not a form control) has the keyboard. */
 const focusScene = async () => { await page.evaluate(() => document.activeElement?.blur?.()); };
 const viewShare = () => page.evaluate(() => document.querySelector('[data-testid="world-view"]').getBoundingClientRect().height / innerHeight);
@@ -71,8 +72,8 @@ const viewShare = () => page.evaluate(() => document.querySelector('[data-testid
 const pauseWorkshop = async () => { await page.click(T('t-replay')); await wait(400); await page.keyboard.press('Space'); await wait(120); eq(await attr('world', 'data-paused'), '1', 'Space paused the model (a button clicked with the mouse does not keep the keyboard)'); };
 
 // ══ entry ═══════════════════════════════════════════════════════════════════════════════════════════════════════
-await step('entry: the chooser offers three toys; the classic studio is one click away and unchanged; the brain has a way in', async () => {
-  await page.goto(`${BASE}/#/world`);
+await step('entry: the development chooser offers three toys; the classic studio is one click away and unchanged; the brain has a way in', async () => {
+  await page.goto(`${BASE}/#/world/dev`);
   await page.waitForSelector(T('world-chooser'));
   for (const t of ['flight', 'workshop', 'pilot']) assert(await page.locator(T(`toy-${t}`)).isVisible(), `toy ${t} is offered`);
   assert(/→/.test(await txt('world-order')), 'a suggested order is shown');
@@ -83,8 +84,8 @@ await step('entry: the chooser offers three toys; the classic studio is one clic
   for (const n of ['world', 'brain', 'experiment', 'interface', 'signal', 'chip', 'decoder', 'research']) assert(await page.locator(T(`nav-${n}`)).count() === 1, `dock entry ${n}`);
   await page.waitForSelector(T('enter-world'), { timeout: 30000 });
   await page.click(T('enter-world'));
-  await page.waitForSelector(T('world-chooser'));
-  return 'chooser ↔ classic studio; all seven classic scenes still in the dock';
+  await page.waitForSelector(T('journey'), { timeout: 20000 });      // the atlas's way in now leads to the integrated world
+  return 'development chooser ↔ classic studio; all seven classic scenes still in the dock; the atlas’s “enter” button opens the world';
 });
 
 // ══ Toy B · Time workshop (also carries the shared control checks) ═════════════════════════════════════════════════
@@ -746,9 +747,11 @@ await step('C · the full recording chain is still there: the link opens the Exp
   await page.waitForSelector(T('nav-experiment'), { timeout: 20000 });
   eq(await page.locator(T('nav-experiment')).getAttribute('aria-current'), 'page', 'the Experiment scene');
   assert(await page.locator('.shell-bar').isVisible(), 'with the classic dock');
-  await page.click(T('nav-world')); await page.waitForSelector(T('world'), { timeout: 20000 });
-  eq(await attr('world', 'data-toy'), 'pilot', 'and back to the toy');
-  return 'Pilot ↔ Experiment (full chain) ↔ Pilot';
+  // the dock's World entry opens the world itself now; the prototype is one address away
+  await page.click(T('nav-world')); await page.waitForSelector(T('journey'), { timeout: 20000 });
+  await page.goto(`${BASE}/#/world/pilot`); await page.waitForSelector(T('world'), { timeout: 20000 });
+  eq(await attr('world', 'data-toy'), 'pilot', 'and the prototype opens again from its own address');
+  return 'Pilot → Experiment (full chain) → World → Pilot prototype';
 });
 
 // ══ across the toys ═══════════════════════════════════════════════════════════════════════════════════════════════

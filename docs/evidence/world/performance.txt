@@ -1,0 +1,94 @@
+The integrated world (#/world) — interactive performance sample
+Run: 2026-11-25T20:23:06.269Z   Build: production (vite preview), visible Chrome window
+Machine: Apple M5 Ultra, macOS 27.0.1, 'AC Power'
+Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36
+Graphics: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
+Window: 1920 × 1080 CSS pixels. Two pixel densities were measured (below).
+
+How to read this. This display refreshes at about 120 Hz, so no frame interval can be shorter than 8.3 ms: a median at
+that value means the page kept up with this display — it is a ceiling set by the display, not a measure of spare
+capacity. The target was 60 Hz (16.7 ms). “Main-thread work” is the part of each frame the page itself spends
+(scripts and submitting draw calls); what the GPU then spends cannot be read from inside a page and is not reported.
+
+PROFILE 1 — device pixel ratio 1: brain canvas 1920 × 1080, tissue canvas 1920 × 1010 physical pixels; 30 s per segment
+
+Whole brain — turning it by dragging, hovering to name regions (460 k triangles, one draw call)
+  3618 frames in 30.1 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.5 ms · p99 9.1 ms · worst 9.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.1 ms · p95 0.2 ms · p99 0.2 ms per frame  (1 % of a 60 Hz frame at p95)
+  response         not sampled in this segment
+
+Going in — dive, caption, cross-fade, arrival glide (includes the first frames of the tissue view)
+  406 frames in 3.4 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.6 ms · p99 9.2 ms · worst 25.1 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 1 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.3 ms · p95 0.6 ms · p99 0.7 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         not sampled in this segment
+
+Circuit — flying, looking, wheel glides, replay, new runs every few seconds, overview; linked trace open
+  3658 frames in 30.5 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.4 ms · p99 9.2 ms · worst 9.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.3 ms · p95 0.4 ms · p99 0.5 ms per frame  (2 % of a 60 Hz frame at p95)
+  response         407 inputs · median 7.3 ms · p95 8.1 ms
+
+Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (15 targets reached)
+  3619 frames in 30.2 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.4 ms · p99 9.2 ms · worst 9.5 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.2 ms · p95 0.4 ms · p99 0.5 ms per frame  (2 % of a 60 Hz frame at p95)
+  response         44 inputs · median 4.2 ms · p95 7.5 ms
+
+PROFILE 2 — device pixel ratio 2 (a Retina display draws this): brain canvas 3840 × 2160, tissue canvas 3840 × 2020 physical pixels; 15 s per segment
+
+Whole brain — turning it by dragging, hovering to name regions (460 k triangles, one draw call)
+  1816 frames in 15.1 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.7 ms · p99 10.2 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.1 ms · p95 0.2 ms · p99 0.2 ms per frame  (1 % of a 60 Hz frame at p95)
+  response         not sampled in this segment
+
+Going in — dive, caption, cross-fade, arrival glide (includes the first frames of the tissue view)
+  403 frames in 3.4 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 9.7 ms · p99 10.2 ms · worst 33.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 2 · over 33.3 ms: 1 · over 100 ms: 0
+  main-thread work median 0.4 ms · p95 0.6 ms · p99 0.7 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         not sampled in this segment
+
+Circuit — flying, looking, wheel glides, replay, new runs every few seconds, overview; linked trace open
+  1844 frames in 15.4 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 8.5 ms · p99 10.1 ms · worst 10.3 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.3 ms · p95 0.5 ms · p99 0.5 ms per frame  (3 % of a 60 Hz frame at p95)
+  response         212 inputs · median 7.2 ms · p95 8.8 ms
+
+Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (8 targets reached)
+  1818 frames in 15.2 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 9 ms · p99 10.3 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.2 ms · p95 0.4 ms · p99 0.6 ms per frame  (2 % of a 60 Hz frame at p95)
+  response         31 inputs · median 4.7 ms · p95 9.3 ms
+
+Loading (from a local server; no network is involved)
+  to “brain on screen”: cold (new browser profile) 561 ms · warm (reload) 263 ms
+  from the click on “Enter” to a flyable tissue view: 3019 ms, of which about 2.5 s is the authored dive and arrival
+
+Payload (production build, dist/assets)
+  all JavaScript 2967 kB raw, 934 kB gzip · all CSS 217 kB raw
+  the world's own chunks: Journey.js 117 kB, Journey.css 20 kB, WorldFrame.js 64 kB, WorldWorkspace.js 6 kB, WorldWorkspace.css 13 kB, pilot.worker.js 24 kB
+  the brain is the atlas already in the studio (8.9 MB on disk); the tissue downloads no mesh, texture or dataset — every shape is generated in the browser
+
+Memory over repeated trips (out to the brain and back in)
+  JS heap after one trip: 67.3 MB; after six more: 66.8 MB (-0.5 MB).
+  No garbage collection was forced, so this is an upper bound on growth. GPU memory is not exposed by the browser and was not measured.
+
+Pointer capture (real browser grant, profile 1)
+  window in front: yes
+  requested by the “Mouse look” button: granted; centre mark shown: yes; that click selected nothing; mouse movement turned the view: yes; Escape released it and held keys were forgotten: yes
+
+Adaptive detail
+  The world lowers its detail setting by itself when more than half of 150 consecutive frames take over 22.5 ms. In this run it never did: every segment stayed at “high”.
+
+Not measured: any other computer, a phone or tablet, a browser other than Chrome, battery power, a 60 Hz display,
+GPU time or GPU memory, and anything a person feels. Model time steps and sample rates do not depend on any of the above.

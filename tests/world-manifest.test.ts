@@ -32,10 +32,18 @@ test('manifest: every entry says what it assumes, what it leaves out, where it c
     assert.ok(!/expert-reviewed$/.test(m.review) || m.review.startsWith('code-tested; not'), m.id);
     for (const f of m.files) assert.ok(existsSync(join(root, f)), `${m.id}: ${f} exists`);
   }
-  for (const toy of ['A', 'B', 'C'] as const) {
+  for (const toy of ['A', 'B', 'C', 'W'] as const) {
     const mine = manifestFor(toy);
-    assert.ok(mine.some((m) => m.kind === 'model') && mine.some((m) => m.cls === 'illustrative'), `toy ${toy} has a model and names its illustration`);
+    assert.ok(mine.some((m) => m.kind === 'model') && mine.some((m) => m.cls === 'illustrative'), `${toy} has a model and names its illustration`);
   }
-  // nothing in the toys is measured data or derived anatomy, and the manifest must not say otherwise
-  assert.ok(MANIFEST.every((m) => m.cls !== 'measured-data' && m.cls !== 'derived-anatomy'));
+  // nothing in the three prototype toys is measured data or derived anatomy, and the manifest must not say otherwise
+  for (const toy of ['A', 'B', 'C'] as const) assert.ok(manifestFor(toy).every((m) => m.cls !== 'measured-data' && m.cls !== 'derived-anatomy'));
+  // the integrated world has exactly one piece of anatomy — the atlas surface with its labels — and it is DATA, kept
+  // apart from every model and from the way it is lit; nothing anywhere is presented as a measured recording
+  const anatomy = MANIFEST.filter((m) => m.cls === 'derived-anatomy');
+  assert.deepEqual(anatomy.map((m) => [m.id, m.kind]), [['atlas-surface', 'data']]);
+  assert.ok(MANIFEST.every((m) => m.cls !== 'measured-data'));
+  assert.equal(MANIFEST.find((m) => m.id === 'brain-look')!.cls, 'illustrative');
+  // the world uses the circuit, the probe and the decoder task; the ten-cell field of the dropped Toy A is not in it
+  assert.deepEqual(manifestFor('W').map((m) => m.id).sort(), ['atlas-surface', 'brain-look', 'cells', 'contact', 'lif', 'pilot', 'workshop']);
 });

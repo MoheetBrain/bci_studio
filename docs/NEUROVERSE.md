@@ -1,5 +1,11 @@
 # Hamiltonian Neuroverse — three competing toys (stages 0–2)
 
+> **Superseded as the current state on 2026-11-25** by the integrated world — see `docs/WORLD.md`. The owner authorised
+> the next phase without the comparative playtest this document ends on. What follows is the record of the three
+> prototypes as they stood at commit `6b33806`; they are kept as development aids at `#/world/dev`. Two things changed
+> under them since: the scene renderer they share, and the positions of the five workshop cells (which do not enter
+> the dynamics). Their browser suite still passes (`npm run test:e2e:neuroverse`).
+
 Date: 2026-11-25 · Branch `feature/neuroverse-toys`, cut from `feature/bci-experiment` @ `c605e3f` · nothing pushed,
 merged, published or deployed · one engineering agent; no sub-agents, no second model, no paid or generative service.
 

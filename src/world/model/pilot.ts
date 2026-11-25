@@ -177,6 +177,13 @@ export interface PilotSnapshot {
    */
   fit: number;
   decoderId: string; calibrated: boolean; cond: PilotCondition;
+  /**
+   * How the active decoder arrived at `decoded` in this bin, exactly as its own step reported it:
+   * decoded[o] = base[o] + Σ_j terms[o][j]. For the linear decoder and the Kalman filter a term is one recording
+   * contact (`termOf` = 'channel'); for the network it is one hidden unit. `base` is a bias, or (Kalman) the filter's
+   * own previous estimate carried forward. Empty while no decoder is fitted.
+   */
+  base: number[]; terms: number[][]; termOf: 'channel' | 'hidden' | 'none';
 }
 
 /** Intended velocity for an intent code: 0 = none, 1…8 = E, NE, N, NW, W, SW, S, SE at full speed, +9 = the same at 45 %. */
@@ -303,9 +310,9 @@ export class PilotSession {
     genBin(hash3(this.seed, 0, 0x91a7), k, intent[0], intent[1], this.cond, this.thresholds, this.last, this.counts, spikes);
     const alpha = 1 - Math.exp(-BIN_MS / PILOT_TAU_MS);
     for (let ch = 0; ch < N_CH; ch++) this.rates[ch] += alpha * (this.counts[ch] / BIN_S - this.rates[ch]);
-    let decoded: [number, number] = [0, 0];
+    let decoded: [number, number] = [0, 0], base: number[] = [], terms: number[][] = [], termOf: PilotSnapshot['termOf'] = 'none';
     const model = this.models.get(this.decoderId);
-    if (model && this.dec) { const y = model.step(this.dec, { counts: this.counts, rates: this.rates }).y; decoded = [y[0], y[1]]; }
+    if (model && this.dec) { const out = model.step(this.dec, { counts: this.counts, rates: this.rates }), y = out.y; decoded = [y[0], y[1]]; base = out.base.slice(); terms = out.contrib.map((r) => r.slice()); termOf = out.contribOf; }
     // the cursor is moved by the DECODED velocity only; the ghost shows where the intended velocity would have taken it
     const px = this.cursor[0], py = this.cursor[1], lim = 1.15, cl = (v: number) => Math.max(-lim, Math.min(lim, v));
     this.cursor = [cl(px + decoded[0] * VMAX * BIN_S), cl(py + decoded[1] * VMAX * BIN_S)];
@@ -327,7 +334,7 @@ export class PilotSession {
     return {
       bin: this.bin, tS: this.bin * BIN_S, intent, decoded, cursor: [this.cursor[0], this.cursor[1]], ghost: [this.ghost[0], this.ghost[1]], target: [tg[0], tg[1]],
       counts: Array.from(this.counts), rates: Array.from(this.rates), spikes, hits: this.hits, misses: this.misses, ended, fit: this.recentFit(),
-      decoderId: this.decoderId, calibrated: !!this.calibration, cond: this.cond,
+      decoderId: this.decoderId, calibrated: !!this.calibration, cond: this.cond, base, terms, termOf,
     };
   }
 

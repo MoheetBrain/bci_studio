@@ -9,7 +9,7 @@ export const TOYS: Array<{ id: ToyId; letter: 'A' | 'B' | 'C'; name: string; que
   { id: 'workshop', letter: 'B', name: 'Time workshop', question: 'Is it enjoyable to change one cause and discover why the result changes?', verb: 'Move two inputs in time, switch a connection, freeze, step, replay, compare.' },
   { id: 'pilot', letter: 'C', name: 'Decoder pilot', question: 'Does getting a real control loop to work, breaking it and repairing it, make you want another go?', verb: 'Steer a cursor through a fitted decoder, break the loop, recover it two ways.' },
 ];
-export interface Selection { kind: 'cell' | 'link'; id: string }
+export interface Selection { kind: 'cell' | 'site' | 'link'; id: string }
 export type Panel = null | 'controls' | 'model' | 'runs';
 export type Quality = 'high' | 'balanced' | 'low';
 
@@ -46,7 +46,7 @@ export const useWorld = create<WorldState>((set, get) => ({
   running: '', paused: false, ready: false, quality: 'high', reducedMotion: !!reduceQuery?.matches,
   notice: null,
   setToy: (toy) => {
-    if (typeof location !== 'undefined') history.replaceState(null, '', toy ? `#/world/${toy}` : '#/world');
+    if (typeof location !== 'undefined') history.replaceState(null, '', toy ? `#/world/${toy}` : '#/world/dev');
     set({ toy, selected: null, hovered: null, panel: null, running: '', paused: false, ready: false, notice: null });
   },
   select: (selected) => { const a = get().selected; if (a?.id !== selected?.id || a?.kind !== selected?.kind) set({ selected }); },
@@ -55,4 +55,5 @@ export const useWorld = create<WorldState>((set, get) => ({
 }));
 
 reduceQuery?.addEventListener?.('change', (e) => useWorld.setState({ reducedMotion: e.matches }));
-if (typeof window !== 'undefined') window.addEventListener('hashchange', () => { const t = fromHash(); if (t !== useWorld.getState().toy && location.hash.startsWith('#/world')) useWorld.getState().setToy(t); });
+// a change of address is followed, never rewritten: #/world is the world, #/world/dev the prototype chooser
+if (typeof window !== 'undefined') window.addEventListener('hashchange', () => { const t = fromHash(); if (t !== useWorld.getState().toy && location.hash.startsWith('#/world')) useWorld.setState({ toy: t, selected: null, hovered: null, panel: null, running: '', paused: false, ready: false, notice: null }); });

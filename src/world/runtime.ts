@@ -19,11 +19,14 @@ export interface SceneCell {
   shape: 'pyramidal' | 'multipolar';
 }
 export interface SceneLink { id: string; from: string; to: string; inhibitory: boolean }
+/** A recording site that can be aimed at and selected (an electrode contact). Not a cell of any model. */
+export interface SceneSite { id: string; label: string; pos: V3; radius: number }
 export interface SceneSpec {
   /** Changes whenever the geometry must be rebuilt. */
   key: string;
   cells: SceneCell[];
   links: SceneLink[];
+  sites?: SceneSite[];
   /** Where the rig starts and what it looks at. */
   home: { pos: V3; lookAt: V3 };
   overview: { pivot: V3; dist: number; az: number; el: number };
@@ -41,6 +44,8 @@ export const rt = {
   dim: new Float32Array(MAX_CELLS),
   /** Per link, 1 = connected. */
   linkOn: new Float32Array(MAX_LINKS).fill(1),
+  /** Per recording site, 0…1: the contact has just counted a threshold crossing. */
+  site: new Float32Array(16),
   /** Events on their way along a link (u = 0 at the sender, 1 at the receiver). */
   pulses: [] as Pulse[],
   /** The toy's per-frame work: advance its model clock and refresh the arrays above. */
@@ -52,5 +57,5 @@ export const rt = {
 };
 
 export function resetRuntime(): void {
-  rt.act.fill(0); rt.flash.fill(0); rt.dim.fill(0); rt.linkOn.fill(1); rt.pulses.length = 0; rt.frame = null; rt.onPick = null;
+  rt.act.fill(0); rt.flash.fill(0); rt.dim.fill(0); rt.site.fill(0); rt.linkOn.fill(1); rt.pulses.length = 0; rt.frame = null; rt.onPick = null;
 }

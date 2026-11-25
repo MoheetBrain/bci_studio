@@ -12,10 +12,11 @@ export type SourceClass = 'measured-data' | 'derived-anatomy' | 'published-model
 export interface ManifestEntry {
   id: string;
   name: string;
-  kind: 'model' | 'asset';
+  kind: 'model' | 'asset' | 'data';
   cls: SourceClass;
   revision: string;
-  usedBy: Array<'A' | 'B' | 'C'>;
+  /** Which prototype toys use it (A, B, C) and whether the integrated world does (W). */
+  usedBy: Array<'A' | 'B' | 'C' | 'W'>;
   /** What it computes or is, in one or two sentences. */
   what: string;
   units: string;
@@ -29,7 +30,7 @@ export interface ManifestEntry {
 
 export const MANIFEST: ManifestEntry[] = [
   {
-    id: 'lif', name: 'Current-based leaky integrate-and-fire circuit', kind: 'model', cls: 'published-model', revision: LIF_REVISION, usedBy: ['A', 'B'],
+    id: 'lif', name: 'Current-based leaky integrate-and-fire circuit', kind: 'model', cls: 'published-model', revision: LIF_REVISION, usedBy: ['A', 'B', 'W'],
     what: 'C·dV/dt = −g_L(V − E_L) + I_bias + I_e + I_i; a threshold crossing is a spike event followed by a reset; each connection delivers an exponentially decaying current after a fixed delay.',
     units: 'ms · mV · nF · µS · nA; positions in µm',
     assumptions: [
@@ -45,10 +46,10 @@ export const MANIFEST: ManifestEntry[] = [
     review: 'code-tested; not expert-reviewed', files: ['src/world/model/lif.ts', 'tests/world-lif.test.ts'],
   },
   {
-    id: 'workshop', name: 'Time-workshop circuit (five cells)', kind: 'model', cls: 'published-model', revision: `${LIF_REVISION}/workshop-1`, usedBy: ['B'],
+    id: 'workshop', name: 'Time-workshop circuit (five cells)', kind: 'model', cls: 'published-model', revision: `${LIF_REVISION}/workshop-1`, usedBy: ['B', 'W'],
     what: 'Two input cells converge on a target; one of them also drives an inhibitory cell whose connection onto the target can be switched; the target drives a follower.',
     units: 'as the LIF model',
-    assumptions: ['Reference numbers: C 0.25 nF, τ 15 ms, rest −70 mV, threshold −54 mV; one input moves the target about 10 mV.', 'Variants change the target’s leak, the two input weights and the inhibitory weight and delay within stated bounds, and are kept only if the target can still fire with inhibition on.'],
+    assumptions: ['Reference numbers: C 0.25 nF, τ 15 ms, rest −70 mV, threshold −54 mV; one input moves the target about 10 mV.', 'Cell positions do not enter the dynamics. They are chosen so that only the target is close to the journey’s probe (the other four are about 240 µm from it).', 'Variants change the target’s leak, the two input weights and the inhibitory weight and delay within stated bounds, and are kept only if the target can still fire with inhibition on.'],
     omits: ['It is a diagram of a mechanism (temporal summation, feed-forward inhibition), not a circuit found in any brain region.'],
     sources: [{ label: 'Parameters chosen for this toy', read: 'n/a' }],
     verified: ['one input is not enough; two within the window are', 'the window is symmetric without inhibition and one-sided with it', 'a leakier target has a narrower window', 'six variants keep the task possible'],
@@ -65,7 +66,7 @@ export const MANIFEST: ManifestEntry[] = [
     review: 'code-tested; not expert-reviewed', files: ['src/world/model/circuits.ts', 'src/world/model/fieldRun.ts'],
   },
   {
-    id: 'contact', name: 'Virtual recording contact', kind: 'model', cls: 'synthetic-observation', revision: 'contact-1', usedBy: ['A'],
+    id: 'contact', name: 'Virtual recording contact', kind: 'model', cls: 'synthetic-observation', revision: 'contact-1', usedBy: ['A', 'W'],
     what: 'y(t) = Σ_cells a·Σ_spikes h(t − t_spike) + noise, sampled at 20 kHz, with a = 120 µV × 30 µm ÷ distance from the contact to the cell body.',
     units: 'µV; µm; ms',
     assumptions: [`Distance floor ${OBS.minDistUm} µm (avoids a singularity only).`, `White Gaussian noise, ${OBS.noiseUv} µV rms, a pure function of (seed, contact, sample).`, 'The waveform’s trough is placed on the model’s spike time.', `Events are detected at −${OBS.threshK} × the noise level with a ${OBS.deadMs} ms dead time.`],
@@ -78,7 +79,7 @@ export const MANIFEST: ManifestEntry[] = [
     review: 'code-tested; not expert-reviewed', files: ['src/world/model/observe.ts'],
   },
   {
-    id: 'pilot', name: 'Decoder-pilot surrogate', kind: 'model', cls: 'published-model', revision: PILOT_REVISION, usedBy: ['C'],
+    id: 'pilot', name: 'Decoder-pilot surrogate', kind: 'model', cls: 'published-model', revision: PILOT_REVISION, usedBy: ['C', 'W'],
     what: 'Per 50 ms bin: intended velocity → firing rates of the Experiment scene’s 24 units → Poisson spikes → each spike counted with a probability set by its size, the detector noise and a threshold fixed at calibration → smoothed rates → a fitted decoder → cursor velocity.',
     units: 'velocity in workspace units (1 = full speed); rates in spikes/s; amplitudes and thresholds in µV',
     assumptions: ['Keeps the population model and the decoders of experiment/model unchanged.', 'Detection probability Φ((κ·a − θ)/σ) with κ computed from the chain’s own filters; noise crossings at Rice’s rate.', 'Thresholds are K·σ at calibration and stay there until the next calibration.', 'Spike times, counts and false crossings are pure functions of (seed, unit or contact, bin).'],
@@ -91,14 +92,33 @@ export const MANIFEST: ManifestEntry[] = [
     review: 'code-tested; not expert-reviewed', files: ['src/world/model/pilot.ts', 'src/world/pilotHost.ts', 'tests/world-pilot.test.ts'],
   },
   {
-    id: 'cells', name: 'Cell shapes and backdrop', kind: 'asset', cls: 'illustrative', revision: 'morph-1', usedBy: ['A', 'B', 'C'],
-    what: 'Generated bodies, branching dendrites and thin axons at a consistent scale; a shell of dimmer backdrop cells; a small vessel as a landmark.',
+    id: 'cells', name: 'Cell shapes and backdrop', kind: 'asset', cls: 'illustrative', revision: 'morph-2', usedBy: ['A', 'B', 'C', 'W'],
+    what: 'Generated bodies, branching dendrites and thin axons at a consistent scale; dimmer backdrop cells, fine fibres and specks as scenery; a small vessel as a landmark; a haze that is rosy towards the cortical surface and indigo towards the white matter; electrode shanks with exposed tips.',
     units: 'scene µm (a 100 µm bar is drawn)',
-    assumptions: ['Body positions of the model’s cells are the model’s own coordinates (the contact model uses them).', 'In Toy C the layout is compressed for drawing; that model uses its own distances.'],
+    assumptions: ['Body positions of the model’s cells are the model’s own coordinates (the contact model uses them).', 'In Toy C the layout is compressed for drawing; that model uses its own distances.', 'In the integrated world each population unit is drawn at the population model’s own offset from its contact; the array’s 170 µm pitch and the probe’s position are choices of this build.', 'The glow in a body, the flash and the soft disc at a spike are an overlay of model state, not the appearance of tissue.'],
     omits: ['Not reconstructions. Not the cells at any atlas location. No model computes anything along a dendrite or axon.'],
     sources: [{ label: 'Generated in src/world/morph.ts; no external mesh or texture', read: 'n/a' }],
-    verified: [], review: 'illustration; nothing to verify numerically', files: ['src/world/morph.ts', 'src/world/fieldMaterial.ts'],
+    verified: [], review: 'illustration; nothing to verify numerically', files: ['src/world/morph.ts', 'src/world/fieldMaterial.ts', 'src/world/model/layout.ts'],
+  },
+  {
+    id: 'atlas-surface', name: 'Whole-brain surface and region labels', kind: 'data', cls: 'derived-anatomy', revision: 'hbci-specimen/1 · hbci-atlas/1', usedBy: ['W'],
+    what: 'One continuous outer surface of one volunteer’s brain, derived from that volunteer’s own T1 MRI in the SPL/NAC atlas, with the atlas’s own label for the region under every surface point.',
+    units: 'atlas subject space, RAS millimetres',
+    assumptions: ['The surface is the T1 intensity boundary between tissue and fluid inside a mask grown around the labelled brain, smoothed and simplified (see docs/CINEMATIC_REBUILD.md §2).', 'A region is whatever the atlas’s label volume says lies under a surface point.'],
+    omits: ['Not a validated pial surface. One person: not an average and not a clinical reference.', 'Labels are drawn from folds. The atlas contains no cytoarchitectonic borders (for example of primary motor cortex) and no cells.'],
+    sources: [{ label: 'SPL/NAC Brain Atlas, as recorded in docs/ATLAS_PROVENANCE.md', read: 'The repository’s data files and licence (see that document). No new reading for this build.' }],
+    verified: ['every region’s surface patch lies on that region’s own atlas model; left is left; the precentral gyrus is in front of the postcentral (tests/specimen-assets.test.ts)', 'in the browser: the region picked under the pointer is the atlas structure drawn there'],
+    review: 'code-tested; not expert-reviewed', files: ['src/atlas/loadAtlas.ts', 'src/world/journey/BrainStage.tsx'],
+  },
+  {
+    id: 'brain-look', name: 'How the whole brain is lit and coloured', kind: 'asset', cls: 'illustrative', revision: 'brain-look-1', usedBy: ['W'],
+    what: 'A dusty-mauve tissue colour, a cool key light from the upper left and a warm one from the right, darkened folds with a thin line along each fold’s floor (from the mesh’s own concavity), broad satin highlights, and a warm contour around the region that can be entered.',
+    units: 'none (appearance)',
+    assumptions: ['The light rig travels with the camera, so every view is lit like the opening shot.', 'The fold line comes from a concavity field computed from the surface mesh; it does not move or reshape the surface.'],
+    omits: ['No colour, highlight or shadow is histology, blood supply or activity. No subsurface scattering, no cast shadows between folds.'],
+    sources: [{ label: 'Computed in src/world/journey/brainLook.ts; no external texture', read: 'n/a' }],
+    verified: [], review: 'illustration; nothing to verify numerically', files: ['src/world/journey/brainLook.ts'],
   },
 ];
 
-export const manifestFor = (toy: 'A' | 'B' | 'C') => MANIFEST.filter((m) => m.usedBy.includes(toy));
+export const manifestFor = (toy: 'A' | 'B' | 'C' | 'W') => MANIFEST.filter((m) => m.usedBy.includes(toy));

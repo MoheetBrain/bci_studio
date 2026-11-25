@@ -8,10 +8,10 @@ import { BufferAttribute, BufferGeometry, Vector3 } from 'three';
 import { mulberry32 } from '../experiment/model/rng';
 import type { SceneCell } from './runtime';
 
-interface Build { pos: number[]; nor: number[]; cell: number[]; kind: number[]; along: number[]; idx: number[] }
-const newBuild = (): Build => ({ pos: [], nor: [], cell: [], kind: [], along: [], idx: [] });
+interface Build { pos: number[]; nor: number[]; cell: number[]; kind: number[]; along: number[]; tip: number[]; idx: number[] }
+const newBuild = (): Build => ({ pos: [], nor: [], cell: [], kind: [], along: [], tip: [], idx: [] });
 export interface Detail { somaU: number; somaV: number; radial: number; segPer100: number; branches: number }
-export const FOREGROUND: Detail = { somaU: 28, somaV: 18, radial: 7, segPer100: 9, branches: 1 };
+export const FOREGROUND: Detail = { somaU: 36, somaV: 24, radial: 9, segPer100: 13, branches: 1 };
 export const BACKDROP: Detail = { somaU: 12, somaV: 8, radial: 4, segPer100: 4, branches: 0.5 };
 
 function soma(b: Build, c: Vector3, r: number, tall: number, taper: boolean, cell: number, d: Detail, ph: number): void {
@@ -25,15 +25,18 @@ function soma(b: Build, c: Vector3, r: number, tall: number, taper: boolean, cel
       const x = dx * r * narrow * bump, y = sy * r * tall * bump, z = dz * r * narrow * bump;
       b.pos.push(c.x + x, c.y + y, c.z + z);
       const nx = dx / narrow, ny = sy / tall, nz = dz / narrow, n = Math.hypot(nx, ny, nz) || 1;
-      b.nor.push(nx / n, ny / n, nz / n); b.cell.push(cell); b.kind.push(0); b.along.push(0);
+      b.nor.push(nx / n, ny / n, nz / n); b.cell.push(cell); b.kind.push(0); b.along.push(0); b.tip.push(0);
     }
   }
   const w = d.somaU + 1;
   for (let v = 0; v < d.somaV; v++) for (let u = 0; u < d.somaU; u++) { const a = base + v * w + u, q = a + w; b.idx.push(a, a + 1, q, a + 1, q + 1, q); }
 }
 
-/** A tapering tube through points (Catmull–Rom), closed at the tip. `a0`…`a1`: how far from the body it runs (0…1). */
-function tube(b: Build, pts: Vector3[], r0: number, r1: number, cell: number, kind: number, a0: number, a1: number, d: Detail): void {
+/**
+ * A tapering tube through points (Catmull–Rom), closed at the tip. `a0`…`a1`: how far from the body it runs (0…1).
+ * A `terminal` tube is the last stretch of a branch: the material lets it thin out towards its tip.
+ */
+function tube(b: Build, pts: Vector3[], r0: number, r1: number, cell: number, kind: number, a0: number, a1: number, d: Detail, terminal = false): void {
   let len = 0;
   for (let i = 1; i < pts.length; i++) len += pts[i].distanceTo(pts[i - 1]);
   const segs = Math.max(3, Math.round((len / 100) * d.segPer100)), base = b.pos.length / 3, R = d.radial;
@@ -54,13 +57,13 @@ function tube(b: Build, pts: Vector3[], r0: number, r1: number, cell: number, ki
     const r = r0 + (r1 - r0) * Math.pow(t, 0.8);
     for (let j = 0; j < R; j++) {
       const a = (j / R) * 2 * Math.PI, cx = Math.cos(a), sx = Math.sin(a), nx = nrm.x * cx + bin.x * sx, ny = nrm.y * cx + bin.y * sx, nz = nrm.z * cx + bin.z * sx;
-      b.pos.push(p.x + nx * r, p.y + ny * r, p.z + nz * r); b.nor.push(nx, ny, nz); b.cell.push(cell); b.kind.push(kind); b.along.push(a0 + (a1 - a0) * t);
+      b.pos.push(p.x + nx * r, p.y + ny * r, p.z + nz * r); b.nor.push(nx, ny, nz); b.cell.push(cell); b.kind.push(kind); b.along.push(a0 + (a1 - a0) * t); b.tip.push(terminal ? t : 0);
     }
   }
   for (let s = 0; s < segs; s++) for (let j = 0; j < R; j++) { const a = base + s * R + j, n = base + s * R + ((j + 1) % R); b.idx.push(a, n, a + R, n, n + R, a + R); }
   // tip
   const tip = b.pos.length / 3; at(1, p);
-  b.pos.push(p.x, p.y, p.z); b.nor.push(tan.x, tan.y, tan.z); b.cell.push(cell); b.kind.push(kind); b.along.push(a1);
+  b.pos.push(p.x, p.y, p.z); b.nor.push(tan.x, tan.y, tan.z); b.cell.push(cell); b.kind.push(kind); b.along.push(a1); b.tip.push(terminal ? 1 : 0);
   for (let j = 0; j < R; j++) b.idx.push(base + segs * R + j, base + segs * R + ((j + 1) % R), tip);
 }
 
@@ -68,12 +71,24 @@ function branch(b: Build, from: Vector3, dir: Vector3, len: number, r0: number, 
   const bend = new Vector3((rnd() - 0.5) * 0.5, (rnd() - 0.5) * 0.35, (rnd() - 0.5) * 0.5);
   const mid = from.clone().addScaledVector(dir, len * 0.5).addScaledVector(bend, len * 0.3), end = from.clone().addScaledVector(dir, len).addScaledVector(bend, len * 0.55);
   const a1 = Math.min(1, a0 + len / 260);
-  if (!fork) { tube(b, [from, mid, end], r0, r1, cell, kind, a0, a1, d); return; }
+  // a little meander between the control points, so that no branch is a clean arc
+  const wob = (p: Vector3, k: number) => p.add(new Vector3((rnd() - 0.5) * len * k, (rnd() - 0.5) * len * k, (rnd() - 0.5) * len * k));
+  if (!fork) {
+    const pts = d.branches >= 1 ? [from, wob(from.clone().lerp(mid, 0.5), 0.07), mid, wob(mid.clone().lerp(end, 0.5), 0.09), end] : [from, mid, end];
+    tube(b, pts, r0, r1, cell, kind, a0, a1, d, true);
+    return;
+  }
   const split = from.clone().lerp(end, 0.55).addScaledVector(bend, len * 0.12);
   tube(b, [from, mid.clone().lerp(from, 0.3), split], r0, (r0 + r1) / 2, cell, kind, a0, (a0 + a1) / 2, d);
   for (const s of [-1, 1]) {
     const side = new Vector3(dir.z, (rnd() - 0.5) * 0.6, -dir.x).multiplyScalar(s * (0.45 + rnd() * 0.35)).add(dir).normalize();
-    tube(b, [split, split.clone().addScaledVector(side, len * 0.3), split.clone().addScaledVector(side, len * 0.62).addScaledVector(bend, len * 0.2)], (r0 + r1) / 2, r1 * 0.8, cell, kind, (a0 + a1) / 2, a1, d);
+    const c1 = split.clone().addScaledVector(side, len * 0.3), c2 = split.clone().addScaledVector(side, len * 0.62).addScaledVector(bend, len * 0.2);
+    tube(b, [split, wob(c1, 0.05), c2], (r0 + r1) / 2, r1 * 0.8, cell, kind, (a0 + a1) / 2, a1, d, true);
+    // a second-order twig on some of them (foreground detail only)
+    if (d.branches >= 1 && rnd() < 0.5) {
+      const tw = new Vector3((rnd() - 0.5), (rnd() - 0.5) * 0.7, (rnd() - 0.5)).add(side).normalize();
+      tube(b, [c1, c1.clone().addScaledVector(tw, len * 0.16), c1.clone().addScaledVector(tw, len * 0.34).addScaledVector(bend, len * 0.08)], r1 * 0.85, r1 * 0.55, cell, kind, (a0 + a1) / 2, a1, d, true);
+    }
   }
 }
 
@@ -100,7 +115,7 @@ function buildCell(b: Build, c: SceneCell, index: number, d: Detail, seed: numbe
     // axon: thin, straight down
     const ax = [C.clone().add(new Vector3(0, -r * 1.1, 0))];
     for (let k = 1; k <= 3; k++) ax.push(ax[k - 1].clone().add(new Vector3((rnd() - 0.5) * 16, -(40 + rnd() * 22), (rnd() - 0.5) * 16)));
-    tube(b, ax, 1.0, 0.5, index, 2, 0.05, 0.7, d);
+    tube(b, ax, 1.0, 0.5, index, 2, 0.05, 0.7, d, true);
   } else {
     soma(b, C, r, 1.0, false, index, d, rnd() * 6);
     const nd = d.branches >= 1 ? 6 + Math.floor(rnd() * 2.5) : 4;
@@ -118,6 +133,7 @@ function finish(b: Build): BufferGeometry {
   g.setAttribute('aCell', new BufferAttribute(new Float32Array(b.cell), 1));
   g.setAttribute('aKind', new BufferAttribute(new Float32Array(b.kind), 1));
   g.setAttribute('aAlong', new BufferAttribute(new Float32Array(b.along), 1));
+  g.setAttribute('aTip', new BufferAttribute(new Float32Array(b.tip), 1));
   g.setIndex(b.idx);
   g.computeBoundingSphere();
   return g;
@@ -155,4 +171,57 @@ export function linkPath(from: SceneCell, to: SceneCell, bow = 0.16): Vector3[] 
   const side = new Vector3(dir.z, 0.6, -dir.x).normalize();
   const m1 = start.clone().lerp(end, 0.3).addScaledVector(side, -len * bow).add(new Vector3(0, -len * 0.1, 0)), m2 = start.clone().lerp(end, 0.72).addScaledVector(side, -len * bow * 0.6);
   return [start, m1, m2, end];
+}
+
+export interface Box { min: [number, number, number]; max: [number, number, number] }
+
+/**
+ * Backdrop cells scattered through a block of tissue, never nearer than a sphere's radius to any of the `avoid`
+ * points (the model's own cells, the electrodes) and never on top of each other. They take part in nothing.
+ */
+export function buildBackdropBlock(count: number, box: Box, avoid: ReadonlyArray<{ p: readonly number[]; r: number }>, seed = 4242): { geometry: BufferGeometry; bodies: Array<[number, number, number]> } {
+  const b = newBuild(), rnd = mulberry32(seed), bodies: Array<[number, number, number]> = [];
+  let guard = 0;
+  while (bodies.length < count && guard++ < count * 60) {
+    const x = box.min[0] + rnd() * (box.max[0] - box.min[0]), y = box.min[1] + rnd() * (box.max[1] - box.min[1]), z = box.min[2] + rnd() * (box.max[2] - box.min[2]);
+    if (avoid.some((a) => Math.hypot(a.p[0] - x, a.p[1] - y, a.p[2] - z) < a.r)) continue;
+    if (bodies.some((p) => Math.hypot(p[0] - x, p[1] - y, p[2] - z) < 52)) continue;
+    bodies.push([x, y, z]);
+    buildCell(b, { id: '', label: '', pos: [x, y, z], radius: 7.5 + rnd() * 3, tint: 'far', shape: rnd() < 0.8 ? 'pyramidal' : 'multipolar' }, -1, BACKDROP, 90000 + bodies.length * 13);
+  }
+  return { geometry: finish(b), bodies };
+}
+
+/** Fine fibres (line segments) wandering through a block: the grain of the tissue between the cells. Scenery. */
+export function buildFibres(count: number, box: Box, seed = 99): BufferGeometry {
+  const rnd = mulberry32(seed), pos: number[] = [], sd: number[] = [], SEG = 7;
+  for (let i = 0; i < count; i++) {
+    let x = box.min[0] + rnd() * (box.max[0] - box.min[0]), y = box.min[1] + rnd() * (box.max[1] - box.min[1]), z = box.min[2] + rnd() * (box.max[2] - box.min[2]);
+    // most fibres run roughly up-and-down (as apical dendrites and descending axons do), some across
+    const across = rnd() < 0.3;
+    let dx = (rnd() - 0.5) * (across ? 2 : 0.5), dy = across ? (rnd() - 0.5) * 0.5 : rnd() < 0.5 ? 1 : -1, dz = (rnd() - 0.5) * (across ? 2 : 0.5);
+    const s = rnd(), step = 16 + rnd() * 20;
+    for (let k = 0; k < SEG; k++) {
+      const n = Math.hypot(dx, dy, dz) || 1, nx = x + (dx / n) * step, ny = y + (dy / n) * step, nz = z + (dz / n) * step;
+      pos.push(x, y, z, nx, ny, nz); sd.push(s, s);
+      x = nx; y = ny; z = nz;
+      dx += (rnd() - 0.5) * 0.7; dy += (rnd() - 0.5) * 0.5; dz += (rnd() - 0.5) * 0.7;
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  g.setAttribute('aSeed', new BufferAttribute(new Float32Array(sd), 1));
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** Specks suspended between the cells (points). Scenery: they make movement readable in empty stretches. */
+export function buildMotes(count: number, box: Box, seed = 7): BufferGeometry {
+  const rnd = mulberry32(seed), pos = new Float32Array(count * 3), sd = new Float32Array(count);
+  for (let i = 0; i < count; i++) { for (let k = 0; k < 3; k++) pos[i * 3 + k] = box.min[k] + rnd() * (box.max[k] - box.min[k]); sd[i] = rnd(); }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(pos, 3));
+  g.setAttribute('aSeed', new BufferAttribute(sd, 1));
+  g.computeBoundingSphere();
+  return g;
 }

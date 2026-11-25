@@ -1,5 +1,8 @@
 # Neuroverse — playtest sheet (stage 3)
 
+> **No longer a gate.** On 2026-11-25 the owner authorised the integrated world (`docs/WORLD.md`) without this
+> comparison. The sheet is kept because its questions still apply to anything played here; nothing in it was filled in.
+
 Three toys share one circuit, one set of controls and one visual style. They differ in what you **do**:
 
 | | Toy | The question it is there to answer |
