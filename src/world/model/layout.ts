@@ -2,7 +2,8 @@
 // cortical surface. Two models live here and they are kept apart in space on purpose:
 //
 //   the five-cell circuit   the LIF circuit of the timing experiment, at the positions its own definition gives
-//                           (model/circuits.ts), with ONE recording probe beside the target cell;
+//                           (model/circuits.ts). Two recording contacts, P1 and P2, are placed near it BY THE PLAYER:
+//                           their positions are state (model/journey.ts), in the coordinates of this file;
 //   the array               eight penetrating electrode tips, and around each tip the three units the population model
 //                           assigns to it (experiment/model/motor.ts), each at that model's own offset from its tip.
 //
@@ -16,7 +17,15 @@ import { ampAtUv, distUm, type Vec3 } from './observe.ts';
 
 export type V3 = [number, number, number];
 
-/** The recording site of the single probe beside the target cell T. */
+/**
+ * Model coordinates are scene coordinates here: both are micrometres in this block, with the same origin and axes.
+ * The two functions exist so that every place where a position crosses from a model to the picture (or back) says so,
+ * and so that a different picture scale would need a change in exactly one place.
+ */
+export const modelToScene = (p: readonly number[]): V3 => [p[0], p[1], p[2]];
+export const sceneToModel = (p: readonly number[]): V3 => [p[0], p[1], p[2]];
+
+/** A recording site beside the target cell T that hears T well and the other four cells weakly (used by tests and as a suggested place). */
 export const PROBE_TIP: V3 = [24, -27, 5];
 /** The probe's shank runs from its tip up and out of the block along this direction (unit vector). */
 export const PROBE_AXIS: V3 = (() => { const v: V3 = [-0.34, 0.92, 0.2], n = Math.hypot(...v); return [v[0] / n, v[1] / n, v[2] / n] as V3; })();
@@ -35,9 +44,26 @@ export const UNIT_POS: V3[] = UNITS.map((u) => { const t = ARRAY_TIPS[u.ch]; ret
 export const BLOCK = { min: [-820, -430, -1420] as V3, max: [1040, 540, 760] as V3 };
 
 export const CIRCUIT_CENTRE: V3 = [26, 4, 0];
-/** Where the rig arrives: the circuit in front, the array in the distance behind it. */
-export const HOME = { pos: [52, 58, 338] as V3, lookAt: [28, 2, 0] as V3 };
-export const OVERVIEW = { pivot: [90, 0, -330] as V3, dist: 1250, az: 0.5, el: 0.34 };
+/**
+ * The reconstructed exemplar neuron (public/world/h01-exemplar.json): where its cell body is put, and how far it is
+ * turned about the surfaceward axis (a rigid placement: nothing is mirrored or scaled).
+ */
+export const EXEMPLAR = { origin: [40, 10, 330] as V3, turn: Math.PI };
+/** A point of the exemplar's own frame (µm) in the block. */
+export function exemplarToScene(x: number, y: number, z: number): V3 {
+  const c = Math.cos(EXEMPLAR.turn), s = Math.sin(EXEMPLAR.turn);
+  return [EXEMPLAR.origin[0] + x * c + z * s, EXEMPLAR.origin[1] + y, EXEMPLAR.origin[2] - x * s + z * c];
+}
+/** Where the craft arrives: beside the exemplar neuron, the circuit beyond it, the array in the distance. */
+export const HOME = { pos: [78, 40, 432] as V3, lookAt: [24, 2, 40] as V3 };
+/** Where the craft goes for the circuit: close enough to read the five cells. */
+export const CIRCUIT_VIEW = { pos: [60, 46, 250] as V3, lookAt: [28, 2, 0] as V3 };
+export const OVERVIEW = { pivot: [90, 0, -200] as V3, dist: 1350, az: 0.5, el: 0.34 };
+/** A small vessel that forks under the circuit: a landmark. Centre lines, µm. */
+export const VESSEL: { trunk: V3[]; branch: V3[] } = {
+  trunk: [[-800, -190, 380], [-380, -152, 190], [40, -176, -80], [470, -150, -420], [1020, -212, -780]],
+  branch: [[40, -176, -80], [-90, -214, -300], [-250, -236, -560], [-430, -262, -900]],
+};
 
 /**
  * A pose from which the whole array is in view, for a view of the given aspect ratio in which the right-hand share

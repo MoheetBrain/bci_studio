@@ -21,7 +21,7 @@ import { hash3 } from '../model/lif';
 import { PILOT_BIN_MS, PILOT_CH, PILOT_DECODERS, PILOT_FAULTS, PILOT_TARGET_RADIUS, PILOT_UNITS, condKey, intentCode, type PilotDecoderId, type PilotFault, type PilotSnapshot } from '../model/pilot';
 import { PilotHost, type PilotInfo, type PilotProgress } from '../pilotHost';
 import { rt, type SceneSpec } from '../runtime';
-import { useWorld } from '../worldStore';
+import { selectionOf, useWorld } from '../worldStore';
 import { WorldFrame, fitCanvas, type ModelCard } from '../WorldFrame';
 
 const BIN_S = PILOT_BIN_MS / 1000, HIST = 160, TRAIL = 70;
@@ -314,7 +314,7 @@ export default function PilotToy() {
     eng.host = new PilotHost(); eng.acc = 0; eng.inflight = false; eng.paused = false;
     usePilot.setState({ offThread: eng.host.offThread });
     rt.frame = frame;
-    rt.onPick = (hit) => useWorld.getState().select(hit ? { kind: hit.kind, id: hit.id } : null);
+    rt.onPick = (hit) => useWorld.getState().select(selectionOf(hit));
     useWorld.setState({ paused: false });
     void start(7);
     // Esc closes an open panel first (the frame does that); only then does it give the keys back to the rig

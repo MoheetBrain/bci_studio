@@ -66,7 +66,7 @@ function ControlsPanel({ onClose }: { onClose: () => void }) {
       <div className="w-keys">
         {(['Move', 'Look at', 'Model', 'Other'] as const).map((g) => (
           <section key={g}><h3>{g}</h3>
-            {ACTIONS.filter((a) => a.group === g).map((a) => (
+            {ACTIONS.filter((a) => a.group === g && a.id !== 'view').map((a) => (
               <div key={a.id} className="w-key-row"><span>{a.label}</span>
                 <button type="button" className={`w-keycap${waiting === a.id ? ' waiting' : ''}`} onClick={() => listen(a.id)} data-testid={`key-${a.id}`} aria-label={`${a.label}: ${keyName(keys[a.id])}. Click to change.`}>{waiting === a.id ? 'press a key…' : keyName(keys[a.id])}</button>
               </div>
@@ -229,7 +229,7 @@ export function WorldFrame({ spec, tag, scene, instrument, transport, model, run
         <div className="w-speed" data-testid="speed"><button type="button" className="w-mini" onClick={() => speed(-1)} aria-label="Slower">−</button><span>{SPEEDS_UM_S[ctl.speedLevel]} µm/s</span><button type="button" className="w-mini" onClick={() => speed(1)} aria-label="Faster">+</button></div>
         <div className="w-sel">
           <label><span>Go to</span>
-            <select value={selCell?.id ?? ''} onChange={(e) => { const c = spec.cells.find((x) => x.id === e.target.value); useWorld.getState().select(c ? { kind: 'cell', id: c.id } : null); if (c) { rt.onPick?.({ kind: 'cell', id: c.id, t: 0 }); controller.focus(c.pos, c.radius, c.label); } }} data-testid="goto" aria-label="Select a cell and look at it">
+            <select value={selCell?.id ?? ''} onChange={(e) => { const c = spec.cells.find((x) => x.id === e.target.value); useWorld.getState().select(c ? { kind: 'cell', id: c.id } : null); if (c) { rt.onPick?.({ kind: 'cell', id: c.id, t: 0, part: '', point: c.pos, exact: true }); controller.focus(c.pos, c.radius, c.label); } }} data-testid="goto" aria-label="Select a cell and look at it">
               <option value="">a cell…</option>{spec.cells.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </label>
@@ -260,7 +260,7 @@ export function WorldFrame({ spec, tag, scene, instrument, transport, model, run
 
 /** Test and inspection hooks (read-only views of the controller, plus where a scene point is on screen). */
 function screenOf(p: V3): { x: number; y: number; visible: boolean } {
-  const cv = document.querySelector('[data-testid="world-view"] canvas'), r = cv?.getBoundingClientRect(), s = controller.s;
+  const cv = document.querySelector('[data-testid="world-view"] canvas'), r = cv?.getBoundingClientRect(), s = controller.camPose();
   if (!r) return { x: 0, y: 0, visible: false };
   const q = projectPoint(s.pos, s.yaw, s.pitch, controller.fovY, controller.aspect, p);
   return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height, visible: q.front && Math.abs(q.x) < 1 && Math.abs(q.y) < 1 };

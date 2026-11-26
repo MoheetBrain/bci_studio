@@ -59,6 +59,27 @@ Three packages were added; nothing else from the brief's list was installed.
 `.gitignore` excludes all three, and a test asserts nothing under `corpus/private` or the index is tracked.
 `public/corpus/manifest.json` (committed) lists titles, hashes and reading level only — no passage text.
 
+## 4b · The reconstructed neuron (H01 release) — added 2026-11-25
+
+`public/world/h01-exemplar.json` is derived from one entry (`2252715458.0.swc`) of the "104 proofread cells" skeleton
+archive of the H01 release (Google Research and the Lichtman Laboratory, Harvard University).
+
+- **Licence:** Creative Commons Attribution 4.0 (CC BY 4.0). The release's data page states that all released
+  datasets are under this licence (page read 2026-11-25).
+- **Attribution used:** Shapson-Coe A, Januszewski M, Berger DR, et al. *A petavoxel fragment of human cerebral
+  cortex reconstructed at nanoscale resolution.* Science 384, eadk4858 (2024). doi:10.1126/science.adk4858. Source:
+  https://h01-release.storage.googleapis.com/data.html
+- **Changes made (CC BY requires saying so):** converted to micrometres and rotated into the cell's own frame; the
+  nodes inside the cell body merged into one; each unbranched stretch simplified to within 0.18 µm; drawn as tubes.
+  The file records the archive entry and its SHA-256.
+- **Where the attribution appears:** in the file itself, on the neuron's card in the world ("Source, licence, what
+  was changed"), in the "What is this?" panel (manifest entry `h01-exemplar`), in `THIRD_PARTY_NOTICES.md`, and in
+  `docs/EMBODIED.md` §5.
+- **Not checked:** whether the dataset's authors ask for any wording beyond the citation; the paper itself was not
+  re-read for this build (citation and abstract only). No endorsement by the authors is implied or claimed.
+- Only this one entry (0.81 MB of a 59.8 MB archive) was downloaded. Neuroglancer was consulted for the data
+  formats; none of its code is included.
+
 ## 5 · Open licence questions for a commercial release
 
 1. **3D Slicer License, Part B** (read in full for this build). It grants a royalty-free licence to use, reproduce,

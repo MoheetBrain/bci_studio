@@ -23,7 +23,7 @@ export const FOG_DENSITY = 0.0017;
 
 export const TINTS: Record<string, Color> = {
   exc: new Color('#E79AB6'), inh: new Color('#9C8FE8'), input: new Color('#F1B58F'),
-  near: new Color('#C3AEEF'), mid: new Color('#9A90DC'), far: new Color('#6F6CB0'),
+  near: new Color('#C3AEEF'), mid: new Color('#9A90DC'), far: new Color('#6F6CB0'), exemplar: new Color('#F0C3CF'),
 };
 
 /** sky(d): the colour of the haze in direction d (unit vector, +y towards the cortical surface). */
@@ -48,23 +48,26 @@ float noise(vec3 x) {
 const VERT = /* glsl */ `
 attribute float aCell; attribute float aKind; attribute float aAlong; attribute float aTip;
 uniform float uAct[${MAX_CELLS}]; uniform float uFlash[${MAX_CELLS}]; uniform float uDim[${MAX_CELLS}]; uniform vec3 uTint[${MAX_CELLS}];
-uniform float uSel; uniform float uHover; uniform float uBackdrop;
-varying vec3 vN; varying vec3 vW; varying vec3 vTint; varying float vAct; varying float vFlash; varying float vDim; varying float vMark; varying float vKind; varying float vAlong; varying float vTip;
+uniform float uSel; uniform float uHover; uniform float uBackdrop; uniform float uIso;
+varying vec3 vN; varying vec3 vW; varying vec3 vTint; varying float vAct; varying float vFlash; varying float vDim; varying float vMark; varying float vKind; varying float vAlong; varying float vTip; varying float vGhost;
 void main() {
   vec4 w = modelMatrix * vec4(position, 1.0);
   vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vKind = aKind; vAlong = aAlong; vTip = aTip;
-  if (uBackdrop > 0.5) { vAct = 0.0; vFlash = 0.0; vDim = 0.0; vMark = 0.0; vTint = vec3(0.30, 0.20, 0.36); }
+  // the whole owner lights up, whichever part of it is aimed at: the mark goes by the cell's number, not by the part
+  vMark = abs(aCell - uSel) < 0.5 ? 1.0 : (abs(aCell - uHover) < 0.5 ? 0.45 : 0.0);
+  // "isolate": everything but one cell is thinned to a ghost (a display choice; nothing is removed from any model)
+  vGhost = (uIso > -5.0 && abs(aCell - uIso) > 0.5) ? 1.0 : 0.0;
+  if (uBackdrop > 0.5) { vAct = 0.0; vFlash = 0.0; vDim = 0.0; vTint = vec3(0.30, 0.20, 0.36); }
   else {
     int i = int(aCell + 0.5);
     vAct = uAct[i]; vFlash = uFlash[i]; vDim = uDim[i]; vTint = uTint[i];
-    vMark = abs(aCell - uSel) < 0.5 ? 1.0 : (abs(aCell - uHover) < 0.5 ? 0.45 : 0.0);
   }
   gl_Position = projectionMatrix * viewMatrix * w;
 }`;
 
 const FRAG = /* glsl */ `
-uniform float uFogDensity; uniform float uFadeNear; uniform float uFadeFar; uniform float uBackdrop;
-varying vec3 vN; varying vec3 vW; varying vec3 vTint; varying float vAct; varying float vFlash; varying float vDim; varying float vMark; varying float vKind; varying float vAlong; varying float vTip;
+uniform float uFogDensity; uniform float uFadeNear; uniform float uFadeFar; uniform float uBackdrop; uniform float uContext;
+varying vec3 vN; varying vec3 vW; varying vec3 vTint; varying float vAct; varying float vFlash; varying float vDim; varying float vMark; varying float vKind; varying float vAlong; varying float vTip; varying float vGhost;
 ${SKY_GLSL}
 ${NOISE}
 void main() {
@@ -72,6 +75,7 @@ void main() {
   float dither = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   // display cutaway: dithered fade of whatever is right in front of the lens
   if (smoothstep(uFadeNear, uFadeFar, dist) < dither) discard;
+  if (vGhost > 0.5 && dither > 0.085) discard;
   // the last stretch of a branch thins out into the haze instead of ending in a cut
   if (vTip > 0.0 && 1.0 - smoothstep(0.55, 1.0, vTip) < dither * 0.999) discard;
   vec3 N = normalize(vN); if (!gl_FrontFacing) N = -N;
@@ -84,7 +88,8 @@ void main() {
     N = normalize(N - (g - dot(g, N) * N) * 0.55 * relief);
   }
   float mott = noise(vW * 0.21) * 0.62 + noise(vW * 0.83) * 0.38;
-  vec3 base = vTint * (0.78 + 0.36 * mott);
+  // context cells are quieter than the cells of a model; "reveal" (uContext) brings them forward on request
+  vec3 base = mix(vTint, vec3(0.58, 0.40, 0.56), uBackdrop * uContext) * (0.78 + 0.36 * mott);
   if (vKind > 1.5) base = mix(base, vec3(0.62, 0.60, 0.82), 0.4);
   // the body is denser than its branches; where a branch leaves the body it sits in the body's shade
   float thin = step(0.5, vKind);
@@ -122,7 +127,7 @@ void main() {
   col += vec3(0.72, 0.95, 1.0) * (fres * 1.5 + 0.05) * vMark;
   col = 1.0 - exp(-col * 1.18);
   // haze: the model's own cells stay clearer than the backdrop at the same distance
-  float fog = clamp(1.0 - exp(-uFogDensity * (0.5 + 1.25 * uBackdrop) * dist), 0.0, 1.0);
+  float fog = clamp(1.0 - exp(-uFogDensity * (0.5 + 1.25 * uBackdrop * (1.0 - 0.6 * uContext)) * dist), 0.0, 1.0);
   col = mix(col, sky(-V), fog);
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
@@ -134,7 +139,7 @@ export function makeFieldMaterial(backdrop: boolean): ShaderMaterial {
     uniforms: {
       uAct: { value: new Float32Array(MAX_CELLS) }, uFlash: { value: new Float32Array(MAX_CELLS) }, uDim: { value: new Float32Array(MAX_CELLS) },
       uTint: { value: Array.from({ length: MAX_CELLS }, () => new Vector3(0.8, 0.5, 0.6)) },
-      uSel: { value: -9 }, uHover: { value: -9 }, uBackdrop: { value: backdrop ? 1 : 0 },
+      uSel: { value: -9 }, uHover: { value: -9 }, uBackdrop: { value: backdrop ? 1 : 0 }, uIso: { value: -9 }, uContext: { value: 0 },
       uFogDensity: { value: FOG_DENSITY }, uFadeNear: { value: 3 }, uFadeFar: { value: 13 }, ...skyUniforms(),
     },
   });

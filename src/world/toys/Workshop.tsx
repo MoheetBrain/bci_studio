@@ -11,7 +11,7 @@ import { WORKSHOP_MS, defaultSetup, workshopCircuit, type WorkshopSetup } from '
 import { LIF_DT_MS, LIF_LIMITS, ModelClock } from '../model/lif';
 import { exportRun, firingEdge, importRun, makeRun, type WorkshopResult } from '../model/workshopRun';
 import { rt, type SceneSpec } from '../runtime';
-import { useWorld } from '../worldStore';
+import { selectionOf, useWorld } from '../worldStore';
 import { WorldFrame, fitCanvas, type ModelCard } from '../WorldFrame';
 
 const SPEEDS = [2, 5, 10, 25];
@@ -352,7 +352,7 @@ export default function WorkshopToy() {
   const spec = useMemo(() => specOf(variant), [variant]);
   useEffect(() => {
     rt.frame = frame;
-    rt.onPick = (hit) => { useWorld.getState().select(hit ? { kind: hit.kind, id: hit.id } : null); if (hit?.kind === 'cell') { useWorkshop.setState({ focus: hit.id }); eng.dirty = true; } };
+    rt.onPick = (hit) => { useWorld.getState().select(selectionOf(hit)); if (hit?.kind === 'cell') { useWorkshop.setState({ focus: hit.id }); eng.dirty = true; } };
     restart(0);
     return () => { rt.frame = null; rt.onPick = null; };
   }, []);

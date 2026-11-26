@@ -8,43 +8,38 @@
 //   level     how much explanation is on screen: observe (the scene and one sentence), understand (the linked
 //             traces), inspect (equations, parameters, units, sources).
 //
-// The experiment itself lives in circuitLab.ts and decoderTask.ts and is not reset by moving between places.
+// The experiment itself lives in circuitLab.ts and decoderTask.ts and is not reset by moving between places. What is
+// stored, in which version, and how an older record is read: model/saved.ts.
 import { create } from 'zustand';
-import type { WorkshopSetup } from '../model/circuits';
+import { BLOCK } from '../model/layout';
+import type { SavedLab } from '../model/journey';
+import { SAVE_KEY, SAVE_KEY_V1, readSaved, type Level, type Saved, type SavedPose, type Station } from '../model/saved';
 
+export type { Level, Station } from '../model/saved';
 export type Place = 'brain' | 'entering' | 'cortex' | 'leaving';
-export type Station = 'circuit' | 'array';
-export type Level = 'observe' | 'understand' | 'inspect';
 export interface RegionPick { id: string; name: string; hemisphere: string; tissue: string; group: string | null; enterable: boolean }
 
 /** The steps of the authored route. Each is ticked by something that actually happened, in any order. */
 export const BEATS = [
   { id: 'arrive', place: 'brain', prompt: 'Drag to turn the brain. Move over it to name its parts.' },
   { id: 'enter', place: 'brain', prompt: 'Go in where the glow is: the left precentral gyrus.' },
-  { id: 'explore', place: 'cortex', prompt: 'You are an observer inside the tissue. W A S D to fly, drag to look. Fly up to a cell.' },
-  { id: 'notice', place: 'cortex', prompt: 'Two input cells fire, one after the other. Watch the cell they both reach — T. Does it fire?' },
-  { id: 'change', place: 'cortex', prompt: 'Change one cause: select input cell B and make it fire earlier.' },
+  { id: 'explore', place: 'cortex', prompt: 'The pearl craft in front of you is you. W A S D fly it, E and Q go up and down, drag to look. Fly up beside the large neuron ahead.' },
+  { id: 'point', place: 'cortex', prompt: 'Point at any branch of a neuron. The whole cell lights up: a branch belongs to its neuron. Click to keep it selected.' },
+  { id: 'notice', place: 'cortex', prompt: 'Beyond it are five model cells. Two inputs fire, one after the other. Watch the cell they both reach — T. Does it fire?' },
+  { id: 'change', place: 'cortex', prompt: 'Change one cause, where it is: select input cell B and make it fire earlier.' },
   { id: 'compare', place: 'cortex', prompt: 'Open the trace and compare with the baseline. Why did the outcome change?' },
-  { id: 'record', place: 'cortex', prompt: 'Now look at it from outside: select the probe beside T. What does an electrode see?' },
-  { id: 'engineer', place: 'cortex', prompt: 'Counts like that are all a decoder gets. Go to the electrode array and run the control task.' },
+  { id: 'place', place: 'cortex', prompt: 'Now record it from outside. Take contact P1 and put it down near T; then put P2 somewhere further away.' },
+  { id: 'move', place: 'cortex', prompt: 'Move P1 nearer to a cell that fires and leave P2 where it is. Same spikes, same noise: only what P1 records changes.' },
+  { id: 'engineer', place: 'cortex', prompt: 'Counts like those are all a decoder gets. Go to the electrode array and run the control task.' },
   { id: 'disrupt', place: 'cortex', prompt: 'Break it: lose three contacts. Watch the cursor.' },
   { id: 'recover', place: 'cortex', prompt: 'Get control back — by switching decoder, by recalibrating, or by restoring the contacts.' },
-  { id: 'return', place: 'cortex', prompt: 'Go back out to the brain whenever you like (the map, bottom left). Nothing is lost.' },
+  { id: 'return', place: 'cortex', prompt: 'Go back out to the brain whenever you like (the map, bottom left). Your contacts stay where you put them.' },
 ] as const;
 export type BeatId = (typeof BEATS)[number]['id'];
 
-const KEY = 'hbci.world.journey.v1';
-interface Saved {
-  visited: boolean; beats: Partial<Record<BeatId, boolean>>; level: Level; station: Station; guide: boolean; declared: boolean;
-  history: Array<{ setup: WorkshopSetup; label: string }>; baseline: WorkshopSetup | null;
-  pose: { pos: [number, number, number]; yaw: number; pitch: number } | null;
-  entry: { id: string; name: string } | null;
-  dragLooks: boolean; lookScale: number;
-}
-function load(): Partial<Saved> {
-  try { const x = JSON.parse(localStorage.getItem(KEY) ?? 'null'); return x && typeof x === 'object' ? x : {}; } catch { return {}; }
-}
-const saved = typeof localStorage === 'undefined' ? {} : load();
+function stored(key: string): unknown { try { return JSON.parse(localStorage.getItem(key) ?? 'null'); } catch { return null; } }
+function load(): Saved { return readSaved(typeof localStorage === 'undefined' ? null : stored(SAVE_KEY), typeof localStorage === 'undefined' ? null : stored(SAVE_KEY_V1), BLOCK); }
+const saved = load();
 
 interface JourneyState {
   place: Place;
@@ -63,9 +58,10 @@ interface JourneyState {
   declared: boolean;
   /** Who the keyboard belongs to right now. */
   owner: 'observer' | 'pilot' | 'interface';
-  /** What a visit left behind, for "return to where you were". */
-  resume: Pick<Saved, 'history' | 'baseline' | 'pose' | 'station'> | null;
+  /** What a visit left behind, for "return to where you were": the experiment (with its contacts) and, separately, where the craft was. */
+  resume: { lab: SavedLab | null; pose: SavedPose | null; station: Station } | null;
   dragLooks: boolean; lookScale: number;
+  viewKind: 'third' | 'first';
   tick: (b: BeatId) => void;
   set: (p: Partial<JourneyState>) => void;
   remember: (p: Partial<Saved>) => void;
@@ -74,32 +70,37 @@ interface JourneyState {
 
 let pending: Partial<Saved> = {};
 let timer: ReturnType<typeof setTimeout> | null = null;
+function flush(): void {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (!Object.keys(pending).length) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...load(), ...pending, v: 2 })); } catch { /* storage unavailable: nothing is remembered */ }
+  pending = {};
+}
 function write(p: Partial<Saved>): void {
   pending = { ...pending, ...p };
-  if (timer) return;
-  timer = setTimeout(() => {
-    timer = null;
-    try { localStorage.setItem(KEY, JSON.stringify({ ...load(), ...pending })); } catch { /* storage unavailable: nothing is remembered */ }
-    pending = {};
-  }, 400);
+  if (!timer) timer = setTimeout(flush, 400);
 }
+/** Write what is waiting to be stored now (the page is going away). */
+export const flushSaved = flush;
 
 export const useJourney = create<JourneyState>((set, get) => ({
-  place: 'brain', station: 'circuit', level: saved.level ?? 'observe',
-  region: null, hoverRegion: null, entry: saved.entry ?? null,
-  beats: saved.beats ?? {}, guide: saved.guide ?? true, visited: !!saved.visited, declared: !!saved.declared, owner: 'observer',
-  resume: saved.visited && saved.history?.length ? { history: saved.history, baseline: saved.baseline ?? null, pose: saved.pose ?? null, station: saved.station ?? 'circuit' } : null,
-  dragLooks: !!saved.dragLooks, lookScale: typeof saved.lookScale === 'number' ? saved.lookScale : 1,
-  tick: (b) => { if (get().beats[b]) return; const beats = { ...get().beats, [b]: true }; set({ beats }); write({ beats }); },
+  place: 'brain', station: 'circuit', level: saved.level,
+  region: null, hoverRegion: null, entry: saved.entry,
+  beats: saved.beats as Partial<Record<BeatId, boolean>>, guide: saved.guide, visited: saved.visited, declared: saved.declared, owner: 'observer',
+  resume: saved.visited && saved.lab ? { lab: saved.lab, pose: saved.pose, station: saved.station } : null,
+  dragLooks: saved.dragLooks, lookScale: saved.lookScale, viewKind: saved.viewKind,
+  tick: (b) => { if (get().beats[b]) return; const beats = { ...get().beats, [b]: true }; set({ beats }); write({ beats: beats as Record<string, boolean> }); },
   set: (p) => {
     set(p);
     const keep: Partial<Saved> = {};
-    for (const k of ['level', 'station', 'guide', 'declared', 'visited', 'entry', 'dragLooks', 'lookScale'] as const) if (k in p) (keep as Record<string, unknown>)[k] = (p as Record<string, unknown>)[k];
+    for (const k of ['level', 'station', 'guide', 'declared', 'visited', 'entry', 'dragLooks', 'lookScale', 'viewKind'] as const) if (k in p) (keep as Record<string, unknown>)[k] = (p as Record<string, unknown>)[k];
     if (Object.keys(keep).length) write(keep);
   },
   remember: (p) => write(p),
-  forget: () => { try { localStorage.removeItem(KEY); } catch { /* nothing to forget */ } pending = {}; set({ beats: {}, visited: false, declared: false, resume: null, guide: true, level: 'observe', station: 'circuit', entry: null }); },
+  forget: () => { try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(SAVE_KEY_V1); } catch { /* nothing to forget */ } pending = {}; set({ beats: {}, visited: false, declared: false, resume: null, guide: true, level: 'observe', station: 'circuit', entry: null }); },
 }));
+/** How the tissue was last shown (read once, when the world opens). */
+export const savedReveal = saved.reveal;
 
 /**
  * The next step of the route for the place the player is in: the first one not yet done that comes AFTER the last one

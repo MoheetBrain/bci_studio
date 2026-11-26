@@ -7,6 +7,12 @@ second model, no paid or generative service, no new dependency.
 This is the compact implementation and evidence record of the build that followed the three prototypes. The earlier
 record, `docs/NEUROVERSE.md`, describes those prototypes and is kept as written.
 
+> **Superseded in part (2026-11-25, later the same day).** The build after this one — `docs/EMBODIED.md`, branch
+> `feature/neuroverse-embodied` — made the player a craft in the scene, made every drawn thing answer to the pointer
+> as a whole, added one reconstructed neuron, and replaced the single fixed probe by two contacts the player places.
+> Where this document says "observer" or "the probe", read that one. The design decision (§3), the whole-brain work
+> (§4) and the rules about time (§6) stand as written; the numbers in §8–§9 describe the earlier commit.
+
 ## 0 · Where this stands
 
 **Built and checked by code:** `#/world` opens on the whole brain and leads, by a reversible dive, into one block of

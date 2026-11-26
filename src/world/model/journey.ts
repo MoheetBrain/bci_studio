@@ -18,6 +18,32 @@ import { makeRun, type WorkshopResult } from './workshopRun.ts';
 export const PROBE_SEED = 20261125;
 export const PROBE_SLOT = 0;
 
+/** The two recording contacts the player places. (Not "A" and "B": those are the input cells.) */
+export const CONTACT_IDS = ['P1', 'P2'] as const;
+export type ContactId = (typeof CONTACT_IDS)[number];
+/** Each contact has its own noise stream (slot) under the one observation seed, so that moving one never changes the other's noise. */
+export const CONTACT_SLOT: Record<ContactId, number> = { P1: 0, P2: 1 };
+/** Where each contact is, in model coordinates (µm; see model/layout.ts) — or null while it has not been placed. */
+export interface Contacts { P1: Vec3 | null; P2: Vec3 | null }
+export const NO_CONTACTS: Contacts = { P1: null, P2: null };
+const sameV = (a: Vec3 | null, b: Vec3 | null) => (a === null || b === null ? a === b : a[0] === b[0] && a[1] === b[1] && a[2] === b[2]);
+export const sameContacts = (a: Contacts, b: Contacts) => sameV(a.P1, b.P1) && sameV(a.P2, b.P2);
+const copyContacts = (c: Contacts): Contacts => ({ P1: c.P1 ? [c.P1[0], c.P1[1], c.P1[2]] : null, P2: c.P2 ? [c.P2[0], c.P2[1], c.P2[2]] : null });
+
+/**
+ * A position a contact may take: finite, inside the block, rounded to a tenth of a micrometre (so that a saved layout
+ * and a replayed one are the same numbers). Returns null for anything that is not a position.
+ */
+export function contactPosition(p: readonly number[] | null | undefined, box: { min: readonly number[]; max: readonly number[] }): Vec3 | null {
+  if (!p || p.length < 3 || !p.slice(0, 3).every((v) => typeof v === 'number' && Number.isFinite(v))) return null;
+  const q = [0, 1, 2].map((k) => Math.round(Math.max(box.min[k], Math.min(box.max[k], p[k])) * 10) / 10);
+  return [q[0], q[1], q[2]];
+}
+/** Distance from a contact to each cell body, and the size that rule gives each cell's spike there. */
+export function contributions(run: LifRun, pos: Vec3): Array<{ cell: string; distUm: number; ampUv: number; spikes: number }> {
+  return run.circuit.cells.map((c, i) => { const d = distUm(pos, c.pos as Vec3); return { cell: c.id, distUm: d, ampUv: ampAtUv(d), spikes: run.spikes[i].length }; });
+}
+
 /** A threshold crossing on the probe, with the GENERATOR'S OWN knowledge of what caused it (a recording has no such column). */
 export interface ProbeEvent { ms: number; ampUv: number; cell: string | null }
 export interface ProbeRecording {
@@ -32,9 +58,9 @@ export interface ProbeRecording {
 }
 
 /** What the probe at `tip` records during a run of the five-cell circuit. A synthetic observation (see model/observe.ts). */
-export function probeRecording(run: LifRun, tip: Vec3, seed: number = PROBE_SEED): ProbeRecording {
+export function probeRecording(run: LifRun, tip: Vec3, seed: number = PROBE_SEED, slot: number = PROBE_SLOT): ProbeRecording {
   const cells = run.circuit.cells, pos = cells.map((c) => c.pos as Vec3);
-  const trace = contactTrace({ cells: pos, spikes: run.spikes, placements: [{ atStep: 0, pos: tip }], seed, slot: PROBE_SLOT, fromStep: 0, n: run.nSteps + 1, dtMs: run.dt });
+  const trace = contactTrace({ cells: pos, spikes: run.spikes, placements: [{ atStep: 0, pos: tip }], seed, slot, fromStep: 0, n: run.nSteps + 1, dtMs: run.dt });
   const events: ProbeEvent[] = detect(trace).map((d) => {
     const ms = d.i * run.dt;
     let cell: string | null = null, best = 0.35;
@@ -137,47 +163,126 @@ export function probeSentence(p: ProbeRecording): string {
   return `The probe counted ${p.events.length} threshold crossing${p.events.length === 1 ? '' : 's'}${t ? `: ${t}` : ''}${small ? `${t ? ', and ' : ': '}${small} small one${small === 1 ? '' : 's'} near the ${thr} threshold` : ''}. A decoder is given counts like this — not which cell fired.`;
 }
 
+// ── what differs between two layouts of the contacts ────────────────────────────────────────────────────────────
+/** The declared differences between two contact layouts, in terms of the nearest model cell (what the recording depends on). */
+export function contactChanges(a: Contacts, b: Contacts, variant = 0): Change[] {
+  const cells = workshopCircuit(variant).cells, out: Change[] = [];
+  const near = (p: Vec3) => { let best = cells[0], d = Infinity; for (const c of cells) { const x = distUm(p, c.pos as Vec3); if (x < d) { d = x; best = c; } } return `${d.toFixed(0)} µm from ${best.id}`; };
+  for (const id of CONTACT_IDS) {
+    if (sameV(a[id], b[id])) continue;
+    const from = a[id], to = b[id];
+    out.push({ key: `contact:${id}`, what: !from ? `${id} placed` : !to ? `${id} removed` : `${id} moved ${distUm(from, to).toFixed(0)} µm`, from: from ? near(from) : 'not placed', to: to ? near(to) : 'not placed', where: id });
+  }
+  return out;
+}
+
 // ── a history of runs that can be undone ────────────────────────────────────────────────────────────────────────
-export interface HistoryEntry { n: number; setup: WorkshopSetup; digest: string; fired: boolean; label: string }
+export interface HistoryEntry { n: number; setup: WorkshopSetup; contacts: Contacts; digest: string; fired: boolean; label: string }
+/**
+ * The experiment: the circuit's causes, where the two contacts are, the seed of their noise, and the run those causes
+ * give. The player's craft and the camera are NOT part of it — they are navigation, kept elsewhere.
+ */
 export interface Lab {
   setup: WorkshopSetup;
+  contacts: Contacts;
+  /** Seed of the contacts' noise. The same seed means the same noise, sample for sample, whatever else changes. */
+  seed: number;
   result: WorkshopResult;
-  /** The run everything is compared with. It changes only when the player says so. */
+  /** What everything is compared with: a circuit configuration AND a contact layout, under the same seed. It changes only when the player says so. */
   baseline: WorkshopResult;
+  baselineContacts: Contacts;
   history: HistoryEntry[];
+  /** Steps that were undone and can be done again (emptied by any new change). */
+  future: HistoryEntry[];
 }
 
 const copy = (s: WorkshopSetup): WorkshopSetup => ({ ...s, conn: { ...s.conn }, extra: s.extra.map((e) => ({ ...e })) });
-const entry = (n: number, r: WorkshopResult, label: string): HistoryEntry => ({ n, setup: copy(r.recipe.parameters), digest: r.digest, fired: r.firedMs != null, label });
+const entry = (n: number, r: WorkshopResult, contacts: Contacts, label: string): HistoryEntry => ({ n, setup: copy(r.recipe.parameters), contacts: copyContacts(contacts), digest: r.digest, fired: r.firedMs != null, label });
 
-/** A fresh experiment: the circuit as found, which is also the baseline. */
+/** A fresh experiment: the circuit as found and no contact placed — which is also the baseline. */
 export function newLab(variant = 0): Lab {
   const setup = defaultSetup(variant), result = makeRun(setup);
-  return { setup, result, baseline: result, history: [entry(1, result, 'The circuit as you found it')] };
+  return { setup, contacts: copyContacts(NO_CONTACTS), seed: PROBE_SEED, result, baseline: result, baselineContacts: copyContacts(NO_CONTACTS), history: [entry(1, result, NO_CONTACTS, 'The circuit as you found it')], future: [] };
 }
+/** What of an experiment is kept between visits: every step's causes and contact layout, the baseline, the seed. No run, no trace: those are recomputed. */
+export interface SavedEntry { setup: WorkshopSetup; contacts: Contacts; label: string }
+export interface SavedLab { history: SavedEntry[]; baseline: { setup: WorkshopSetup; contacts: Contacts } | null; seed: number }
+export const saveLab = (lab: Lab): SavedLab => ({
+  history: lab.history.map((h) => ({ setup: copy(h.setup), contacts: copyContacts(h.contacts), label: h.label })),
+  baseline: { setup: copy(lab.baseline.recipe.parameters), contacts: copyContacts(lab.baselineContacts) }, seed: lab.seed,
+});
+/** The experiment a saved one stands for: every run is computed again from its causes (the model is deterministic, so they are the same runs). */
+export function restoreLab(s: SavedLab): Lab {
+  if (!s.history.length) return newLab(0);
+  let prev = makeRun(copy(s.history[0].setup));
+  const history = [entry(1, prev, s.history[0].contacts, s.history[0].label)];
+  for (const e of s.history.slice(1)) {
+    if (changesBetween(prev.recipe.parameters, e.setup).length) prev = makeRun(copy(e.setup), prev.recipe.runId);
+    history.push(entry(history.length + 1, prev, e.contacts, e.label));
+  }
+  const last = s.history[s.history.length - 1], b = s.baseline ?? { setup: s.history[0].setup, contacts: s.history[0].contacts };
+  const baseline = changesBetween(prev.recipe.parameters, b.setup).length ? makeRun(copy(b.setup)) : prev;
+  return { setup: copy(last.setup), contacts: copyContacts(last.contacts), seed: s.seed, result: prev, baseline, baselineContacts: copyContacts(b.contacts), history, future: [] };
+}
+
 /** Apply a change of causes: a new run whose parent is the current one. No-op when nothing would change. */
 export function applyChange(lab: Lab, patch: Partial<WorkshopSetup>): Lab {
   const setup = copy({ ...lab.setup, ...patch }), ch = changesBetween(lab.setup, setup);
   if (!ch.length) return lab;
   const result = makeRun(setup, lab.result.recipe.runId), label = ch.map((c) => `${c.what}: ${c.from} → ${c.to}`).join('; ');
-  return { ...lab, setup, result, history: [...lab.history, entry(lab.history.length + 1, result, label)].slice(-60) };
+  return { ...lab, setup, result, history: [...lab.history, entry(lab.history.length + 1, result, lab.contacts, label)].slice(-80), future: [] };
 }
-/** Step back one change. The run is computed again from its set-up, and must end in the same state (the digest says so). */
+/**
+ * Put a contact somewhere (or take it away with null). ONE step of the history, however the position was arrived at.
+ * The circuit's run is not recomputed and cannot change: a contact observes, it does not act.
+ */
+export function placeContact(lab: Lab, id: ContactId, pos: Vec3 | null): Lab {
+  const contacts = copyContacts({ ...lab.contacts, [id]: pos }), ch = contactChanges(lab.contacts, contacts, lab.setup.variant);
+  if (!ch.length) return lab;
+  return { ...lab, contacts, history: [...lab.history, entry(lab.history.length + 1, lab.result, contacts, ch.map((c) => `${c.what}: ${c.from} → ${c.to}`).join('; '))].slice(-80), future: [] };
+}
+const restore = (lab: Lab, e: HistoryEntry): Pick<Lab, 'setup' | 'contacts' | 'result'> => ({ setup: copy(e.setup), contacts: copyContacts(e.contacts), result: e.digest === lab.result.digest && changesBetween(lab.setup, e.setup).length === 0 ? lab.result : makeRun(copy(e.setup)) });
+/** Step back one change (of a cause or of a contact). A run is computed again from its causes and must end in the same state. */
 export function undo(lab: Lab): Lab {
   if (lab.history.length < 2) return lab;
-  const history = lab.history.slice(0, -1), prev = history[history.length - 1], result = makeRun(copy(prev.setup));
-  return { ...lab, setup: copy(prev.setup), result, history };
+  const history = lab.history.slice(0, -1), gone = lab.history[lab.history.length - 1];
+  return { ...lab, ...restore(lab, history[history.length - 1]), history, future: [...lab.future, gone] };
 }
-/** Go back to the baseline's causes (as a new entry, so that this too can be undone). */
-export function toBaseline(lab: Lab): Lab { return applyChange(lab, copy(lab.baseline.recipe.parameters)); }
-/** Make the current run the one that later runs are compared with. */
-export const keepAsBaseline = (lab: Lab): Lab => ({ ...lab, baseline: lab.result });
+/** Do again the step that was last undone. */
+export function redo(lab: Lab): Lab {
+  if (!lab.future.length) return lab;
+  const e = lab.future[lab.future.length - 1];
+  return { ...lab, ...restore(lab, e), history: [...lab.history, e], future: lab.future.slice(0, -1) };
+}
+/** Go back to the baseline's causes and contact layout (as one new step, so that this too can be undone). */
+export function toBaseline(lab: Lab): Lab {
+  const setup = copy(lab.baseline.recipe.parameters), contacts = copyContacts(lab.baselineContacts);
+  if (!changesBetween(lab.setup, setup).length && sameContacts(lab.contacts, contacts)) return lab;
+  const result = changesBetween(lab.setup, setup).length ? makeRun(setup, lab.result.recipe.runId) : lab.result;
+  return { ...lab, setup, contacts, result, history: [...lab.history, entry(lab.history.length + 1, result, contacts, 'Back to the baseline')].slice(-80), future: [] };
+}
+/** Make the current configuration — causes, contact layout, seed — the one that later ones are compared with. */
+export const keepAsBaseline = (lab: Lab): Lab => ({ ...lab, baseline: lab.result, baselineContacts: copyContacts(lab.contacts) });
+/** Every declared difference between the baseline and now: causes of the circuit, then contacts. Empty = this is the baseline. */
+export const labChanges = (lab: Lab): Change[] => [...changesBetween(lab.baseline.recipe.parameters, lab.setup), ...contactChanges(lab.baselineContacts, lab.contacts, lab.setup.variant)];
 
 /** One line that says what was changed against the baseline and what that did, or that nothing differs. */
 export function compareSentence(lab: Lab): string {
-  const ch = changesBetween(lab.baseline.recipe.parameters, lab.setup);
-  if (!ch.length) return 'This is the baseline run.';
+  const ch = changesBetween(lab.baseline.recipe.parameters, lab.setup), moved = contactChanges(lab.baselineContacts, lab.contacts, lab.setup.variant);
+  if (!ch.length && !moved.length) return 'This is the baseline run.';
   const b = lab.baseline, c = lab.result, was = b.firedMs != null ? `fired at ${f1(b.firedMs)} ms` : `stayed ${f1(b.thresholdMv - b.peakMv)} mV short`;
   const now = c.firedMs != null ? `fires at ${f1(c.firedMs)} ms` : `stays ${f1(c.thresholdMv - c.peakMv)} mV short`;
-  return `Changed against the baseline: ${ch.map((x) => `${x.what.toLowerCase()} (${x.from} → ${x.to})`).join('; ')}. T ${was}; now it ${now}.`;
+  const circuit = ch.length ? `Changed against the baseline: ${ch.map((x) => `${x.what.toLowerCase()} (${x.from} → ${x.to})`).join('; ')}. T ${was}; now it ${now}.` : '';
+  const contacts = moved.length ? `${moved.map((x) => `${x.what} (${x.from} → ${x.to})`).join('; ')}: the circuit’s spikes are the same ones${ch.length ? '' : ' as in the baseline'} — only what ${moved.map((x) => x.where).join(' and ')} record${moved.length === 1 ? 's' : ''} of them differs.` : '';
+  return [circuit, contacts].filter(Boolean).join(' ');
+}
+
+/** What a contact saw, in one sentence. `run` (when given) lets it say that the loudest cell there did not fire at all. */
+export function contactSentence(id: ContactId, p: ProbeRecording, run?: LifRun): string {
+  const loud = Object.entries(p.ampsUv).sort((a, b) => b[1] - a[1])[0], counted = p.events.filter((e) => e.cell != null), by = new Map<string, number>();
+  for (const e of counted) by.set(e.cell!, (by.get(e.cell!) ?? 0) + 1);
+  const thr = `−${p.thresholdUv.toFixed(0)} µV`, li = run ? run.circuit.cells.findIndex((c) => c.id === loud[0]) : -1, silent = li >= 0 && run!.spikes[li].length === 0;
+  const loudest = `${loud[0]}, ${loud[1].toFixed(0)} µV${silent ? ` — but ${loud[0]} does not fire in this run` : ''}`;
+  if (!p.events.length) return `${id} counted nothing: no deflection crossed its ${thr} threshold. The loudest cell there would be ${loudest}.`;
+  return `${id} counted ${p.events.length} crossing${p.events.length === 1 ? '' : 's'} of ${thr}: ${[...by].map(([c, n]) => `${n} from ${c}`).join(', ') || 'none traced to a spike'}${p.events.length > counted.length ? `, ${p.events.length - counted.length} from noise alone` : ''}. Loudest there: ${loudest}.`;
 }

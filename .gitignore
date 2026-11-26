@@ -11,3 +11,6 @@ corpus/index.sqlite-*
 # test output
 test-results/
 playwright-report/
+
+# raw third-party downloads used by asset build tools (the built assets are committed, with provenance)
+tools/morph/.cache/

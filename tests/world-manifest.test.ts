@@ -38,12 +38,16 @@ test('manifest: every entry says what it assumes, what it leaves out, where it c
   }
   // nothing in the three prototype toys is measured data or derived anatomy, and the manifest must not say otherwise
   for (const toy of ['A', 'B', 'C'] as const) assert.ok(manifestFor(toy).every((m) => m.cls !== 'measured-data' && m.cls !== 'derived-anatomy'));
-  // the integrated world has exactly one piece of anatomy — the atlas surface with its labels — and it is DATA, kept
-  // apart from every model and from the way it is lit; nothing anywhere is presented as a measured recording
+  // the integrated world has exactly two pieces of anatomy — one reconstructed neuron (structure only) and the atlas
+  // surface with its labels — and both are DATA, kept apart from every model and from the way they are drawn; nothing
+  // anywhere is presented as a measured recording
   const anatomy = MANIFEST.filter((m) => m.cls === 'derived-anatomy');
-  assert.deepEqual(anatomy.map((m) => [m.id, m.kind]), [['atlas-surface', 'data']]);
+  assert.deepEqual(anatomy.map((m) => [m.id, m.kind]), [['h01-exemplar', 'data'], ['atlas-surface', 'data']]);
+  const h01 = MANIFEST.find((m) => m.id === 'h01-exemplar')!;
+  assert.ok(h01.omits.some((o) => /No electrical model/.test(o)) && h01.omits.some((o) => /temporal cortex, not the precentral gyrus/.test(o)), 'the reconstructed neuron says what it is not');
+  assert.ok(h01.assumptions.some((a) => /CC BY 4\.0/.test(a)), 'and under which licence it is used');
   assert.ok(MANIFEST.every((m) => m.cls !== 'measured-data'));
   assert.equal(MANIFEST.find((m) => m.id === 'brain-look')!.cls, 'illustrative');
   // the world uses the circuit, the probe and the decoder task; the ten-cell field of the dropped Toy A is not in it
-  assert.deepEqual(manifestFor('W').map((m) => m.id).sort(), ['atlas-surface', 'brain-look', 'cells', 'contact', 'lif', 'pilot', 'workshop']);
+  assert.deepEqual(manifestFor('W').map((m) => m.id).sort(), ['atlas-surface', 'brain-look', 'cells', 'contact', 'craft', 'h01-exemplar', 'lif', 'pilot', 'workshop']);
 });
