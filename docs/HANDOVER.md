@@ -4,6 +4,39 @@ Date: 2026-11-17. Branch `feature/brain-atlas-studio` in `~/bci_studio`, pushed 
 owner's request (no pull request opened, nothing merged, published or deployed). The owner confirmed on 2026-11-18
 that the studio stays in this repository. One engineering agent; no sub-agents or second model were used.
 
+## 00 · Embodied exploration — 2026-11-25/26 (read this first)
+
+Branch `feature/neuroverse-embodied`, cut from `feature/neuroverse-world` @ `3786e0d` (which is pushed and has pull
+request #2 open against `feature/bci-experiment`). **This branch is committed locally and NOT pushed; nothing merged,
+published or deployed.** One engineering agent; no sub-agents, no second model, no paid or generative service, no new
+dependency. Record: `docs/EMBODIED.md`. Evidence: `docs/evidence/world/`.
+
+What changed, in one paragraph: inside the tissue the player is a small craft with its own position and aim; the
+camera follows it, sits in it (`V`), or leaves it to inspect one thing. Every drawn thing answers to the pointer as a
+whole (a branch selects its neuron). One neuron is a real reconstruction from the H01 release (CC BY 4.0; structure
+only). The fixed probe is replaced by two recording contacts, P1 and P2, that the player places, moves and leaves;
+their positions are part of the experiment's state, with undo/redo, a baseline that includes them, and a versioned
+save that reads the previous format.
+
+Things to know before touching it:
+
+- **Navigation is not an input to anything.** The craft's and the camera's poses live in the controller and are
+  saved apart from the experiment (`model/saved.ts`). A recording is a function of the run's spike times, the
+  contact's position, the seed and the contact's number — keep it that way.
+- **`controller.s` is the craft, `controller.cam` is the camera** when `controller.embodied` is true (the world).
+  The prototypes at `#/world/dev` still use the old meaning (`s` is the camera) and their 29-step suite still passes.
+- **Picking is a registry** (`pickRegistry.ts`): whatever draws something registers stand-ins for it under a key and
+  removes them when it unmounts. If you draw something that should answer to the pointer, register it; if it should
+  not (the craft, a preview), do not.
+- **P1/P2 are never decoder inputs.** The array's eight contacts belong to the population model. Do not merge the two
+  for convenience.
+- **The reconstructed neuron's file is derived, with provenance inside it.** Re-derive it with
+  `node tools/morph/build-h01-exemplar.mjs` (downloads 0.81 MB by range request). If you add another cell, add its
+  attribution in the same four places (`docs/LICENCES.md` §4b).
+- **Scene numbering:** the five circuit cells are scene cells 0–4, the 24 units 5–28, the reconstructed neuron 29.
+  `rt.site[0]` is P1, `rt.site[1…8]` the array, `rt.site[9]` P2.
+- **Saves:** `hbci.world.journey.v2`. Bump the version and extend `readSaved` rather than changing the shape in place.
+
 ## 0 · The integrated world — 2026-11-25 (read this first)
 
 Branch `feature/neuroverse-world`, on top of the prototype checkpoint `6b33806` (`feature/neuroverse-toys`), which is

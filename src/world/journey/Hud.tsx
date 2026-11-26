@@ -9,24 +9,34 @@ import { controller } from '../controller';
 import { SPEEDS_UM_S, changeSpeedLevel } from '../flight';
 import { MANIFEST } from '../manifest';
 import { workshopCircuit } from '../model/circuits';
-import { changesBetween } from '../model/journey';
-import { OBS } from '../model/observe';
+import { CONTACT_IDS, contributions, labChanges, type ContactId } from '../model/journey';
+import { BLOCK } from '../model/layout';
+import { OBS, distUm, type Vec3 } from '../model/observe';
 import { PILOT_TARGET_RADIUS, PILOT_UNITS, detectProb, detectorNoiseUv } from '../model/pilot';
-import { useWorld, type Quality } from '../worldStore';
+import { useWorld, type Quality, type Reveal, type Selection } from '../worldStore';
 import { ClassChip, fitCanvas } from '../WorldFrame';
 import { ENTRY_ID, brain } from './BrainStage';
-import { cellNow, probeNow, replay, slowFactor, useLab } from './circuitLab';
+import { cellNow, contactNow, isContactId, replay, slowFactor, useLab } from './circuitLab';
 import { SPEC, isContact, isUnit } from './CortexStage';
 import { DECODER_NAME, DecoderPicker, LevelSwitch } from './Dock';
 import { task, useTask } from './decoderTask';
+import { EXEMPLAR_ID, useExemplar } from './exemplar';
 import { BEATS, nextBeat, useJourney, type BeatId } from './journeyStore';
 
 const f1 = (v: number) => v.toFixed(1).replace('-', '−');
+const f0 = (v: number) => v.toFixed(0).replace('-', '−');
 const Key = ({ a }: { a: Action }) => <kbd>{keyName(controller.keys[a])}</kbd>;
-export interface HudActions { enter: () => void; leave: () => void; resume: () => void; goStation: (s: 'circuit' | 'array') => void; pilot: () => void; select: (kind: 'cell' | 'site' | 'link', id: string, focus?: boolean) => void }
+export interface HudActions {
+  enter: () => void; leave: () => void; resume: () => void; goStation: (s: 'circuit' | 'array') => void; pilot: () => void;
+  select: (kind: Selection['kind'], id: string, focus?: boolean, part?: string) => void;
+  /** Take a contact in hand (the next click on the scene puts it down), or put it away (null, or the one already in hand). */
+  takeTool: (id: ContactId | null) => void;
+  /** Put a contact down straight ahead of the craft, at arm's reach (no pointer needed). */
+  placeAtArm: (id: ContactId) => void;
+}
 
-/** Drawing the frame loop asks for (the cursor's workspace). */
-export const hud = { draw: null as null | (() => void) };
+/** Drawing the frame loop asks for (the cursor's workspace, and the attitude gauge). */
+export const hud = { draw: null as null | (() => void), orient: null as null | (() => void), aim: null as null | (() => void) };
 
 // ── where you are ───────────────────────────────────────────────────────────────────────────────────────────────
 function Where({ act }: { act: HudActions }) {
@@ -50,27 +60,42 @@ function Running() {
   if (place !== 'cortex') return null;
   const circuit = station === 'circuit', paused = circuit ? lab.paused : st.paused;
   const text = circuit
-    ? <>Five-cell circuit · replaying two input events · <b>{lab.tMs.toFixed(1)} ms</b> of 60 · slow motion ×{slowFactor(lab.speed)} · run {lab.lab.history.length}</>
+    ? <>Five-cell circuit · replaying two input events · <b>{lab.tMs.toFixed(1)} ms</b> of 60 · slow motion ×{slowFactor(lab.speed)} · step {lab.lab.history.length}</>
     : st.status !== 'ready' ? <>Decoder task · {st.status === 'calibrating' ? `calibrating (${st.progress?.what ?? '…'})` : st.status}</>
     : <>Decoder task · real time · bin <b>{st.snap?.bin ?? 0}</b> · {DECODER_NAME[st.info?.decoderId ?? 'linear']} · {ctx === 'pilot' ? 'your keys are the intent' : 'intent is zero until you take the controls'}</>;
   return (
     <div className="j-running" data-testid="running" data-paused={paused ? '1' : '0'} data-station={station}>
       <span className={`j-dot${paused ? ' paused' : ''}`} aria-hidden="true" /><span>{text}</span><b>{paused ? 'model paused — you can still move' : 'model running'}</b>
-      <span className={`j-owner ${owner}`} data-testid="owner" data-owner={owner} title="Who the keyboard belongs to right now">{owner === 'pilot' ? 'Keys: your intent' : owner === 'interface' ? 'Keys: this control · Esc returns them' : 'Keys: fly'}</span>
+      <ModeChip owner={owner} />
     </div>
   );
+}
+
+/** Which of the input modes is on, and what the movement keys do in it. Selecting something never changes this. */
+function ModeChip({ owner }: { owner: 'observer' | 'pilot' | 'interface' }) {
+  const ctl = useWorld((s) => s.ctl), tool = useLab((s) => s.tool);
+  const mode = ctl.context === 'pilot' ? 'pilot' : ctl.mode === 'orbit' ? 'inspect' : 'explore';
+  const name = { pilot: 'Decoder Pilot', inspect: 'Inspect', explore: 'Explore' }[mode];
+  const what = owner === 'interface' ? 'keys: this control · Esc returns them'
+    : mode === 'pilot' ? 'keys are your intent · the craft holds still'
+    : mode === 'inspect' ? 'drag orbits · a movement key flies your craft again'
+    : tool ? `${tool} in hand · click to put it down · keys still fly` : ctl.travelling ? 'your craft is flying itself there · any movement key takes over' : 'keys fly your craft';
+  return <span className={`j-owner ${owner} mode-${mode}`} data-testid="owner" data-owner={owner} data-input={mode} title="Which input mode is on, and who the keyboard belongs to right now"><b>{name}</b> · {what}</span>;
 }
 
 // ── the next step of the route ──────────────────────────────────────────────────────────────────────────────────
 function Guide({ act }: { act: HudActions }) {
   const j = useJourney(), beat = nextBeat(j), done = BEATS.filter((b) => j.beats[b.id]).length;
-  const say = useWorld((s) => s.say);
+  const say = useWorld((s) => s.say), contacts = useLab((s) => s.lab.contacts), layoutIsBaseline = useLab((s) => labChanges(s.lab).every((c) => !c.key.startsWith('contact:')));
   if (!j.guide || j.place === 'entering' || j.place === 'leaving') return null;
   const button: Partial<Record<BeatId, [string, () => void]>> = {
     enter: ['Go in →', act.enter],
-    change: ['Select B', () => act.select('cell', 'B', true)],
+    explore: ['Show me the neuron', () => act.select('context', EXEMPLAR_ID, true)],
+    notice: ['Fly me to the circuit', () => act.goStation('circuit')],
+    change: ['Select B', () => act.select('cell', 'B')],
     compare: ['Open the trace', () => j.set({ level: 'understand' })],
-    record: ['Show me the probe', () => act.select('site', 'probe', true)],
+    place: j.station !== 'circuit' ? ['Go to the circuit', () => act.goStation('circuit')] : [`Take ${contacts.P1 ? 'P2' : 'P1'}`, () => act.takeTool(contacts.P1 ? 'P2' : 'P1')],
+    move: layoutIsBaseline ? ['Select P1', () => act.select('site', 'P1')] : ['Keep this layout as the baseline', () => useLab.getState().keepBaseline()],
     engineer: [j.station === 'array' ? 'Take the controls' : 'Go to the array', () => (j.station === 'array' ? act.pilot() : act.goStation('array'))],
     return: ['Back to the brain', act.leave],
   };
@@ -80,7 +105,7 @@ function Guide({ act }: { act: HudActions }) {
   return (
     <div className="j-guide" data-testid="guide" data-beat={beat?.id ?? 'done'} role="status">
       <span className="j-steps" aria-label={`${done} of ${BEATS.length} steps of the route done`}>{BEATS.map((x) => <i key={x.id} className={j.beats[x.id] ? 'done' : x.id === beat?.id ? 'now' : ''} />)}</span>
-      <p>{all ? 'That is the whole route. Nothing is locked: switch the inhibitory connection on (select the violet cell I) and find a timing that still fires — or see how late B can come.' : beat!.prompt}</p>
+      <p>{all ? 'That is the whole route. Nothing is locked: switch the inhibitory connection on (select the violet cell I) and find a timing that still fires — or see how far a contact can be from T and still count its spike.' : beat!.id === 'move' && !layoutIsBaseline ? 'Both contacts are down. Keep this layout as the baseline, so that the next move is compared with it.' : beat!.prompt}</p>
       {b && <button type="button" className="j-btn primary" onClick={b[1]} data-testid="guide-act">{b[0]}</button>}
       <button type="button" className="j-x" onClick={() => { j.set({ guide: false }); say('Guide hidden. It can be switched back on under Controls.'); }} aria-label="Hide the guide" title="Hide the guide" data-testid="guide-hide">×</button>
     </div>
@@ -105,12 +130,78 @@ function Nudge({ which }: { which: 'aMs' | 'bMs' }) {
   );
 }
 
+const PART_NOTE = 'The shape is drawn; the model is a point neuron — one membrane potential for the whole cell, with nothing computed along a branch.';
+function IsolateBtn() {
+  const reveal = useWorld((s) => s.reveal);
+  return <button type="button" className={`j-btn${reveal === 'isolate' ? ' on' : ''}`} onClick={() => useWorld.setState({ reveal: reveal === 'isolate' ? 'explore' : 'isolate' })} data-testid="card-isolate" aria-pressed={reveal === 'isolate'} title="Thin out everything else so that this one thing can be seen whole. A display choice: nothing is removed from any model.">{reveal === 'isolate' ? 'Show the tissue again' : 'Isolate it'}</button>;
+}
+
+/** One recording contact: what it hears now, from which cell and how strongly, and the controls that move it precisely. */
+function ContactCard({ id, act, focusBtn }: { id: ContactId; act: HudActions; focusBtn: ReactNode }) {
+  const lab = useLab(), level = useJourney((s) => s.level);
+  const at = lab.drag?.id === id ? lab.drag.pos : lab.lab.contacts[id], rec = lab.rec[id], other = id === 'P1' ? 'P2' : 'P1';
+  // the cell to move towards: by default the nearest one that fires in this run (there is something to hear from it)
+  const [ref, setRef] = useState(() => {
+    const r = lab.lab.result.run, firing = r.circuit.cells.filter((_, i) => r.spikes[i].length > 0), pool = firing.length ? firing : r.circuit.cells;
+    return at ? pool.slice().sort((a, b) => distUm(at, a.pos as Vec3) - distUm(at, b.pos as Vec3))[0].id : 'T';
+  });
+  if (!at || !rec) {
+    return (
+      <>
+        <p><b>{id} is not placed.</b> Take it in hand and click where it should go — it snaps to just outside whatever you aim at — or put it straight ahead of your craft.</p>
+        <div className="j-row"><button type="button" className="j-btn primary" onClick={() => act.takeTool(id)} data-testid="contact-take">Take {id} <Key a="tool" /></button><button type="button" className="j-btn" onClick={() => act.placeAtArm(id)} data-testid="contact-arm">Put it ahead of the craft</button></div>
+      </>
+    );
+  }
+  const now = contactNow(id), run = lab.lab.result.run, rows = contributions(run, at), by = new Map<string, number>();
+  for (const e of rec.events) if (e.cell) by.set(e.cell, (by.get(e.cell) ?? 0) + 1);
+  const noise = rec.events.filter((e) => !e.cell).length, base = lab.lab.baselineContacts[id], moved = base ? distUm(base, at) : null;
+  const refCell = run.circuit.cells.find((c) => c.id === ref) ?? run.circuit.cells[0], toRef = distUm(at, refCell.pos as Vec3);
+  const step = lab.nudgeUm, put = (p: Vec3 | null) => lab.place(id, p);
+  const by3 = (dx: number, dy: number, dz: number) => put([at[0] + dx * step, at[1] + dy * step, at[2] + dz * step]);
+  const along = (sign: 1 | -1) => {
+    const r = refCell.pos as Vec3, d = Math.max(1e-6, toRef), k = sign > 0 ? Math.min(step, toRef) : step;
+    put([at[0] + ((r[0] - at[0]) / d) * k * sign, at[1] + ((r[1] - at[1]) / d) * k * sign, at[2] + ((r[2] - at[2]) / d) * k * sign]);
+  };
+  const edge = [0, 1, 2].some((k) => at[k] <= BLOCK.min[k] || at[k] >= BLOCK.max[k]);
+  return (
+    <>
+      <p>Voltage at {id} now: <b data-testid="contact-uv">{f0(now?.uV ?? 0)} µV</b> — outside the cells. Counted so far in this run: <b data-testid="contact-count">{now?.counted ?? 0}</b> of {rec.events.length} crossing{rec.events.length === 1 ? '' : 's'} of −{rec.thresholdUv.toFixed(0)} µV.</p>
+      <table className="j-table tight" data-testid="contact-table" aria-label={`What ${id} hears from each cell of the circuit`}>
+        <thead><tr><th>Cell</th><th>distance</th><th>its spike here</th><th>spikes</th><th>counted</th></tr></thead>
+        <tbody>{rows.map((r) => <tr key={r.cell} className={r.cell === ref ? 'ref' : ''}><td>{r.cell}</td><td>{r.distUm.toFixed(0)} µm</td><td>{r.ampUv.toFixed(0)} µV</td><td>{r.spikes || <em title="This cell does not fire in this run, so there is nothing of it to record">0</em>}</td><td>{by.get(r.cell) ?? 0}</td></tr>)}</tbody>
+      </table>
+      <p className="j-fine" data-testid="contact-where">At x {f1(at[0])}, y {f1(at[1])}, z {f1(at[2])} µm (the circuit’s own coordinates; y is towards the surface).{moved != null && moved > 0.05 ? <> Moved <b>{moved.toFixed(0)} µm</b> from its place in the baseline.</> : base ? ' This is its place in the baseline.' : ' Not placed in the baseline.'}{noise ? ` ${noise} crossing${noise === 1 ? '' : 's'} came from noise alone.` : ''}{edge ? ' It is at the edge of the block and cannot go further.' : ''}</p>
+      <div className="j-cause" data-testid="contact-move">
+        <span>Move {id} by <select value={step} onChange={(e) => useLab.setState({ nudgeUm: +e.target.value })} data-testid="nudge-step" aria-label="How far one press moves the contact">{[1, 5, 20].map((v) => <option key={v} value={v}>{v} µm</option>)}</select> — or drag one of its arrows in the scene. {other} is not touched.</span>
+        <div className="j-nudge six" role="group" aria-label={`Move ${id} along the block’s axes`}>
+          <button type="button" className="j-btn" onClick={() => by3(-1, 0, 0)} data-testid="nudge-x-">x −</button>
+          <button type="button" className="j-btn" onClick={() => by3(1, 0, 0)} data-testid="nudge-x+">x +</button>
+          <button type="button" className="j-btn" onClick={() => by3(0, -1, 0)} data-testid="nudge-y-" title="Away from the cortical surface">deeper</button>
+          <button type="button" className="j-btn" onClick={() => by3(0, 1, 0)} data-testid="nudge-y+" title="Towards the cortical surface">surface</button>
+          <button type="button" className="j-btn" onClick={() => by3(0, 0, -1)} data-testid="nudge-z-">z −</button>
+          <button type="button" className="j-btn" onClick={() => by3(0, 0, 1)} data-testid="nudge-z+">z +</button>
+        </div>
+        <div className="j-nudge" role="group" aria-label={`Move ${id} towards or away from a cell`}>
+          <button type="button" className="j-btn primary" onClick={() => along(1)} disabled={toRef < 0.05} data-testid="nudge-nearer">Nearer to</button>
+          <select value={ref} onChange={(e) => setRef(e.target.value)} data-testid="nudge-ref" aria-label="Which cell to move towards or away from">{run.circuit.cells.map((c) => <option key={c.id} value={c.id}>{c.id}</option>)}</select>
+          <button type="button" className="j-btn" onClick={() => along(-1)} data-testid="nudge-away">Away</button>
+          <span className="j-fine" data-testid="nudge-dist">{toRef.toFixed(0)} µm from {refCell.id}</span>
+        </div>
+      </div>
+      <div className="j-row">{focusBtn}<button type="button" className="j-btn" onClick={() => act.takeTool(id)} data-testid="contact-take" title="Take it in hand again and click a new place for it">Pick it up</button><button type="button" className="j-btn" onClick={() => put(null)} data-testid="contact-remove">Remove</button>{level === 'observe' && <button type="button" className="j-btn primary" onClick={() => useJourney.getState().set({ level: 'understand' })} data-testid="card-trace">Show its trace</button>}</div>
+      <p className="j-fine">A generated signal: each model spike adds one fixed waveform, sized by 120 µV × 30 µm ÷ distance (never less than {OBS.minDistUm} µm: a floor that only avoids dividing by zero), plus {OBS.noiseUv} µV of noise that depends on the seed and the sample number alone. Not a recording. Where your craft is plays no part in it.</p>
+    </>
+  );
+}
+
 function Card({ act }: { act: HudActions }) {
   const sel = useWorld((s) => s.selected), select = useWorld((s) => s.select), level = useJourney((s) => s.level);
-  const lab = useLab(), st = useTask();
+  const lab = useLab(), st = useTask(), ex = useExemplar();
   if (!sel) return null;
   const c = workshopCircuit(0), close = <button type="button" className="j-x" onClick={() => select(null)} aria-label="Clear the selection" data-testid="card-close">×</button>;
-  const focusBtn = <button type="button" className="j-btn" onClick={() => controller.act('focus')} data-testid="card-focus">Look at it <Key a="focus" /></button>;
+  const focusBtn = <button type="button" className="j-btn" onClick={() => controller.act('focus')} data-testid="card-focus" title="Inspect: the camera leaves your craft to look at this. Your craft waits where it is.">Look at it <Key a="focus" /></button>;
+  const part = sel.part && sel.part !== 'cell body' && sel.part !== 'contact' ? sel.part : '';
   let body: ReactNode = null, title = '', chip: ReactNode = null;
   if (sel.kind === 'link') {
     const k = c.conns.find((q) => q.id === sel.id);
@@ -120,29 +211,60 @@ function Card({ act }: { act: HudActions }) {
     body = (
       <>
         <p>{k.w < 0 ? 'Inhibits' : 'Excites'}: each spike of {k.from} delivers a current of {f1(Math.abs(k.w))} nA at its peak to {k.to}, {k.delayMs.toFixed(1)} ms later. It is <b>{on ? 'connected' : 'disconnected'}</b>.</p>
-        <div className="j-row"><button type="button" className="j-btn primary" onClick={() => lab.change({ conn: { ...lab.lab.setup.conn, [k.id]: !on } })} data-testid="card-toggle">{on ? 'Disconnect it' : 'Connect it'}</button></div>
-        <p className="j-fine">The bead you see travelling marks the delay. No voltage is computed along the fibre.</p>
+        <div className="j-row">
+          <button type="button" className="j-btn primary" onClick={() => lab.change({ conn: { ...lab.lab.setup.conn, [k.id]: !on } })} data-testid="card-toggle">{on ? 'Disconnect it' : 'Connect it'}</button>
+          <button type="button" className="j-btn" onClick={() => act.select('cell', k.from)} data-testid="card-from">◂ {k.from}</button>
+          <button type="button" className="j-btn" onClick={() => act.select('cell', k.to)} data-testid="card-to">{k.to} ▸</button>
+        </div>
+        <p className="j-fine">A declared connection of the model. The bead you see travelling marks its delay; no voltage is computed along the fibre.</p>
       </>
     );
-  } else if (sel.kind === 'site' && sel.id === 'probe') {
-    const now = probeNow(), p = lab.probe, others = Math.max(...Object.entries(p.ampsUv).filter(([k]) => k !== 'T').map(([, v]) => v));
-    title = 'Recording probe'; chip = <ClassChip cls="synthetic-observation" />;
-    body = (
-      <>
-        <p>Voltage at its tip now: <b data-testid="probe-uv">{now.uV.toFixed(0).replace('-', '−')} µV</b> — outside the cells, a thousand times smaller than what happens inside one.</p>
-        <p>Counted so far in this run: <b data-testid="probe-count">{now.counted}</b> of {p.events.length} crossing{p.events.length === 1 ? '' : 's'} of its −{p.thresholdUv.toFixed(0)} µV threshold. T is {p.ampsUv.T.toFixed(0)} µV here; the other four at most {others.toFixed(0)} µV.</p>
-        <div className="j-row">{focusBtn}{level === 'observe' && <button type="button" className="j-btn primary" onClick={() => useJourney.getState().set({ level: 'understand' })} data-testid="card-trace">Show its trace</button>}</div>
-        <p className="j-fine">A generated signal: each model spike adds one fixed waveform, sized by 120 µV × 30 µm ÷ distance, plus {OBS.noiseUv} µV of noise. Not a recording.</p>
-      </>
-    );
+  } else if (sel.kind === 'site' && isContactId(sel.id)) {
+    title = `Recording contact ${sel.id}`; chip = <ClassChip cls="synthetic-observation" />;
+    body = <ContactCard id={sel.id} act={act} focusBtn={focusBtn} />;
   } else if (sel.kind === 'site' && isContact(sel.id)) {
     const ch = +sel.id.slice(2) - 1, i = st.info, lost = !!i?.cond.lost.includes(ch), thr = i?.calibration?.thresholdsUv[ch];
     title = `Array contact ${ch + 1}`; chip = <ClassChip cls="published-model" />;
     body = (
       <>
         <p>{lost ? <b>Lost: it delivers nothing.</b> : <>Counted rate now: <b>{(st.snap?.rates[ch] ?? 0).toFixed(0)} spikes/s</b> (smoothed over 250 ms).</>} {thr != null && <>Threshold {thr.toFixed(1)} µV, set at calibration; noise at the detector {detectorNoiseUv(i!.cond.noiseUv).toFixed(1)} µV.</>}</p>
-        <p className="j-fine">Three model units belong to this contact. Only its count per 50 ms reaches the decoder.</p>
+        <p className="j-fine">One of the decoder’s eight contacts. Three model units belong to it; only its count per 50 ms reaches the decoder. It is fixed in place, and it is not P1 or P2.</p>
         <div className="j-row">{focusBtn}<button type="button" className="j-btn primary" onClick={() => act.goStation('array')} data-testid="card-task">Run the decoder task here</button></div>
+      </>
+    );
+  } else if (sel.kind === 'landmark') {
+    title = 'Small vessel'; chip = <ClassChip cls="illustrative" />;
+    body = (
+      <>
+        <p>A landmark: it runs under the circuit and forks there, so that you can tell where you are and which way you are facing.</p>
+        <p className="j-fine" data-testid="card-nomodel">Drawn, not measured. <b>No model is attached</b>: no flow, no oxygen, nothing to plot.</p>
+      </>
+    );
+  } else if (sel.kind === 'context' && sel.id === EXEMPLAR_ID) {
+    const a = ex.asset, p = a?.provenance;
+    title = 'Reconstructed neuron'; chip = <ClassChip cls="derived-anatomy" />;
+    body = !a || !p ? <p>{ex.status === 'error' ? `Its file could not be read (${ex.note}), so it is not drawn.` : 'Loading…'}</p> : (
+      <>
+        {part && <p data-testid="card-part">You pointed at its <b>{part}</b>. Every branch of it selects this one neuron.</p>}
+        <p>The shape of one real neuron: a cell the dataset tags <b>{p.datasetTags.join(', ')}</b>, from {p.species} {p.region.replace(/ \(.*/, '')}, traced from electron microscopy. {a.counts.dendriteMm.toFixed(1)} mm of dendrite and {a.counts.axonMm.toFixed(2)} mm of axon inside the sample, {a.counts.tips.toLocaleString('en')} branch ends.</p>
+        <p className="j-fine" data-testid="card-nomodel"><b>No dynamic model is attached</b>: it has no membrane potential, no spikes and no connections in this studio, so there is no trace to show. It is not from the precentral gyrus you entered, not from the atlas volunteer, and not wired to the five model cells.</p>
+        <div className="j-row">{focusBtn}<IsolateBtn /></div>
+        <details data-testid="card-source"><summary>Source, licence, what was changed</summary>
+          <p className="j-fine">{p.citation}</p>
+          <p className="j-fine"><a href={p.landingPage} target="_blank" rel="noreferrer">H01 release ↗</a> · cell {p.segmentId} · <a href={p.licenceUrl} target="_blank" rel="noreferrer">{p.licence} ↗</a></p>
+          <p className="j-fine"><b>Changed here:</b> {a.changes.join('; ')}. <b>Labels:</b> {a.labels.how}</p>
+          <p className="j-fine"><b>Limits:</b> {a.limits.join(' ')}</p>
+        </details>
+      </>
+    );
+  } else if (sel.kind === 'context') {
+    title = 'Context neuron'; chip = <ClassChip cls="illustrative" />;
+    body = (
+      <>
+        {part && <p data-testid="card-part">You pointed at its <b>{part}</b>. Every branch of it selects this one neuron.</p>}
+        <p>Scenery: a generated shape, drawn so that the circuit has surroundings and you have something to steer by.</p>
+        <p className="j-fine" data-testid="card-nomodel"><b>No dynamic model is attached</b>: no membrane potential, no spikes, no connections — so nothing is plotted for it and nothing here depends on it.</p>
+        <div className="j-row">{focusBtn}<IsolateBtn /></div>
       </>
     );
   } else if (sel.kind === 'cell' && isUnit(sel.id)) {
@@ -151,18 +273,21 @@ function Card({ act }: { act: HudActions }) {
     title = `Population unit ${u.id + 1}`; chip = <ClassChip cls="published-model" />;
     body = (
       <>
+        {part && <p className="j-fine" data-testid="card-part">You pointed at its <b>{part}</b>. {PART_NOTE}</p>}
         <p>Fires most for intended movement towards <b>{deg.toFixed(0)}°</b> (0° = right, 90° = up). {u.dist0Um.toFixed(0)} µm from contact {u.ch + 1}, so its spike is <b>{amp.toFixed(0)} µV</b> there{p != null ? <> — counted with probability {p.toFixed(2)}{i!.cond.lost.includes(u.ch) ? ' (but the contact is lost)' : ''}</> : null}.</p>
         <p className="j-fine">One of 24 units of a tuning model (rate = base + speed × (k + m·cos(direction − preferred))). Not one of the five circuit cells, and not connected to them.</p>
-        <div className="j-row">{focusBtn}</div>
+        <div className="j-row">{focusBtn}<IsolateBtn /></div>
       </>
     );
   } else if (sel.kind === 'cell') {
     const x = c.cells.find((q) => q.id === sel.id), now = cellNow(sel.id);
     if (!x || !now) return null;
     const inh = lab.lab.setup.conn['I>T'] ?? false, gap = now.thresholdMv - now.vMv, frac = Math.max(0, Math.min(1, (now.vMv - now.restMv) / (now.thresholdMv - now.restMv)));
+    const wires = c.conns.filter((k) => k.from === x.id || k.to === x.id);
     title = x.label; chip = <ClassChip cls="published-model" />;
     body = (
       <>
+        {part && <p className="j-fine" data-testid="card-part">You pointed at its <b>{part}</b>. {PART_NOTE}</p>}
         <p>Inside it now: <b data-testid="cell-v">{f1(now.vMv)} mV</b> · threshold {f1(now.thresholdMv)} mV · {now.spikes ? <>fired at {f1(now.lastSpikeMs!)} ms</> : gap > 0.05 ? <>{f1(gap)} mV to go</> : 'at threshold'}</p>
         <div className="j-meter" aria-hidden="true"><i style={{ width: `${frac * 100}%` }} /><b /></div>
         {x.id === 'A' && <><p className="j-fine">An input cell: you decide when it fires. It excites T — and the inhibitory cell I.</p><Nudge which="aMs" /></>}
@@ -175,12 +300,15 @@ function Card({ act }: { act: HudActions }) {
         )}
         {x.id === 'I' && <><p className="j-fine">Inhibitory. A makes it fire; its connection onto T is <b>{inh ? 'on' : 'off'}</b>.</p><div className="j-row"><button type="button" className="j-btn primary" onClick={() => lab.change({ conn: { ...lab.lab.setup.conn, 'I>T': !inh } })} data-testid="card-inhibit">{inh ? 'Switch I → T off' : 'Switch I → T on'}</button></div></>}
         {x.id === 'D' && <p className="j-fine">Driven by T alone: it fires 2 ms after T does, and not otherwise.</p>}
-        <div className="j-row">{focusBtn}</div>
+        <div className="j-wires" role="group" aria-label={`Declared connections of ${x.id}`} data-testid="card-wires"><span>Connections</span>
+          {wires.map((k) => { const on = lab.lab.setup.conn[k.id] ?? k.enabled !== false; return <button key={k.id} type="button" className={`j-chip wide${on ? '' : ' off'}`} onClick={() => act.select('link', k.id)} data-testid={`wire-${k.id}`} title={`${k.w < 0 ? 'Inhibits' : 'Excites'} after ${k.delayMs} ms${on ? '' : ' — disconnected'}. Select this connection.`}>{k.from} {k.w < 0 ? '⊣' : '→'} {k.to}</button>; })}
+        </div>
+        <div className="j-row">{focusBtn}<IsolateBtn /></div>
       </>
     );
   }
   return (
-    <aside className="j-card" aria-label="Selected" data-testid="card" data-sel={`${sel.kind}:${sel.id}`}>
+    <aside className="j-card" aria-label="Selected" data-testid="card" data-sel={`${sel.kind}:${sel.id}`} data-part={sel.part ?? ''}>
       <header><h2>{title}</h2>{chip}{close}</header>
       {body}
     </aside>
@@ -260,21 +388,114 @@ function Hold({ a, children, label }: { a: Action; children: ReactNode; label: s
     </button>
   );
 }
+/** What is aimed at, named where the aim is: beside the pointer, or under the centre mark while the mouse is captured. */
+function AimTag() {
+  const hov = useWorld((s) => s.hovered), sel = useWorld((s) => s.selected), tool = useLab((s) => s.tool), ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    hud.aim = () => {
+      const el = ref.current, view = el?.parentElement?.querySelector('[data-world-view]') as HTMLElement | null;
+      if (!el || !view) return;
+      const p = controller.captured ? ([0, 0] as [number, number]) : controller.pointer;
+      if (!p) { el.style.opacity = '0'; return; }
+      const r = view.getBoundingClientRect(), x = r.left + ((p[0] + 1) / 2) * r.width, y = r.top + ((1 - p[1]) / 2) * r.height;
+      el.style.opacity = '1'; el.style.transform = `translate(${Math.round(Math.min(r.right - 250, x + 16))}px, ${Math.round(y + 18)}px)`;
+    };
+    return () => { hud.aim = null; };
+  }, []);
+  const same = hov && sel && hov.kind === sel.kind && hov.id === sel.id;
+  const part = hov?.part && hov.part !== 'cell body' && hov.part !== 'contact' ? hov.part : '';
+  const what = !hov ? '' : hov.kind === 'context' ? (hov.id === EXEMPLAR_ID ? 'Reconstructed neuron · no model' : 'Context neuron · no model') : hov.kind === 'landmark' ? 'Small vessel · landmark' : labelOf(hov.kind, hov.id).replace(/^./, (m) => m.toUpperCase());
+  return <div ref={ref} className="j-aimtag" data-testid="aim-tag" data-kind={hov?.kind ?? ''} data-id={hov?.id ?? ''} data-part={hov?.part ?? ''} aria-hidden="true" style={{ opacity: 0 }}>{hov && !tool && <span>{same ? '◉ ' : ''}{what}{part ? <em> · {part}</em> : null}</span>}</div>;
+}
+
+/** Which way is up: a small horizon that tilts with the camera. Rose is towards the cortical surface, indigo towards the white matter. */
+function Orient() {
+  const ref = useRef<HTMLCanvasElement | null>(null), txt = useRef<HTMLSpanElement | null>(null), last = useRef('');
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    hud.orient = () => {
+      const c = controller.camPose(), y = controller.s.pos[1], key = `${c.pitch.toFixed(2)}|${Math.round(y / 5)}`;
+      if (key === last.current) return;
+      last.current = key;
+      const { ctx: g, w, h } = fitCanvas(cv), R = Math.min(w, h) / 2 - 1, cx = w / 2, cy = h / 2, hy = cy + (c.pitch / (Math.PI / 2)) * R;
+      g.clearRect(0, 0, w, h);
+      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 6.3); g.clip();
+      g.fillStyle = '#C97A9C'; g.fillRect(0, 0, w, hy); g.fillStyle = '#2A2B6E'; g.fillRect(0, hy, w, h - hy);
+      g.strokeStyle = '#FFF3F6'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, hy); g.lineTo(w, hy); g.stroke();
+      g.restore();
+      g.strokeStyle = 'rgba(232,238,249,.8)'; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R, 0, 6.3); g.stroke();
+      g.fillStyle = '#FFFFFF'; g.beginPath(); g.moveTo(cx - 6, cy); g.lineTo(cx - 2, cy); g.moveTo(cx + 2, cy); g.lineTo(cx + 6, cy); g.stroke(); g.beginPath(); g.arc(cx, cy, 1.4, 0, 6.3); g.fill();
+      const deg = Math.round((c.pitch * 180) / Math.PI);
+      if (txt.current) txt.current.textContent = `${Math.abs(deg) < 3 ? 'level' : deg > 0 ? `looking ${deg}° towards the surface` : `looking ${-deg}° deeper`} · craft at y ${y >= 0 ? '+' : '−'}${Math.abs(Math.round(y / 5) * 5)} µm`;
+    };
+    return () => { hud.orient = null; };
+  }, []);
+  return (
+    <div className="j-orient" data-testid="orient" title="Which way is up in this block: rose is towards the cortical surface, indigo towards the white matter. The line is the horizon of your view.">
+      <canvas ref={ref} aria-hidden="true" />
+      <p><b>↑ surface</b> · ↓ white matter<br /><span ref={txt} data-testid="orient-text">level</span></p>
+    </div>
+  );
+}
+
+const REVEAL: Array<[Reveal, string, string, string]> = [
+  ['explore', 'Readable', 'Thinned so you can fly: the gaps are not in tissue.', 'Readable view: most cells and nearly all fibres are left out so that you can fly and see. The open space is that choice — not a gap or a tunnel that exists in tissue.'],
+  ['dense', 'Denser', 'More context cells — still far sparser than tissue.', 'Denser context: several times more context cells are drawn — still far sparser than tissue. No model is attached to any of them.'],
+  ['isolate', 'Isolate', 'Only the selection is drawn solid.', 'Only what is selected is drawn solid; everything else is thinned out. A display choice: nothing is removed from any model.'],
+];
+function RevealSwitch() {
+  const reveal = useWorld((s) => s.reveal), sel = useWorld((s) => s.selected), say = useWorld((s) => s.say);
+  const set = (r: Reveal) => {
+    if (r === 'isolate' && !(sel && (sel.kind === 'cell' || sel.kind === 'context'))) { say('Select a neuron first: Isolate thins out everything except the selection.'); return; }
+    useWorld.setState({ reveal: r });
+  };
+  return (
+    <div className="j-reveal" data-testid="reveal" data-reveal={reveal}>
+      <div className="j-seg small" role="group" aria-label="How much of the tissue is drawn">
+        <span>Tissue</span>
+        {REVEAL.map(([id, label, , title]) => <button key={id} type="button" className={reveal === id ? 'on' : ''} aria-pressed={reveal === id} title={title} onClick={() => set(id)} data-testid={`reveal-${id}`}>{label}</button>)}
+      </div>
+      <p className="j-fine" data-testid="reveal-note" title={REVEAL.find((r) => r[0] === reveal)![3]}>{REVEAL.find((r) => r[0] === reveal)![2]}</p>
+    </div>
+  );
+}
+
+/** The two recording contacts: take one in hand, or select the one that is down. */
+function ContactButtons({ act }: { act: HudActions }) {
+  const contacts = useLab((s) => s.lab.contacts), tool = useLab((s) => s.tool), sel = useWorld((s) => s.selected);
+  return (
+    <div className="j-contacts" role="group" aria-label="Recording contacts" data-testid="contacts">
+      <span>Contacts</span>
+      {CONTACT_IDS.map((id) => {
+        const placed = !!contacts[id], held = tool === id, on = held || (sel?.kind === 'site' && sel.id === id);
+        return (
+          <button key={id} type="button" className={`j-pad-btn wide${on ? ' on' : ''}`} data-testid={`contact-${id}`} data-state={held ? 'held' : placed ? 'placed' : 'none'}
+            onClick={() => (held ? act.takeTool(null) : placed ? act.select('site', id) : act.takeTool(id))}
+            title={held ? `${id} is in hand: click the scene to put it down, or here to put it away` : placed ? `Select ${id} (it is where you left it)` : `Take ${id} in hand, then click where it should go`}>
+            {id} <em>{held ? 'in hand' : placed ? 'placed' : 'take'}</em>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Move({ act }: { act: HudActions }) {
-  const ctl = useWorld((s) => s.ctl), sel = useWorld((s) => s.selected), station = useJourney((s) => s.station);
+  const ctl = useWorld((s) => s.ctl), sel = useWorld((s) => s.selected), station = useJourney((s) => s.station), contacts = useLab((s) => s.lab.contacts), tool = useLab((s) => s.tool);
   // open by default where there is room for it; the player's own choice is remembered
   const [pad, setPad] = useState(() => { try { const v = localStorage.getItem('hbci.world.pad'); return v == null ? window.innerHeight >= 800 : v !== '0'; } catch { return true; } });
   const togglePad = () => { const v = !pad; setPad(v); try { localStorage.setItem('hbci.world.pad', v ? '1' : '0'); } catch { /* not remembered */ } };
   const speed = (by: number) => { changeSpeedLevel(controller.s, by); useWorld.setState({ ctl: controller.view() }); };
-  const pilot = ctl.context === 'pilot';
+  const pilot = ctl.context === 'pilot', inspect = ctl.mode === 'orbit';
   return (
-    <aside className="j-move" aria-label={pilot ? 'Your intended velocity' : 'Move the observer'} data-testid="move">
-      <button type="button" className="j-padtoggle" onClick={togglePad} aria-expanded={pad} data-testid="pad-toggle">{pilot ? 'Your intent' : 'Move'} <span>{pilot ? 'W A S D' : 'W A S D · E Q · drag to look'}</span> <i>{pad ? '▾' : '▸'}</i></button>
+    <aside className="j-move" aria-label={pilot ? 'Your intended velocity' : 'Fly your craft'} data-testid="move">
+      <button type="button" className="j-padtoggle" onClick={togglePad} aria-expanded={pad} data-testid="pad-toggle" title={pad ? 'Hide the flying controls, the view and the tissue settings' : 'Show the flying controls, the view and the tissue settings'}>{pilot ? 'Your intent' : 'Fly your craft'} <span>{pilot ? 'W A S D' : 'W A S D · E Q · drag to look'}</span> <i>{pad ? '▾' : '▸'}</i></button>
       {pad && <div className="j-pad" role="group" aria-label={pilot ? 'Intended direction' : 'Fly'}>
         <span /><Hold a="forward" label={pilot ? 'Intend up' : 'Forward'}>↑</Hold><span />{pilot ? <span /> : <Hold a="up" label="Up">⤒</Hold>}
         <Hold a="left" label={pilot ? 'Intend left' : 'Left'}>←</Hold><Hold a="back" label={pilot ? 'Intend down' : 'Back'}>↓</Hold><Hold a="right" label={pilot ? 'Intend right' : 'Right'}>→</Hold>{pilot ? <span /> : <Hold a="down" label="Down">⤓</Hold>}
       </div>}
-      {pilot ? <p className="j-aim" data-testid="move-note">These keys are your <b>intent</b> now. The observer stays put. <kbd>Esc</kbd> gives them back.</p> : pad && (
+      {pilot ? <p className="j-aim" data-testid="move-note">These keys are your <b>intent</b> now. Your craft holds still. <kbd>Esc</kbd> gives them back.</p> : pad && (
         <>
           <div className="j-row tight">
             <Hold a="brake" label="Brake">Brake</Hold>
@@ -283,29 +504,49 @@ function Move({ act }: { act: HudActions }) {
           <div className="j-row tight j-speed" data-testid="speed"><button type="button" className="j-mini" onClick={() => speed(-1)} aria-label="Slower">−</button><span>{SPEEDS_UM_S[ctl.speedLevel]} µm/s</span><button type="button" className="j-mini" onClick={() => speed(1)} aria-label="Faster">+</button></div>
         </>
       )}
+      {pad && (
+        <>
+          <div className="j-row tight">
+            <button type="button" className={`j-pad-btn wide${ctl.viewKind === 'first' ? ' on' : ''}`} onClick={() => controller.act('view')} data-testid="btn-view" data-view={ctl.viewKind} aria-pressed={ctl.viewKind === 'first'} title="Third person: the camera follows your craft. First person: you look out of it. The craft is in the same place either way.">{ctl.viewKind === 'first' ? 'First person' : 'Third person'} <Key a="view" /></button>
+          </div>
+          <Orient />
+          <RevealSwitch />
+        </>
+      )}
+      {station === 'circuit' && !pilot && <ContactButtons act={act} />}
       <label className="j-goto"><span>Go to</span>
-        <select value="" onChange={(e) => { const v = e.target.value; if (v === 'circuit' || v === 'array') act.goStation(v); else if (v === 'overview') controller.act('overview'); else if (v) act.select(v === 'probe' || /^ch\d$/.test(v) ? 'site' : 'cell', v, true); (e.target as HTMLSelectElement).blur(); }} data-testid="goto" aria-label="Go to a place in this block, or select a cell or an electrode contact">
+        <select value="" onChange={(e) => {
+          const v = e.target.value;
+          if (v === 'circuit' || v === 'array') act.goStation(v); else if (v === 'overview') controller.act('overview');
+          else if (v === EXEMPLAR_ID) act.select('context', v, true);
+          else if (v) act.select(isContactId(v) || /^ch\d$/.test(v) ? 'site' : 'cell', v, true);
+          (e.target as HTMLSelectElement).blur();
+        }} data-testid="goto" aria-label="Go to a place in this block, or look at a cell, a contact or an electrode">
           <option value="">a place…</option>
-          <option value="circuit">The five-cell circuit{station === 'circuit' ? ' (here)' : ''}</option>
-          <option value="array">The electrode array{station === 'array' ? ' (here)' : ''}</option>
-          <option value="probe">The probe beside T</option>
+          <option value="circuit">The five-cell circuit{station === 'circuit' ? ' (running)' : ''}</option>
+          <option value="array">The electrode array{station === 'array' ? ' (running)' : ''}</option>
+          <option value={EXEMPLAR_ID}>The reconstructed neuron</option>
+          {CONTACT_IDS.filter((id) => contacts[id]).map((id) => <option key={id} value={id}>Contact {id}</option>)}
           {workshopCircuit(0).cells.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           <optgroup label="Array contacts">{Array.from({ length: 8 }, (_, ch) => <option key={ch} value={`ch${ch + 1}`}>Contact {ch + 1}</option>)}</optgroup>
           <option value="overview">Overview of the whole block</option>
         </select>
       </label>
-      {ctl.mode === 'orbit' && (
+      {inspect && (
         <div className="j-row tight" data-testid="mode-pill">
-          <button type="button" className="j-btn primary" onClick={() => controller.returnToFlight()} data-testid="btn-return">Return <Key a="return" /></button>
-          <button type="button" className="j-btn" onClick={() => controller.flyFromHere()} data-testid="btn-fly-here">Fly from here</button>
+          <button type="button" className="j-btn primary" onClick={() => controller.returnToFlight()} data-testid="btn-return" title="The camera goes back to your craft, which is where you left it">Back to my craft <Key a="return" /></button>
+          <button type="button" className="j-btn" onClick={() => controller.flyFromHere()} data-testid="btn-fly-here" title="Your craft flies to where the camera is now">Bring my craft here</button>
         </div>
       )}
-      <p className="j-aim" data-testid="aim">{ctl.mode === 'orbit' ? <>{ctl.orbitLabel === 'Overview' ? 'Overview' : <>Looking at <b>{ctl.orbitLabel}</b></>} · drag to orbit</> : sel ? <>Selected: <b>{labelOf(sel.kind, sel.id)}</b></> : 'Click something to select it'}</p>
+      <p className="j-aim" data-testid="aim">{inspect ? <>{ctl.orbitLabel === 'Overview' ? 'Overview' : <>Looking at <b>{ctl.orbitLabel}</b></>} · drag to orbit · a movement key flies again</> : tool ? <><b>{tool}</b> in hand · click to put it down</> : sel ? <>Selected: <b>{labelOf(sel.kind, sel.id)}</b>{sel.part && sel.part !== 'cell body' && sel.part !== 'contact' ? ` · ${sel.part}` : ''}</> : 'Point at something: the whole of it lights. Click to select.'}</p>
     </aside>
   );
 }
 export function labelOf(kind: string, id: string): string {
   if (kind === 'link') return `connection ${id.replace('>', ' → ')}`;
+  if (kind === 'landmark') return 'the vessel';
+  if (kind === 'context') return id === EXEMPLAR_ID ? 'the reconstructed neuron' : 'a context neuron';
+  if (kind === 'site' && isContactId(id)) return `contact ${id}`;
   return (kind === 'site' ? SPEC.sites?.find((s) => s.id === id)?.label : SPEC.cells.find((c) => c.id === id)?.label) ?? id;
 }
 
@@ -329,9 +570,12 @@ function ControlsPanel({ onClose }: { onClose: () => void }) {
     <div className="j-panel" role="dialog" aria-label="Controls" data-testid="panel-controls">
       <header><h2>Controls</h2><button type="button" className="j-x" onClick={onClose} aria-label="Close">×</button></header>
       <ul className="j-list">
+        <li><b>You</b> are the pearl craft. The movement keys fly it; the camera follows it (<Key a="view" /> looks out of it instead). It is a way of getting about: it records nothing and touches nothing.</li>
         <li><b>Look:</b> drag the scene. Or press <Key a="capture" /> for mouse look (a centre mark appears; <kbd>Esc</kbd> gives the pointer back).</li>
-        <li><b>Select:</b> click a cell, a connection or an electrode tip — with mouse look on, whatever is under the centre mark. A drag never selects, and the click that starts mouse look selects nothing.</li>
-        <li><b>Wheel:</b> glide along your line of sight; while looking at one thing, move nearer or further.</li>
+        <li><b>Point and select:</b> whatever is under the pointer — or under the centre mark with mouse look on — lights up whole: a branch belongs to its neuron. Click to select it. Selecting never stops you flying. A drag never selects, and the click that starts mouse look selects nothing.</li>
+        <li><b>Inspect</b> (<Key a="focus" />): the camera leaves your craft to look at the selection; drag orbits. Any movement key, or <Key a="return" />, takes you back to flying.</li>
+        <li><b>Contacts:</b> <Key a="tool" /> takes P1 or P2 in hand; click puts it down just outside whatever you aim at. Select a contact to drag its arrows or move it by exact steps.</li>
+        <li><b>Wheel:</b> a push along your line of sight; while inspecting, nearer or further.</li>
         <li><b>Keys</b> act while the world has the keyboard. A slider or list you are using keeps the keys; click the scene or press <kbd>Esc</kbd> to take them back.</li>
       </ul>
       <div className="j-keys">
@@ -405,8 +649,13 @@ function InspectPanel({ onClose }: { onClose: () => void }) {
             <thead><tr><th>Connection</th><th>peak current, nA</th><th>delay, ms</th><th>current decays in, ms</th><th>now</th></tr></thead>
             <tbody>{c.conns.map((k) => <tr key={k.id}><td>{k.from} → {k.to}</td><td>{f1(k.w)}</td><td>{k.delayMs}</td><td>{k.w < 0 ? 4 : 2}</td><td>{(lab.setup.conn[k.id] ?? k.enabled !== false) ? 'connected' : 'off'}</td></tr>)}</tbody>
           </table>
-          <p className="j-fine">Run {lab.history.length}: fingerprint {lab.result.digest}; {changesBetween(lab.baseline.recipe.parameters, lab.setup).length ? `differs from the baseline in: ${changesBetween(lab.baseline.recipe.parameters, lab.setup).map((x) => x.what.toLowerCase()).join(', ')}` : 'this is the baseline'}. Nothing in this circuit is random; the probe’s noise is a fixed function of its seed and the sample number.</p>
-          <Entry id="lif" /><Entry id="workshop" /><Entry id="contact" /><Entry id="cells" />
+          <p className="j-fine" data-testid="run-line">Step {lab.history.length}: run fingerprint {lab.result.digest}; {labChanges(lab).length ? `differs from the baseline in: ${labChanges(lab).map((x) => x.what.toLowerCase()).join(', ')}` : 'this is the baseline'}. Nothing in this circuit is random. The contacts’ noise is a fixed function of the seed ({lab.seed}), the contact and the sample number — the same in the baseline and now.</p>
+          <table className="j-table" data-testid="contact-params">
+            <thead><tr><th>Contact</th><th>x, y, z now, µm</th><th>in the baseline</th></tr></thead>
+            <tbody>{CONTACT_IDS.map((id) => { const fmt = (p: Vec3 | null) => (p ? p.map((v) => f1(v)).join(', ') : 'not placed'); return <tr key={id}><td>{id}</td><td>{fmt(lab.contacts[id])}</td><td>{fmt(lab.baselineContacts[id])}</td></tr>; })}</tbody>
+          </table>
+          <p className="j-fine">Kept apart: <b>the experiment</b> (causes of the circuit, where P1 and P2 are, the seed — what Undo, Redo, the baseline and Reset act on) and <b>navigation</b> (where your craft and the camera are — never an input to the circuit or to a recording).</p>
+          <Entry id="lif" /><Entry id="workshop" /><Entry id="contact" /><Entry id="h01-exemplar" /><Entry id="cells" /><Entry id="craft" />
         </>
       ) : (
         <>
@@ -420,7 +669,8 @@ function InspectPanel({ onClose }: { onClose: () => void }) {
             <button type="button" className="j-btn" onClick={() => go('chip')} data-testid="open-chip">The chip, traced to RTL</button>
             <button type="button" className="j-btn" onClick={() => go('decoder')} data-testid="open-decoder">Decoder on the chip</button>
           </div>
-          <Entry id="cells" />
+          <p className="j-fine"><b>Not used here:</b> the recording contacts P1 and P2. They observe the five-cell circuit and are never an input of this decoder; its eight contacts are fixed in the array.</p>
+          <Entry id="cells" /><Entry id="craft" />
         </>
       )}
     </div>
@@ -495,7 +745,8 @@ export function Hud({ act, studio, setStudio }: { act: HudActions; studio: boole
       {inCortex && station === 'circuit' && <Card act={act} />}
       {inCortex && station === 'array' && <div className="j-rightcol"><CursorPanel /><Card act={act} /></div>}
       {inCortex && captured && <div className="j-reticle" aria-hidden="true" data-testid="reticle"><i /></div>}
-      {inCortex && cutaway && <div className="j-cut" role="status" data-testid="cutaway">Display cutaway: tissue this close is faded so you can see. Nothing in a model changed.</div>}
+      {inCortex && <AimTag />}
+      {inCortex && cutaway && <div className="j-cut" role="status" data-testid="cutaway">Display cutaway: tissue this close to the camera is faded so you can see. Nothing in a model changed.</div>}
       {inCortex && station === 'array' && !declared && <Declaration onOk={() => useJourney.getState().set({ declared: true })} />}
 
       <div className="j-mid"><Notice /><Guide act={act} /></div>

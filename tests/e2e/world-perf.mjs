@@ -22,7 +22,7 @@
 //   memory           JS heap before and after repeated trips in and out (no forced garbage collection: an upper bound);
 //   pointer capture  whether the browser really grants and releases pointer lock (the headless suite cannot ask it).
 import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -61,7 +61,7 @@ async function measure(body) {
     const a = window.__fi.slice().sort((x, y) => x - y), q = (p) => (a.length ? +a[Math.min(a.length - 1, Math.floor(p * a.length))].toFixed(2) : null);
     const p = window.__world?.perf.report() ?? {};
     return { seconds: secs, frames: a.length, median: q(0.5), p95: q(0.95), p99: q(0.99), worst: a.length ? +a[a.length - 1].toFixed(1) : null, over33: a.filter((v) => v > 33.4).length, over100: a.filter((v) => v > 100).length, over17: a.filter((v) => v > 17.5).length,
-      visibleShare: window.__vis.ok / Math.max(1, window.__vis.n), work: p.workMs, response: p.responseMs, heap: p.jsHeapMB, quality: window.__world?.store.getState().quality };
+      visibleShare: window.__vis.ok / Math.max(1, window.__vis.n), work: p.workMs, response: p.responseMs, pick: p.pickMs, things: window.__world?.controller.bodies?.length ?? 0, heap: p.jsHeapMB, quality: window.__world?.store.getState().quality };
   }, +((Date.now() - t0) / 1000).toFixed(1));
 }
 const steer = async (ms) => {
@@ -101,8 +101,35 @@ async function profile(dpr, seconds, first) {
   out.enter = await measure(async () => { await page.click(T('enter'), { timeout: 8000 }).catch(async (e) => { console.error('state at failure:', await page.evaluate(() => ({ place: document.querySelector('[data-testid="journey"]')?.dataset.place, hash: location.hash, cta: !!document.querySelector('[data-testid="cta"]'), card: document.querySelector('[data-testid="region-card"]')?.dataset.region }))); throw e; }); await inCortex(); await wait(400); });
   out.enterMs = Date.now() - t2 - 400;
   out.envCortex = await describe();
-  // 3 · the circuit: flying, looking, replaying, changing causes, with the linked trace open
+  // 2b · the first minute: fly the craft beside the reconstructed neuron, point along its branches (the pointer is
+  //      over the scene, so "what is aimed at" is worked out throughout), look around, change between third and first person
+  await world();
+  out.approach = await measure(async () => {
+    const end = Date.now() + seconds * 1000, keys = ['KeyW', 'KeyA', 'KeyW', 'KeyD', 'KeyE', 'KeyQ', 'KeyS']; let k = 0;
+    while (Date.now() < end) {
+      await hold(keys[k % keys.length], 420);
+      await page.mouse.move(520 + (k % 7) * 140, 280 + (k % 5) * 100, { steps: 12 });
+      if (k % 4 === 1) { const y = 300 + (k % 5) * 40; await drag(1000, y, 1000 + (k % 8 < 4 ? 130 : -130), y + 20); }
+      if (k % 9 === 5) { await page.keyboard.press('KeyV'); await wait(500); await page.mouse.move(700 + (k % 3) * 200, 420, { steps: 10 }); await page.keyboard.press('KeyV'); }
+      k++;
+    }
+  });
+  // 2c · a close approach: the craft a few micrometres from the reconstructed neuron's body, its 12,687-node arbor all round
+  await page.evaluate(() => { const c = window.__world.controller; if (c.viewKind !== 'third') c.setView('third'); c.home([58, 14, 372], [38, 10, 328]); }); await wait(500);
+  out.close = await measure(async () => {
+    const end = Date.now() + Math.max(6, seconds * 0.6) * 1000; let k = 0;
+    while (Date.now() < end) {
+      await page.mouse.move(600 + (k % 6) * 150, 300 + (k % 4) * 130, { steps: 14 });
+      const y = 320 + (k % 4) * 50; await drag(960, y, 960 + (k % 2 ? 180 : -180), y + (k % 3 ? 30 : -30));
+      await hold(k % 2 ? 'KeyA' : 'KeyD', 260);
+      if (k % 5 === 3) { await page.keyboard.press('KeyV'); await wait(450); await page.keyboard.press('KeyV'); }
+      k++;
+    }
+  });
+  await page.selectOption(T('goto'), 'circuit'); await wait(1700);
+  // 3 · the circuit: flying, looking, replaying, changing causes, moving a recording contact, with the linked trace open
   await page.click(T('level-understand')); await world();
+  await page.evaluate(() => { const s = window.__lab.store.getState(); s.place('P1', [44, 2, 14]); s.place('P2', [-140, 30, 60]); });
   out.circuit = await measure(async () => {
     const end = Date.now() + seconds * 1000, keys = ['KeyW', 'KeyD', 'KeyS', 'KeyA', 'KeyE', 'KeyQ']; let k = 0;
     while (Date.now() < end) {
@@ -110,6 +137,8 @@ async function profile(dpr, seconds, first) {
       if (k % 2 === 0) { const y = 260 + (k % 5) * 30; await drag(900, y, 900 + (k % 4 < 2 ? 150 : -150), y + 30); }
       if (k % 5 === 2) { await page.mouse.move(900, 320); await page.mouse.wheel(0, k % 10 === 2 ? -200 : 200); }
       if (k % 6 === 4) { await page.evaluate((b) => window.__lab.store.getState().change({ bMs: b }), 10 + (k * 3) % 17); }
+      if (k % 4 === 3) { await page.evaluate((x) => window.__lab.store.getState().place('P1', [x, 2, 14]), 30 + (k * 7) % 40); }
+      await page.mouse.move(640 + (k % 6) * 150, 300 + (k % 4) * 90, { steps: 8 });
       if (k % 12 === 9) { await page.keyboard.press('KeyM'); await wait(700); await page.keyboard.press('KeyR'); }
       k++;
     }
@@ -167,10 +196,11 @@ const row = (name, r) => [
   `  long frames      over 16.7 ms (a missed frame at 60 Hz): ${r.over17} · over 33.3 ms: ${r.over33} · over 100 ms: ${r.over100}`,
   r.work?.n ? `  main-thread work median ${r.work.median} ms · p95 ${r.work.p95} ms · p99 ${r.work.p99} ms per frame  (${((100 * r.work.p95) / budget).toFixed(0)} % of a 60 Hz frame at p95)` : '  main-thread work not sampled (the tissue view was not drawing)',
   r.response?.n ? `  response         ${r.response.n} inputs · median ${r.response.median} ms · p95 ${r.response.p95} ms` : '  response         not sampled in this segment',
+  r.pick?.n ? `  pointing         ${r.pick.n} “what is aimed at” tests among ${r.things} things · median ${r.pick.median} ms · p95 ${r.pick.p95} ms · p99 ${r.pick.p99} ms each (run every fourth frame)` : '  pointing         not sampled in this segment',
   '',
 ];
 const lines = [
-  'The integrated world (#/world) — interactive performance sample',
+  'The world (#/world), embodied build — interactive performance sample',
   `Run: ${new Date().toISOString()}   Build: production (vite preview), visible Chrome window`,
   `Machine: ${machine}`,
   `Browser: ${A.envBrain.ua}`,
@@ -185,8 +215,10 @@ const lines = [
   ...[[A, `PROFILE 1 — device pixel ratio ${A.dpr}: brain canvas ${A.envBrain.canvas}, tissue canvas ${A.envCortex.canvas} physical pixels; ${SECS} s per segment`], [B, `PROFILE 2 — device pixel ratio ${B.dpr} (a Retina display draws this): brain canvas ${B.envBrain.canvas}, tissue canvas ${B.envCortex.canvas} physical pixels; ${Math.round(SECS / 2)} s per segment`]].flatMap(([o, title]) => [
     title, '',
     ...row('Whole brain — turning it by dragging, hovering to name regions (460 k triangles, one draw call)', o.brain),
-    ...row('Going in — dive, caption, cross-fade, arrival glide (includes the first frames of the tissue view)', o.enter),
-    ...row('Circuit — flying, looking, wheel glides, replay, new runs every few seconds, overview; linked trace open', o.circuit),
+    ...row('Going in — dive, caption, cross-fade, the craft’s arrival (includes the first frames of the tissue view)', o.enter),
+    ...row('First minute — flying the craft beside the reconstructed neuron, pointing along its branches, looking, third ↔ first person', o.approach),
+    ...row('Close approach — the craft a few µm from the reconstructed neuron’s body: pointing, orbiting looks, side-slips, both views', o.close),
+    ...row('Circuit — flying, looking, wheel glides, replay, new runs and a moved contact every few seconds, overview; linked traces open', o.circuit),
     ...row(`Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (${o.hits} targets reached)`, o.array),
   ]),
   'Loading (from a local server; no network is involved)',
@@ -196,7 +228,7 @@ const lines = [
   'Payload (production build, dist/assets)',
   `  all JavaScript ${(sum(/\.js$/, 'raw') / 1024).toFixed(0)} kB raw, ${(sum(/\.js$/, 'gz') / 1024).toFixed(0)} kB gzip · all CSS ${(sum(/\.css$/, 'raw') / 1024).toFixed(0)} kB raw`,
   `  the world's own chunks: ${worldChunks.map((a) => `${a.f.replace(/-[\w-]{8}\./, '.')} ${(a.raw / 1024).toFixed(0)} kB`).join(', ')}`,
-  '  the brain is the atlas already in the studio (8.9 MB on disk); the tissue downloads no mesh, texture or dataset — every shape is generated in the browser',
+  `  the brain is the atlas already in the studio (8.9 MB on disk); the tissue downloads one file — the reconstructed neuron, ${(statSync(join(root, 'public/world/h01-exemplar.json')).size / 1024).toFixed(0)} kB of JSON (12,687 nodes) — and every other shape is generated in the browser`,
   '',
   'Memory over repeated trips (out to the brain and back in)',
   `  JS heap after one trip: ${A.h1.toFixed(1)} MB; after six more: ${A.h2.toFixed(1)} MB (${(A.h2 - A.h1 >= 0 ? '+' : '') + (A.h2 - A.h1).toFixed(1)} MB).`,

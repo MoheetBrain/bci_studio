@@ -1,65 +1,77 @@
-Checks on feature/neuroverse-world — 2026-11-25T20:25:34Z
+Checks on feature/neuroverse-embodied — 2026-11-26T00:10:45Z
 Node v24.22.0 · macOS 27.0.1 · Apple M5 Ultra
 
 == npm run typecheck
 > bci-studio@0.5.0 typecheck
 > tsc -b --noEmit
 
-
 == npm test
-ℹ tests 150
+ℹ tests 157
 ℹ suites 0
-ℹ pass 150
+ℹ pass 157
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 12497.314166
+ℹ duration_ms 12648.953333
 
 == npm test (the world's own files)
-✔ flight: the same key presses fly the same path at 30, 60 and 120 frames per second (1.339459ms)
-✔ flight: speed settles on the chosen level, releasing the keys stops without drift, the brake stops sooner and allows a slow creep (0.366084ms)
-✔ look: yaw and pitch only, pitch limited, forward follows the view, and lookAt inverts lookDir (0.272625ms)
-✔ focus: the orbit pose is outside the object on the side the rig came from, looks at its centre, and keeps its pivot while orbiting (0.61975ms)
-✔ picking: nearest body along the ray; a body the rig is inside is not picked; thin links are picked only near the ray (0.243375ms)
-✔ bindings: keys are matched by position, either Shift brakes, arrows always move, a key with no code falls back to its character, and a rebind swaps (0.215375ms)
-✔ aiming: a body the ray hits wins over a thin connection passing in front of it — unless the body is small and far behind (0.126625ms)
-✔ layout: only the target cell is large at the probe; every unit sits at its model’s own distance from its own tip (0.90275ms)
-✔ replay: the same causes give the same run, bit for bit; nothing about a run depends on how often it was asked for (8.42375ms)
-✔ intervention: moving B 8 ms earlier is ONE declared change, and it is what makes the target fire (4.005875ms)
-✔ same seed: baseline and changed run share the probe’s noise sample by sample — the difference between them is spikes only (4.374125ms)
-✔ membrane potential and probe voltage are different quantities: millivolts inside one cell, microvolts outside all of them (2.843167ms)
-✔ why: the explanation adds up — one-input runs superpose exactly while the target has not fired (33.581791ms)
-✔ history: undo returns to the earlier run (same fingerprint); back-to-baseline and reset restore everything (13.924375ms)
-✔ decoder routing: the cursor moves by the active decoder’s own base + terms, bin after bin — for both recovery routes (175.838291ms)
-✔ LIF: a cell at rest stays at rest, and a displaced one decays exponentially with τ = C/g_L (4.207958ms)
-✔ LIF: constant positive and negative currents follow V∞ + (V0 − V∞)·e^(−t/τ) and settle at E_L + I/g_L (5.715541ms)
-✔ LIF: threshold time under a constant current matches τ·ln((V∞ − E_L)/(V∞ − V_th)); a sub-threshold asymptote never fires (8.926333ms)
-✔ LIF: reset and refractory period — V sits at V_reset for exactly t_ref, and the firing period is t_ref + charging time (3.636583ms)
-✔ LIF: one connection — nothing before the delay, then exactly the closed-form potential, with the sign of the weight (5.759292ms)
-✔ LIF: the result does not depend on the order in which cells, connections or simultaneous commands are listed (7.332792ms)
-✔ LIF: halving the timestep moves a synaptically driven spike by less than one old step, and the error keeps shrinking (32.094459ms)
-✔ LIF: restoring a checkpoint and replaying the command log reproduces the run bit for bit; a counterfactual shares its past (6.816166ms)
-✔ scientific clock: 30, 60 and 120 frames per second reach the same model state; pausing stops the model, not the frames (1.287583ms)
-✔ commands are validated against the circuit and clamped to the stated bounds (0.299375ms)
-✔ Time workshop: one input is not enough, two close together are, and the window is what the model says it is (2047.223875ms)
-✔ recording model: spike size follows the stated 1/distance rule from the contact position; noise is a pure function of the sample (3.694208ms)
-✔ Instrument-flight field: one driver, a wave that stops when the driver is silenced, and an exact rewind (165.928542ms)
-✔ live field run: camera-free by construction; rewind replays the same spikes; a command while replaying starts a child run; export → import matches (10.869333ms)
-✔ manifest: revisions are the ones the models and their exported runs carry (4.244042ms)
-✔ manifest: every entry says what it assumes, what it leaves out, where it comes from and how far it was read; nothing claims expert review (0.561625ms)
-✔ detector stand-in: probabilities behave, and its noise level and threshold are those of the full chain to within 10 % (178.92875ms)
-✔ surrogate vs full chain (criteria fixed beforehand): counts per contact within ±30 %, linear held-out R² within ±0.12 (861.334541ms)
-✔ the population generator is a pure function of (stream, bin); intent codes round-trip (0.77475ms)
-✔ the cursor is moved by the decoder and by nothing else (553.124834ms)
-✔ calibration: fitting, held-out and evaluation data come from three different seeds; a stopped calibration changes nothing (67.587583ms)
-✔ three ways to break the loop, and two ways back that the model supports (483.818834ms)
-✔ a pilot run exports and replays exactly, calibrations and faults included (392.506ms)
-ℹ tests 38
-ℹ pass 38
+✔ camera: it sits behind and above the craft looking the same way; a cell body in the way pulls it in, never through; easing does not depend on the frame rate (1.472583ms)
+✔ pointing: the body and every branch of a neuron resolve to that neuron, from any side, with the part named; what is in front wins (6.393333ms)
+✔ a contact observes: moving P1 gives exactly the declared function of its new position; P2 and every spike time stay the same; the noise is the same noise (8.349667ms)
+✔ where a contact can be: always a finite place inside the block; zero distance to a cell is finite; nothing of the craft or camera is part of the experiment (2.652292ms)
+✔ history: placing or moving a contact is one step; undo takes it back and redo does it again; the baseline holds causes, both positions and the seed (13.780334ms)
+✔ saving: an experiment comes back the same after a reload; the previous format is read; rubbish gives the defaults (7.905959ms)
+✔ the reconstructed neuron: its file says where it comes from, under which licence and what it is not; it is one tree; every branch of it points back to it (48.563125ms)
+✔ flight: the same key presses fly the same path at 30, 60 and 120 frames per second (1.430667ms)
+✔ flight: speed settles on the chosen level, releasing the keys stops without drift, the brake stops sooner and allows a slow creep (0.437833ms)
+✔ look: yaw and pitch only, pitch limited, forward follows the view, and lookAt inverts lookDir (0.222084ms)
+✔ focus: the orbit pose is outside the object on the side the rig came from, looks at its centre, and keeps its pivot while orbiting (0.466792ms)
+✔ picking: nearest body along the ray; a body the rig is inside is not picked; thin links are picked only near the ray (0.209542ms)
+✔ bindings: keys are matched by position, either Shift brakes, arrows always move, a key with no code falls back to its character, and a rebind swaps (0.191709ms)
+✔ aiming: a body the ray hits wins over a thin connection passing in front of it — unless the body is small and far behind (0.114917ms)
+✔ layout: only the target cell is large at the probe; every unit sits at its model’s own distance from its own tip (0.732417ms)
+✔ replay: the same causes give the same run, bit for bit; nothing about a run depends on how often it was asked for (9.204375ms)
+✔ intervention: moving B 8 ms earlier is ONE declared change, and it is what makes the target fire (4.588417ms)
+✔ same seed: baseline and changed run share the probe’s noise sample by sample — the difference between them is spikes only (4.07675ms)
+✔ membrane potential and probe voltage are different quantities: millivolts inside one cell, microvolts outside all of them (2.594542ms)
+✔ why: the explanation adds up — one-input runs superpose exactly while the target has not fired (30.380541ms)
+✔ history: undo returns to the earlier run (same fingerprint); back-to-baseline and reset restore everything (15.044333ms)
+✔ decoder routing: the cursor moves by the active decoder’s own base + terms, bin after bin — for both recovery routes (183.27225ms)
+✔ LIF: a cell at rest stays at rest, and a displaced one decays exponentially with τ = C/g_L (4.148458ms)
+✔ LIF: constant positive and negative currents follow V∞ + (V0 − V∞)·e^(−t/τ) and settle at E_L + I/g_L (5.630292ms)
+✔ LIF: threshold time under a constant current matches τ·ln((V∞ − E_L)/(V∞ − V_th)); a sub-threshold asymptote never fires (9.853875ms)
+✔ LIF: reset and refractory period — V sits at V_reset for exactly t_ref, and the firing period is t_ref + charging time (3.089792ms)
+✔ LIF: one connection — nothing before the delay, then exactly the closed-form potential, with the sign of the weight (5.745333ms)
+✔ LIF: the result does not depend on the order in which cells, connections or simultaneous commands are listed (8.284959ms)
+✔ LIF: halving the timestep moves a synaptically driven spike by less than one old step, and the error keeps shrinking (29.867458ms)
+✔ LIF: restoring a checkpoint and replaying the command log reproduces the run bit for bit; a counterfactual shares its past (5.473333ms)
+✔ scientific clock: 30, 60 and 120 frames per second reach the same model state; pausing stops the model, not the frames (2.280625ms)
+✔ commands are validated against the circuit and clamped to the stated bounds (0.2855ms)
+✔ Time workshop: one input is not enough, two close together are, and the window is what the model says it is (2110.892083ms)
+✔ recording model: spike size follows the stated 1/distance rule from the contact position; noise is a pure function of the sample (3.539042ms)
+✔ Instrument-flight field: one driver, a wave that stops when the driver is silenced, and an exact rewind (170.321125ms)
+✔ live field run: camera-free by construction; rewind replays the same spikes; a command while replaying starts a child run; export → import matches (13.791209ms)
+✔ manifest: revisions are the ones the models and their exported runs carry (4.421584ms)
+✔ manifest: every entry says what it assumes, what it leaves out, where it comes from and how far it was read; nothing claims expert review (0.875333ms)
+✔ detector stand-in: probabilities behave, and its noise level and threshold are those of the full chain to within 10 % (186.731625ms)
+✔ surrogate vs full chain (criteria fixed beforehand): counts per contact within ±30 %, linear held-out R² within ±0.12 (881.202458ms)
+✔ the population generator is a pure function of (stream, bin); intent codes round-trip (0.771583ms)
+✔ the cursor is moved by the decoder and by nothing else (581.504417ms)
+✔ calibration: fitting, held-out and evaluation data come from three different seeds; a stopped calibration changes nothing (66.726208ms)
+✔ three ways to break the loop, and two ways back that the model supports (479.206333ms)
+✔ a pilot run exports and replays exactly, calibrations and faults included (424.05525ms)
+ℹ tests 45
+ℹ pass 45
 ℹ fail 0
 
 == npm run check:rtl
+  RAW records: 4000 vs 4000 samples exact (value, channel, index)
+✓ check:v04
+  rtl_trace_v04.json: trained model · 3 frames
+    quantiser (L, x): 24/24 features agree
+    MLP (h, logits, class, margin): 3/3 inferences agree
+    CRC-32 of the 46 words: rtl 0xba6bf18d browser 0xba6bf18d match
     engine latency = 18 cycles for every completed inference: yes
     predictions matching an inference (frame, ts, class, margin): 3/3
   rtl_trace_v04_real.json: trained model · 32 frames
@@ -70,10 +82,16 @@ Node v24.22.0 · macOS 27.0.1 · Apple M5 Ultra
     predictions matching an inference (frame, ts, class, margin): 32/32
 
 == npm run build
-✓ built in 2.44s
+✓ built in 2.54s
 
-== browser suites (production build, headless Chrome)
-   17 of 17 steps passed.
-   27/27 steps passed
-   29 of 29 steps passed. Report: docs/evidence/neuroverse/e2e-report.txt
-   world: 19 of 19 steps passed.
+== browser suites (production build, headless Chrome; each run on this code)
+   experiment: 17 of 17 steps passed.
+   classic studio: 27/27 steps passed
+   prototypes: 29 of 29 steps passed. Report: docs/evidence/neuroverse/e2e-report.txt
+   world: 28 of 28 steps passed. Report: docs/evidence/world/e2e-report.txt
+
+Note: the prototype suite (which shares the controller and the renderer with the world) and the world suite were run
+on the final code. The experiment and classic-studio suites were run a little earlier in the same session, before the
+last changes to the world's camera easing, autopilot, movement panel and tests; nothing they exercise was touched
+after their run (no file outside src/world/, tests/ and docs/ changed in this build, except package-free additions
+under public/world/ and tools/morph/).

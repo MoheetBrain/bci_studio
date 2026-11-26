@@ -5,7 +5,7 @@
 // the decoder scope is drawn from the same snapshots that move the cursor.
 import { useEffect, useRef, type ReactNode } from 'react';
 import { WORKSHOP_MS } from '../model/circuits';
-import { compareSentence, changesBetween, outcomeSentence, probeSentence, whySentence } from '../model/journey';
+import { CONTACT_IDS, compareSentence, changesBetween, contactSentence, labChanges, outcomeSentence, whySentence, type ContactId } from '../model/journey';
 import { LIF_DT_MS } from '../model/lif';
 import { PILOT_CH, PILOT_DECODERS, PILOT_FAULTS, condKey, type PilotDecoderId } from '../model/pilot';
 import { useWorld } from '../worldStore';
@@ -21,18 +21,19 @@ export const DECODER_NAME: Record<string, string> = { linear: 'Linear', kalman: 
 export const dock = { draw: null as null | (() => void) };
 
 // ── circuit: inputs, membrane potential, probe voltage, spikes — one time axis ──────────────────────────────────
-const PAD_L = 106, PAD_R = 14, LANE = 20, V_LO = -78, V_HI = -47, T_COL = '#FFD9A8', BASE_COL = '#8FB7FF', PROBE_COL = '#F4B3FF';
+const PAD_L = 106, PAD_R = 14, LANE = 20, V_LO = -78, V_HI = -47, T_COL = '#FFD9A8', BASE_COL = '#8FB7FF';
+const CONTACT_COL: Record<ContactId, string> = { P1: '#FFD08A', P2: '#9FE8C0' };
 const xOf = (ms: number, w: number) => PAD_L + (ms / WORKSHOP_MS) * (w - PAD_L - PAD_R);
 const msOf = (x: number, w: number) => Math.max(0, Math.min(WORKSHOP_MS, ((x - PAD_L) / (w - PAD_L - PAD_R)) * WORKSHOP_MS));
 
 function drawCircuit(cv: HTMLCanvasElement): void {
   const { ctx, w, h } = fitCanvas(cv), st = useLab.getState(), lab = st.lab, r = lab.result.run, c = r.circuit;
-  const k = Math.min(r.nSteps, clock.step()), t = k * r.dt, differs = lab.baseline.recipe.runId !== lab.result.recipe.runId && changesBetween(lab.baseline.recipe.parameters, lab.setup).length > 0;
+  const k = Math.min(r.nSteps, clock.step()), t = k * r.dt, differs = changesBetween(lab.baseline.recipe.parameters, lab.setup).length > 0;
   const fi = Math.max(0, c.cells.findIndex((x) => x.id === st.focus)), cell = c.cells[fi];
   ctx.clearRect(0, 0, w, h);
   ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace'; ctx.textBaseline = 'middle';
-  // lanes: inputs | membrane potential | probe | spikes | axis
-  const vTop = LANE + 3, spikesY = h - 26, probeH = Math.max(24, Math.min(44, (h - 70) * 0.3)), probeBot = spikesY - 11, probeTop = probeBot - probeH, vBot = probeTop - 8;
+  // lanes: inputs | membrane potential | contact P1 | contact P2 | spikes | axis
+  const vTop = LANE + 3, spikesY = h - 26, laneH = Math.max(18, Math.min(38, (h - 84) * 0.2)), p2Bot = spikesY - 12, p2Top = p2Bot - laneH, p1Bot = p2Top - 12, p1Top = p1Bot - laneH, vBot = p1Top - 8;
   const yV = (mv: number) => vTop + ((V_HI - mv) / (V_HI - V_LO)) * (vBot - vTop);
   // time grid
   ctx.lineWidth = 1; ctx.textAlign = 'center';
@@ -76,22 +77,31 @@ function drawCircuit(cv: HTMLCanvasElement): void {
   }
   trace(r.v[fi], r.spikes[fi], 'rgba(255,217,168,.30)', r.nSteps, 1.2);
   trace(r.v[fi], r.spikes[fi], T_COL, k, 2.3);
-  // the probe: voltage OUTSIDE the cells, at the probe's tip (µV) — a synthetic observation of the same run
-  const p = st.probe, lim = 130, yP = (uv: number) => probeTop + ((30 + Math.max(-lim, Math.min(30, uv)) * -1) / (lim + 30)) * probeH;
-  ctx.fillStyle = 'rgba(244,179,255,.05)'; ctx.fillRect(PAD_L, probeTop - 3, w - PAD_L - PAD_R, probeH + 6);
-  ctx.textAlign = 'left'; ctx.fillStyle = PROBE_COL; ctx.fillText('at the probe', 6, (probeTop + probeBot) / 2 - 7); ctx.fillStyle = '#8FA0BF'; ctx.fillText('µV', 6, (probeTop + probeBot) / 2 + 7);
-  ctx.textAlign = 'right'; ctx.fillStyle = '#8FA0BF'; ctx.fillText('0', PAD_L - 8, yP(0)); ctx.fillText(`−${lim}`, PAD_L - 8, yP(-lim) - 2);
-  const yTh = yP(-p.thresholdUv);
-  ctx.strokeStyle = 'rgba(255,123,138,.7)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(PAD_L, yTh); ctx.lineTo(w - PAD_R, yTh); ctx.stroke(); ctx.setLineDash([]);
-  const probeTrace = (tr: Float32Array, col: string, upTo: number, width: number) => {
-    ctx.strokeStyle = col; ctx.lineWidth = width; ctx.beginPath();
-    for (let s = 0; s <= upTo; s++) { const x = xOf(s * p.dtMs, w), y = yP(tr[s]); if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-    ctx.stroke();
+  // the contacts: voltage OUTSIDE the cells, at each contact (µV) — synthetic observations of the same run, same time axis
+  const lane = (id: ContactId, top: number, bot: number) => {
+    const p = st.rec[id], bp = st.baseRec[id], col = CONTACT_COL[id], lim = 130, H = bot - top, mid = (top + bot) / 2;
+    const yP = (uv: number) => top + ((30 - Math.max(-lim, Math.min(30, uv))) / (lim + 30)) * H;
+    ctx.fillStyle = 'rgba(244,179,255,.05)'; ctx.fillRect(PAD_L, top - 3, w - PAD_L - PAD_R, H + 6);
+    ctx.textAlign = 'left'; ctx.fillStyle = col; ctx.fillText(`at ${id}`, 6, p ? mid - 6 : mid);
+    if (!p) { ctx.fillStyle = '#8FA0BF'; ctx.fillText(`${id} is not placed — take it from “Contacts” and click where it should go`, PAD_L + 8, mid); return; }
+    ctx.fillStyle = '#8FA0BF'; ctx.fillText('µV', 6, mid + 7);
+    ctx.textAlign = 'right'; ctx.fillText('0', PAD_L - 8, yP(0)); ctx.fillText(`−${lim}`, PAD_L - 8, yP(-lim) - 2);
+    const yTh = yP(-p.thresholdUv);
+    ctx.strokeStyle = 'rgba(255,123,138,.7)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(PAD_L, yTh); ctx.lineTo(w - PAD_R, yTh); ctx.stroke(); ctx.setLineDash([]);
+    const tr = (v: Float32Array, c: string, upTo: number, width: number, alpha = 1, dash: number[] = []) => {
+      ctx.strokeStyle = c; ctx.lineWidth = width; ctx.globalAlpha = alpha; ctx.setLineDash(dash); ctx.beginPath();
+      for (let s = 0; s <= upTo; s++) { const x = xOf(s * p.dtMs, w), y = yP(v[s]); if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
+    };
+    // what this contact recorded in the baseline (the baseline's causes, its place then, the same seed)
+    if (bp && bp !== p) tr(bp.trace, BASE_COL, bp.trace.length - 1, 1, 0.75);
+    tr(p.trace, col, p.trace.length - 1, 1, 0.3);
+    tr(p.trace, col, Math.min(p.trace.length - 1, k), 1.3);
+    for (const e of p.events) { if (e.ms > t) break; const x = xOf(e.ms, w); ctx.fillStyle = '#FFE0AE'; ctx.beginPath(); ctx.moveTo(x, bot + 3); ctx.lineTo(x - 4, bot + 9); ctx.lineTo(x + 4, bot + 9); ctx.fill(); }
+    if (st.drag?.id === id) { ctx.fillStyle = col; ctx.textAlign = 'right'; ctx.fillText('moving…', w - PAD_R - 4, top + 6); }
+    else if (bp && bp !== p) { ctx.fillStyle = BASE_COL; ctx.textAlign = 'right'; ctx.fillText('— baseline', w - PAD_R - 4, top + 6); }
   };
-  if (differs) probeTrace(st.baseProbe.trace, 'rgba(143,183,255,.5)', st.baseProbe.trace.length - 1, 1);
-  probeTrace(p.trace, 'rgba(244,179,255,.28)', p.trace.length - 1, 1);
-  probeTrace(p.trace, PROBE_COL, Math.min(p.trace.length - 1, k), 1.3);
-  for (const e of p.events) { if (e.ms > t) break; const x = xOf(e.ms, w); ctx.fillStyle = '#FFE0AE'; ctx.beginPath(); ctx.moveTo(x, probeBot + 5); ctx.lineTo(x - 4, probeBot + 11); ctx.lineTo(x + 4, probeBot + 11); ctx.fill(); }
+  lane('P1', p1Top, p1Bot); lane('P2', p2Top, p2Bot);
   // spike events of all five cells on one labelled row
   ctx.fillStyle = '#8FA0BF'; ctx.textAlign = 'left'; ctx.fillText('spikes', 6, spikesY + 4);
   const marks: Array<{ x: number; id: string; past: boolean }> = [];
@@ -130,7 +140,7 @@ function CircuitTrace() {
   return (
     <canvas
       ref={ref} className="jd-trace" data-testid="trace" role="img"
-      aria-label="Linked traces of the run in the scene: when inputs A and B fire; the membrane potential inside the chosen cell with its threshold, in millivolts; the voltage at the probe outside the cells, in microvolts; and the spikes of all five cells. Drag A or B to change when that input fires; drag elsewhere to move through the recording."
+      aria-label="Linked traces of the run in the scene, on one time axis: when inputs A and B fire; the membrane potential inside the chosen cell with its threshold, in millivolts; the voltage at contact P1 and at contact P2 outside the cells, in microvolts, each against its recording in the baseline; and the spikes of all five cells. Drag A or B to change when that input fires; drag elsewhere to move through the recording."
       onPointerDown={(e) => {
         const p = at(e), s = useLab.getState().lab.setup, near = (ms: number | null) => ms != null && Math.abs(xOf(ms, p.w) - p.x) < 10;
         drag.current = p.y <= LANE + 5 && near(s.bMs) ? 'b' : p.y <= LANE + 5 && near(s.aMs) ? 'a' : 't';
@@ -215,7 +225,8 @@ export function LevelSwitch() {
 
 function CircuitDock() {
   const s = useLab(), level = useJourney((j) => j.level);
-  const lab = s.lab, changed = changesBetween(lab.baseline.recipe.parameters, lab.setup), atEnd = s.tMs >= WORKSHOP_MS - LIF_DT_MS;
+  const lab = s.lab, changed = labChanges(lab), causes = changesBetween(lab.baseline.recipe.parameters, lab.setup), atEnd = s.tMs >= WORKSHOP_MS - LIF_DT_MS;
+  const placed = CONTACT_IDS.filter((id) => s.rec[id]);
   const sentence = outcomeSentence(lab.result);
   return (
     <>
@@ -229,17 +240,19 @@ function CircuitDock() {
         <label className="jd-check"><input type="checkbox" checked={s.loop} onChange={(e) => useLab.setState({ loop: e.target.checked })} data-testid="t-loop" /> repeat</label>
         <span className="jd-time" data-testid="t-time" data-paused={s.paused ? '1' : '0'}><b>{s.tMs.toFixed(1)}</b> / {WORKSHOP_MS} ms {s.paused ? '· paused' : `· ×${slowFactor(s.speed)}`}</span>
         <span className="jd-gap" />
-        <button type="button" className="j-btn" disabled={!changed.length} onClick={s.toBaseline} data-testid="t-baseline" title="Put every cause back to the baseline’s. Can be undone.">Back to baseline</button>
-        <button type="button" className="j-btn opt" disabled={!changed.length} onClick={s.keepBaseline} data-testid="t-keep" title="Compare later runs with this one instead">Set as baseline</button>
-        <button type="button" className="j-btn" disabled={lab.history.length < 2} onClick={s.undo} data-testid="t-undo">↶ Undo</button>
-        <button type="button" className="j-btn" onClick={s.reset} data-testid="t-reset" title="The circuit as you found it: causes, baseline, history and playback">Reset</button>
+        <button type="button" className="j-btn" disabled={!changed.length} onClick={s.toBaseline} data-testid="t-baseline" title="Put every cause of the circuit and both contacts back to the baseline’s. One step: it can be undone. Your craft stays where it is.">Back to baseline</button>
+        <button type="button" className="j-btn opt" disabled={!changed.length} onClick={s.keepBaseline} data-testid="t-keep" title="From now on compare with this: these causes, these contact positions, the same noise seed. Your craft’s position is not part of it.">Set as baseline</button>
+        <button type="button" className="j-btn" disabled={lab.history.length < 2} onClick={s.undo} data-testid="t-undo" title="Undo the last step of the experiment: a changed cause, or a contact placed, moved or removed (a whole drag is one step). Never moves your craft.">↶ Undo</button>
+        <button type="button" className="j-btn" disabled={!lab.future.length} onClick={s.redo} data-testid="t-redo" title="Do again the step that was undone">↷ Redo</button>
+        <button type="button" className="j-btn" onClick={s.reset} data-testid="t-reset" title="The experiment as you found it: the circuit’s causes, no contact placed, the baseline, the history and the playback. Your craft stays where it is.">Reset</button>
       </div>
       <div className={`jd-body${level !== 'observe' ? ' open' : ''}`}>
-        <div className="jd-say" data-testid="say" aria-live="polite" data-fired={lab.result.firedMs != null ? '1' : '0'} data-run={lab.history.length} data-digest={lab.result.digest} data-changes={changed.map((c) => c.key).join(',')}>
-          <p className="jd-main"><span className="jd-run">Run {lab.history.length}{changed.length ? '' : ' · baseline'}</span> {sentence}</p>
+        <div className="jd-say" data-testid="say" aria-live="polite" data-fired={lab.result.firedMs != null ? '1' : '0'} data-run={lab.history.length} data-digest={lab.result.digest} data-changes={changed.map((c) => c.key).join(',')} data-causes={causes.map((c) => c.key).join(',')}
+          data-p1={lab.contacts.P1 ? lab.contacts.P1.join(',') : ''} data-p2={lab.contacts.P2 ? lab.contacts.P2.join(',') : ''} data-seed={lab.seed} data-redo={lab.future.length}>
+          <p className="jd-main"><span className="jd-run">Step {lab.history.length}{changed.length ? '' : ' · baseline'}</span> {sentence}</p>
           {level !== 'observe' && <p className="jd-why" data-testid="say-why"><b>Why.</b> {whySentence(s.why)}</p>}
-          {level !== 'observe' && changed.length > 0 && <p className="jd-why extra" data-testid="say-compare"><b>Compared.</b> {compareSentence(lab)}</p>}
-          {level !== 'observe' && <p className="jd-why extra" data-testid="say-probe"><b>Outside.</b> {probeSentence(s.probe)}</p>}
+          {changed.length > 0 && (level !== 'observe' || causes.length < changed.length) && <p className="jd-why extra" data-testid="say-compare"><b>Compared.</b> {compareSentence(lab)}</p>}
+          {level !== 'observe' && <p className="jd-why extra" data-testid="say-probe"><b>Outside.</b> {placed.length ? placed.map((id) => contactSentence(id, s.rec[id]!, lab.result.run)).join(' ') : 'No contact is placed yet, so nothing is recorded from outside the cells. Take P1 from “Contacts” and put it near T.'}</p>}
         </div>
         {level !== 'observe' && (
           <div className="jd-traces">

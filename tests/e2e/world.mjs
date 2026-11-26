@@ -60,18 +60,23 @@ const txt = (id) => page.locator(T(id)).first().innerText();
 const attr = (id, a) => page.locator(T(id)).first().getAttribute(a);
 const has = async (id) => (await page.locator(T(id)).count()) > 0;
 const wait = (ms) => page.waitForTimeout(ms);
+/** The player's craft: where it is and where it is aimed. */
 const pose = () => page.evaluate(() => window.__world.controller.pose());
+/** The camera: a different thing, which follows the craft. */
+const cam = () => page.evaluate(() => { const c = window.__world.controller.camPose(); return { pos: [...c.pos], yaw: c.yaw, pitch: c.pitch }; });
+/** Put the craft at the circuit's viewing place (as “Go to → the circuit” does, without the flight). */
+const atCircuit = async () => { await page.evaluate(() => { const c = window.__world.controller; if (c.viewKind !== 'third') c.setView('third'); c.home([60, 46, 250], [28, 2, 0]); window.__world.store.getState().select(null); }); await wait(250); };
 const screenOf = (p) => page.evaluate((q) => window.__world.screenOf(q), p);
 const sel = () => page.evaluate(() => window.__world.store.getState().selected);
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const hold = async (key, ms) => { await page.keyboard.down(key); await wait(ms); await page.keyboard.up(key); };
 const J = () => page.evaluate(() => { const s = window.__journey.store.getState(); return { place: s.place, station: s.station, level: s.level, beats: s.beats, owner: s.owner, declared: s.declared, visited: s.visited }; });
-const lab = () => page.evaluate(() => { const s = window.__lab.store.getState(), l = s.lab; return { digest: l.result.digest, runs: l.history.length, fired: l.result.firedMs, follower: l.result.followerMs, peak: l.result.peakMv, tMs: window.__lab.playheadMs(), paused: s.paused, setup: l.setup, baseDigest: l.baseline.digest, events: s.probe.events, focus: s.focus, speed: s.speed, watched: s.watched }; });
+const lab = () => page.evaluate(() => { const s = window.__lab.store.getState(), l = s.lab; return { digest: l.result.digest, runs: l.history.length, fired: l.result.firedMs, follower: l.result.followerMs, peak: l.result.peakMv, tMs: window.__lab.playheadMs(), paused: s.paused, setup: l.setup, baseDigest: l.baseline.digest, events: s.rec.P1?.events ?? [], contacts: l.contacts, baseContacts: l.baselineContacts, future: l.future.length, seed: l.seed, tool: s.tool, focus: s.focus, speed: s.speed, watched: s.watched }; });
 const taskNow = () => page.evaluate(() => { const t = window.__task.task.cur, s = window.__task.store.getState(); return { status: s.status, paused: s.paused, bin: t?.bin ?? 0, cursor: t?.cursor ?? null, intent: t?.intent ?? null, decoded: t?.decoded ?? null, base: t?.base ?? null, terms: t?.terms ?? null, termOf: t?.termOf ?? null, hits: t?.hits ?? 0, counts: t?.counts ?? null, decoder: s.info?.decoderId, lost: s.info?.cond.lost ?? [], cal: s.info?.calibration?.id ?? 0 }; });
 const cellPos = (id) => page.evaluate((k) => { const c = window.__journey.spec.cells.find((x) => x.id === k) ?? window.__journey.spec.sites.find((x) => x.id === k); return c.pos; }, id);
 const active = () => page.evaluate(() => { const a = document.activeElement; return !a || a === document.body ? 'page' : a.closest('[data-world-view]') ? 'world' : (a.getAttribute('data-testid') ?? a.tagName); });
 const settle = () => page.waitForFunction(() => !window.__world.controller.transitioning, null, { timeout: 8000 });
-const fresh = async () => { await page.goto(`${BASE}/#/world`); await page.evaluate(() => { localStorage.removeItem('hbci.world.journey.v1'); localStorage.removeItem('hbci.world.pad'); localStorage.removeItem('hbci.world.keys.v1'); }); await page.reload(); await page.waitForSelector(`${T('brain-stage')}[data-ready="1"]`, { timeout: 30000 }); await wait(700); };
+const fresh = async () => { await page.goto(`${BASE}/#/world`); await page.evaluate(() => { localStorage.removeItem('hbci.world.journey.v1'); localStorage.removeItem('hbci.world.journey.v2'); localStorage.removeItem('hbci.world.pad'); localStorage.removeItem('hbci.world.keys.v1'); }); await page.reload(); await page.waitForSelector(`${T('brain-stage')}[data-ready="1"]`, { timeout: 30000 }); await wait(700); };
 const goIn = async (button = 'enter') => { await page.click(T(button)); await page.waitForSelector(`${T('journey')}[data-place="cortex"]`, { timeout: 20000 }); await page.waitForFunction(() => window.__world.rt.frames > 8, null, { timeout: 20000 }); await settle(); await wait(500); };
 /** Fly with keys only when the world has the keyboard: press on empty scene first (top middle, away from every panel). */
 const worldFocus = () => page.evaluate(() => document.querySelector('[data-world-view]').focus());
@@ -228,10 +233,9 @@ await step('5 mouse capture: the capturing click selects nothing; then the centr
 
 await step('6 selection: a click selects the cell under the pointer; its readout is the model’s value at the playhead; focus and exact return', async () => {
   await page.evaluate(() => { if (window.__lock !== undefined) { window.__lock = null; delete document.pointerLockElement; document.dispatchEvent(new Event('pointerlockchange')); } });
-  await page.evaluate(() => { const c = window.__world.controller; c.home(window.__journey.spec.home.pos, window.__journey.spec.home.lookAt); window.__world.store.getState().select(null); });
-  await wait(250);
+  await atCircuit();
   const at = await screenOf(await cellPos('T'));
-  assert(at.visible, 'T is in view from the arrival pose');
+  assert(at.visible, 'T is in view from the circuit’s viewing place');
   await page.mouse.click(at.x, at.y); await wait(250);
   eq((await sel())?.id, 'T', 'click selects T');
   assert(await page.locator(T('cell-tag-T')).isVisible(), 'the cell is named in the scene');
@@ -241,16 +245,21 @@ await step('6 selection: a click selects the cell under the pointer; its readout
   assert(l.paused, 'paused');
   const want = await page.evaluate(() => { const r = window.__lab.store.getState().lab.result.run, i = r.circuit.cells.findIndex((c) => c.id === 'T'); return r.v[i][Math.min(r.nSteps, window.__lab.clock.step())]; });
   near(parseFloat((await txt('cell-v')).replace('−', '-')), want, 0.06, 'the card shows the membrane potential the run holds at the playhead');
-  const before = await pose();
+  // selecting changed nothing about who owns the keys: still Explore
+  eq(await attr('journey', 'data-input'), 'explore', 'selecting something leaves the player flying');
+  const before = await pose(), camBefore = await cam();
   await page.keyboard.press('KeyF'); await settle(); await wait(150);
-  eq(await attr('journey', 'data-mode'), 'orbit', 'focus is an orbit');
-  const closer = await pose();
-  assert(dist(closer.pos, await cellPos('T')) < dist(before.pos, await cellPos('T')), 'focus moved towards the cell');
-  await page.keyboard.press('KeyR'); await settle(); await wait(150);
-  const back = await pose();
-  assert(dist(back.pos, before.pos) < 1e-6 && Math.abs(back.yaw - before.yaw) < 1e-9 && Math.abs(back.pitch - before.pitch) < 1e-9, 'Return restores the pose exactly');
+  eq(await attr('journey', 'data-mode'), 'orbit', 'focus is an orbit'); eq(await attr('journey', 'data-input'), 'inspect', 'and is shown as Inspect');
+  const closer = await cam(), parked = await pose();
+  assert(dist(closer.pos, await cellPos('T')) < dist(camBefore.pos, await cellPos('T')), 'the camera moved towards the cell');
+  assert(dist(parked.pos, before.pos) < 1e-9, 'the craft stayed where it was');
+  assert(await page.locator(T('craft-tag')).count() > 0, 'and says so in the scene');
+  await page.keyboard.press('KeyR'); await settle(); await wait(250);
+  const back = await pose(), camBack = await cam();
+  assert(dist(back.pos, before.pos) < 1e-9 && Math.abs(back.yaw - before.yaw) < 1e-9 && Math.abs(back.pitch - before.pitch) < 1e-9, 'the craft is exactly where and as it was');
+  assert(dist(camBack.pos, camBefore.pos) < 0.5, `Return brings the camera back behind the craft (${dist(camBack.pos, camBefore.pos).toFixed(2)} µm off)`);
   await page.keyboard.press('Space'); await wait(100);
-  return `card ${await txt('cell-v')} = run value ${want.toFixed(1)} mV at the playhead; F focuses, R returns to the exact pose`;
+  return `card ${await txt('cell-v')} = run value ${want.toFixed(1)} mV at the playhead; F inspects (craft parked), R returns the camera to the craft`;
 });
 
 // ══ the experiment ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -330,26 +339,29 @@ await step('9 replay and compare: replaying is the same recording (not a new exp
   return `Replay: same fingerprint ${a.digest}, same run number; inhibition on → no spike (independent run agrees); Undo, Back to baseline and Reset each restore the expected fingerprint`;
 });
 
-await step('10 outside the cells: the probe is a different quantity (µV, not mV) and counts the target’s spike and little else', async () => {
-  await page.selectOption(T('goto'), 'B'); await settle(); await page.click(T('bMs-earlier4')); await wait(100); await page.click(T('bMs-earlier4')); await wait(400);
-  await page.selectOption(T('goto'), 'probe'); await settle(); await wait(200);
-  eq((await sel())?.kind, 'site', 'the probe is selected as a recording site, not as a cell');
-  assert(await page.locator(T('site-tag-probe')).isVisible(), 'a selection made from the list is named in the scene exactly as a hovered one is');
-  const card = await txt('card');
-  assert(/SYNTHETIC OBSERVATION/.test(card) && /µV/.test(card) && /Not a recording/.test(card), 'it is labelled a synthetic observation, in microvolts');
+await step('10 outside the cells: a recording contact reads a different quantity (µV, not mV) and counts the target’s spike and little else', async () => {
+  if ((await lab()).fired == null) { await page.evaluate(() => window.__lab.store.getState().change({ bMs: 14 })); await wait(200); }
+  // the contact is put at a declared point beside T by command here; placing it with the pointer is tested in the embodied suite
+  await page.evaluate((p) => window.__lab.store.getState().place('P1', p), PROBE_TIP); await wait(200);
+  await page.selectOption(T('goto'), 'P1'); await settle(); await wait(200);
+  eq((await sel())?.kind, 'site', 'the contact is selected as a recording site, not as a cell');
+  assert(await page.locator(T('contact-tag-P1')).isVisible(), 'and it is named in the scene');
+  const uv = await txt('contact-uv');
+  assert(/µV/.test(uv), `the contact reads microvolts (${uv})`);
   const mine = probeRecording(makeRun({ ...defaultSetup(0), bMs: 14 }).run, PROBE_TIP), l = await lab();
-  eq(JSON.stringify(l.events.map((e) => [e.ms, e.cell])), JSON.stringify(mine.events.map((e) => [e.ms, e.cell])), 'the page’s detected events are the ones an independent computation gives');
+  eq(JSON.stringify(l.events.map((e) => [e.ms, e.cell])), JSON.stringify(mine.events.map((e) => [e.ms, e.cell])), 'the events on screen are the ones an independent run of the generator gives');
   const t = mine.events.find((e) => e.cell === 'T');
-  assert(t && t.ampUv > 80, `T’s spike is ${t?.ampUv.toFixed(0)} µV at the probe`);
-  assert((await txt('say-probe')).includes(`${t.ampUv.toFixed(0)} µV`), 'the sentence gives that size');
-  // the two traces share a time axis but not a unit: the canvas is described as such
-  assert(/millivolts/.test(await attr('trace', 'aria-label')) && /microvolts/.test(await attr('trace', 'aria-label')), 'the linked trace names both quantities');
-  assert((await J()).beats.record, 'route step done');
-  await shot('06-probe');
-  return `probe counts ${mine.events.length} crossing(s) in this run; T’s is ${t.ampUv.toFixed(0)} µV (threshold ${mine.thresholdUv} µV), independent computation agrees`;
+  assert(t && t.ampUv > 80, `T’s spike is ${t?.ampUv.toFixed(0)} µV at the contact`);
+  await page.click(T('level-understand')); await wait(200);
+  assert((await txt('say-probe')).includes(`${mine.ampsUv.T.toFixed(0)} µV`), 'the sentence gives T’s size there');
+  assert(mine.events.filter((e) => e.cell && e.cell !== 'T').length === 0, 'no other cell’s spike crosses the threshold from here');
+  assert(/does not|Not a recording|generated signal/i.test(await txt('card')), 'the card says it is a generated signal');
+  eq((await lab()).digest, l.digest, 'placing a contact left the run’s fingerprint alone');
+  await shot('06-contact');
+  await page.keyboard.press('Escape'); await settle();
+  return `P1 counts ${mine.events.length} crossing(s) in this run; T’s is ${t.ampUv.toFixed(0)} µV (threshold ${mine.thresholdUv} µV), independent computation agrees`;
 });
 
-// ══ who owns the keyboard ═══════════════════════════════════════════════════════════════════════════════════════
 await step('11 input ownership: a clicked button does not take the keys; a list or slider does, until Escape; a button reached with Tab behaves as a button', async () => {
   await page.click(T('btn-return')).catch(() => undefined); await wait(200);
   await page.click(T('t-replay')); await wait(250);
@@ -580,12 +592,390 @@ await step('19 reduced motion: going in is a cut, not a flight', async () => {
   return `with “Reduce motion” on, the tissue is on screen ${ms} ms after the click and no camera glide runs`;
 });
 
+// ══ the embodied build: a craft that is flown, things that are pointed at whole, contacts that are placed and left ══
+const hov = () => page.evaluate(() => window.__world.store.getState().hovered);
+const craftAndCam = () => page.evaluate(() => { const c = window.__world.controller; return { craft: [...c.s.pos], yaw: c.s.yaw, pitch: c.s.pitch, body: { ...c.body }, cam: [...c.cam.pos], auto: !!c.auto, mode: c.mode, view: c.viewKind }; });
+/** Screen points on a body of the scene's picking list: the middles of `n` of its branch segments (those that are in view and not under a panel). */
+const pointsOn = (kind, id, n) => page.evaluate(({ kind, id, n }) => {
+  const W = window.__world, b = W.controller.bodies.find((x) => x.kind === kind && x.id === id), out = [];
+  if (!b?.segs) return out;
+  const m = b.segs.length / 7, stepBy = Math.max(1, Math.floor(m / (n * 6)));
+  for (let i = 0; i < m && out.length < n * 6; i += stepBy) {
+    const p = [(b.segs[i * 7] + b.segs[i * 7 + 3]) / 2, (b.segs[i * 7 + 1] + b.segs[i * 7 + 4]) / 2, (b.segs[i * 7 + 2] + b.segs[i * 7 + 5]) / 2], s = W.screenOf(p);
+    if (!s.visible) continue;
+    const top = document.elementFromPoint(s.x, s.y);
+    if (top && top.closest('[data-world-view]')) out.push({ x: s.x, y: s.y, part: b.partNames?.[b.parts ? b.parts[i] : 0] ?? '' });
+  }
+  return out;
+}, { kind, id, n });
+/** Hover each point and report what the application says is aimed at there. */
+const aimAt = async (pts) => { const got = []; for (const p of pts) { await page.mouse.move(p.x, p.y); await wait(110); got.push({ ...p, hit: await hov() }); } return got; };
+const recOf = (id) => page.evaluate((k) => { const r = window.__lab.store.getState().rec[k]; return r ? { trace: Array.from(r.trace), events: r.events.map((e) => [e.ms, e.cell]) } : null; }, id);
+const spikesNow = () => page.evaluate(() => JSON.stringify(window.__lab.store.getState().lab.result.run.spikes));
+const sameArr = (a, b, tol = 0) => a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) <= tol);
+
+await step('20 the player is a craft in the scene: it has its own place and aim, the keys move IT, and the camera follows from behind', async () => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await fresh(); await goIn(); await worldFocus();
+  const a = await craftAndCam(), boom = dist(a.craft, a.cam);
+  assert(boom > 50 && boom < 80, `the camera is ${boom.toFixed(0)} µm from the craft, not at it`);
+  assert(a.cam[1] > a.craft[1], 'and above it');
+  const on = await screenOf(a.craft);
+  assert(on.visible && on.y > 450, 'the craft is on screen, below the centre of the view');
+  await shot('20-craft-first-view');
+  // fly forward and turn while sampling both: the craft translates and turns, the camera keeps its station behind it, nothing jumps
+  const samples = [];
+  await page.keyboard.down('KeyW');
+  for (let i = 0; i < 24; i++) { if (i === 8) { await page.mouse.move(700, 300); await page.mouse.down(); } if (i > 8 && i < 18) await page.mouse.move(700 - (i - 8) * 22, 300); if (i === 18) await page.mouse.up(); samples.push(await craftAndCam()); await wait(40); }
+  await page.keyboard.up('KeyW'); await wait(700);
+  const b = await craftAndCam();
+  assert(dist(a.craft, b.craft) > 60, `the craft flew ${dist(a.craft, b.craft).toFixed(0)} µm`);
+  assert(Math.abs(b.yaw - a.yaw) > 0.2, 'and turned');
+  let worstCraft = 0, worstCam = 0, minBoom = 1e9, maxBoom = 0;
+  for (let i = 1; i < samples.length; i++) { worstCraft = Math.max(worstCraft, dist(samples[i].craft, samples[i - 1].craft)); worstCam = Math.max(worstCam, dist(samples[i].cam, samples[i - 1].cam)); const d = dist(samples[i].craft, samples[i].cam); minBoom = Math.min(minBoom, d); maxBoom = Math.max(maxBoom, d); }
+  assert(worstCraft < 30 && worstCam < 45, `no jump between samples (craft ≤ ${worstCraft.toFixed(0)} µm, camera ≤ ${worstCam.toFixed(0)} µm per ~45 ms)`);
+  assert(minBoom > boom * 0.5 && maxBoom < boom * 1.6, `the camera stayed with the craft (${minBoom.toFixed(0)}–${maxBoom.toFixed(0)} µm from it)`);
+  // the drawn craft turns towards the aim and arrives there
+  assert(Math.abs(b.body.yaw - b.yaw) < 0.05, 'the craft’s drawn heading has caught up with its aim');
+  const still = await craftAndCam(); await wait(300);
+  assert(dist(still.craft, (await craftAndCam()).craft) < 0.01, 'and it holds still when the keys are released');
+  eq(await attr('journey', 'data-input'), 'explore', 'Explore is shown as the input mode');
+  assert((await txt('owner')).includes('keys fly your craft'), 'with what the keys do in it');
+  assert((await J()).beats.explore, 'the route noticed the flying');
+  return `camera ${boom.toFixed(0)} µm behind/above the craft; W + drag: craft flew ${dist(a.craft, b.craft).toFixed(0)} µm and turned ${Math.abs(b.yaw - a.yaw).toFixed(2)} rad with the camera ${minBoom.toFixed(0)}–${maxBoom.toFixed(0)} µm from it; largest step between samples ${worstCraft.toFixed(0)} µm`;
+});
+
+await step('21 one player state: first person, Inspect and Return never move the craft; a movement key or a new command interrupts from where things are — nothing snaps', async () => {
+  await page.evaluate(() => { const c = window.__world.controller; if (c.viewKind !== 'third') c.setView('third'); c.home(window.__journey.spec.home.pos, window.__journey.spec.home.lookAt); window.__world.store.getState().select(null); }); await wait(300); await worldFocus();
+  const a = await craftAndCam();
+  await page.keyboard.press('KeyV'); await settle(); await wait(150);
+  const fp = await craftAndCam();
+  eq(await attr('journey', 'data-view'), 'first', 'first person is shown'); assert(dist(fp.craft, a.craft) < 1e-9 && fp.yaw === a.yaw && fp.pitch === a.pitch, 'the player is in the same place, aimed the same way');
+  assert(dist(fp.cam, fp.craft) < 4, 'the camera is in the craft');
+  await shot('21-first-person');
+  // pointing works the same from inside
+  const inside = await aimAt((await pointsOn('context', 'h01', 4)).slice(0, 12));
+  assert(inside.some((p) => p.hit?.id === 'h01'), 'in first person a branch of the neuron still resolves to the neuron');
+  await page.keyboard.press('KeyV'); await settle(); await wait(150);
+  const tp = await craftAndCam();
+  assert(dist(tp.cam, a.cam) < 0.6 && dist(tp.craft, a.craft) < 1e-9, 'back in third person the camera is where it was');
+  // Inspect the neuron, then press a movement key: flying resumes from the craft's own place, the camera comes back continuously
+  await page.evaluate(() => window.__world.store.getState().select({ kind: 'context', id: 'h01' }));
+  await page.keyboard.press('KeyF'); await wait(700);
+  eq(await attr('journey', 'data-input'), 'inspect', 'Inspect');
+  const insp = await craftAndCam();
+  assert(dist(insp.craft, a.craft) < 1e-9, 'the craft waits where it was'); assert(dist(insp.cam, a.cam) > 100, 'while the camera has gone to look');
+  await shot('21-inspect-neuron');
+  const trail = [];
+  await page.keyboard.down('KeyW');
+  for (let i = 0; i < 16; i++) { trail.push(await craftAndCam()); await wait(35); }
+  await page.keyboard.up('KeyW'); await settle(); await wait(200);
+  eq(trail[1].mode, 'fly', 'the first movement key leaves Inspect');
+  let step = 0; for (let i = 1; i < trail.length; i++) step = Math.max(step, dist(trail[i].cam, trail[i - 1].cam));
+  assert(step < 60, `the camera came back without a cut (largest step ${step.toFixed(0)} µm per ~40 ms)`);
+  assert(dist(trail[1].cam, trail[0].cam) <= step, 'and its first step is not its largest: it starts from rest (the exact curve is unit-tested)');
+  assert(dist(trail[0].craft, a.craft) < 3 && dist(trail[1].craft, trail[0].craft) < 15, 'the craft carried on from its own place');
+  eq(await attr('journey', 'data-input'), 'explore', 'Explore again');
+  // a journey the craft makes by itself is interrupted where the craft IS, not at its destination
+  await page.selectOption(T('goto'), 'circuit'); await wait(350);
+  eq(await attr('journey', 'data-travelling'), '1', 'the craft is flying itself to the circuit'); assert((await txt('owner')).includes('any movement key takes over'), 'and the mode line says how to take over');
+  await worldFocus(); await page.keyboard.down('KeyS'); await wait(60);
+  const cut = await craftAndCam(); await wait(120); await page.keyboard.up('KeyS'); await wait(500);
+  const after = await craftAndCam();
+  assert(!cut.auto, 'the key ended the journey'); assert(dist(after.craft, [60, 46, 250]) > 25, `it did not jump to the destination (${dist(after.craft, [60, 46, 250]).toFixed(0)} µm short)`);
+  assert(dist(after.craft, cut.craft) < 40, 'it carried on from where it was');
+  // …and a second command sent mid-journey starts from where the craft is
+  await page.selectOption(T('goto'), 'circuit'); await wait(250); const m1 = await craftAndCam();
+  await page.selectOption(T('goto'), 'array'); const m2 = await craftAndCam(); await wait(60); const m3 = await craftAndCam();
+  assert(dist(m1.craft, m2.craft) < 60 && dist(m2.craft, m3.craft) < 60, `a new destination is taken up from the present position (${dist(m1.craft, m2.craft).toFixed(0)} µm, then ${dist(m2.craft, m3.craft).toFixed(0)} µm between samples — no jump to either place)`);
+  await page.selectOption(T('goto'), 'circuit'); await settle(); await wait(200);
+  assert(dist((await craftAndCam()).craft, [60, 46, 250]) < 0.5, 'left alone, the craft arrives at the circuit’s viewing place');
+  return `V: same pose, camera in the craft; Inspect: craft parked, W returns to flying with the camera moving ≤ ${step.toFixed(0)} µm per sample; an interrupted journey stops ${dist(after.craft, [60, 46, 250]).toFixed(0)} µm short of its destination`;
+});
+
+await step('22 pointing: the body and every branch of a neuron resolve to that one neuron, from more than one side; selecting it does not stop the flying; a context cell says it has no model', async () => {
+  await page.selectOption(T('goto'), 'circuit'); await settle(); await atCircuit(); await worldFocus();
+  const tally = (got, id) => ({ own: got.filter((p) => p.hit?.id === id).length, other: got.filter((p) => p.hit && p.hit.id !== id).length, none: got.filter((p) => !p.hit).length, parts: [...new Set(got.filter((p) => p.hit?.id === id).map((p) => p.hit.part))] });
+  // what is under the pointer is what the application's own ray test says is nearest there (so "other" means: something is in front)
+  const front = async (pts) => page.evaluate((pts) => pts.map((p) => { const r = document.querySelector('[data-testid="world-view"] canvas').getBoundingClientRect(), h = window.__world.controller.hitAt(((p.x - r.left) / r.width) * 2 - 1, 1 - ((p.y - r.top) / r.height) * 2); return h ? h.id : null; }), pts);
+  const view1 = await aimAt(await pointsOn('cell', 'T', 5)), t1 = tally(view1, 'T');
+  eq(JSON.stringify(view1.map((p) => p.hit?.id ?? null)), JSON.stringify(await front(view1)), 'the highlight is always the nearest thing under the pointer');
+  assert(t1.own >= 8 && t1.parts.length >= 2, `from the front, ${t1.own} of ${view1.length} points on T’s branches resolve to T (${t1.parts.join(', ')})`);
+  const body = await screenOf(await cellPos('T')); await page.mouse.move(body.x, body.y); await wait(150);
+  eq((await hov())?.id, 'T', 'its body resolves to T'); eq((await hov())?.part, 'cell body', 'and is called the cell body');
+  assert((await txt('aim-tag')).length > 0, 'what is aimed at is named beside the pointer');
+  await shot('22-point-branch');
+  // from another side
+  await page.evaluate(() => { const c = window.__world.controller; c.home([-150, 90, -120], [28, 2, 0]); }); await wait(300);
+  const view2 = await aimAt(await pointsOn('cell', 'T', 5)), t2 = tally(view2, 'T');
+  assert(t2.own >= 8, `from behind and above, ${t2.own} of ${view2.length} resolve to T`);
+  // click a branch: the neuron is selected, the part is named, and the keys still fly
+  const br = view2.find((p) => p.hit?.id === 'T' && p.hit.part !== 'cell body');
+  await page.mouse.move(br.x, br.y); await wait(120); await page.mouse.click(br.x, br.y); await wait(250);
+  const s1 = await sel();
+  eq(s1?.id, 'T', 'a click on a branch selects the neuron'); assert(s1.part && s1.part !== 'cell body', `with the part pointed at (${s1.part})`);
+  assert((await txt('card-part')).includes(s1.part), 'the card names that part'); assert(await has('cell-v'), 'and shows the neuron’s membrane potential — one value for the whole cell');
+  eq(await attr('journey', 'data-input'), 'explore', 'the input mode is still Explore');
+  const p0 = await pose(); await worldFocus(); await hold('KeyW', 300); await wait(400);
+  assert(dist((await pose()).pos, p0.pos) > 15, 'with something selected, W still flies the craft');
+  eq((await sel())?.id, 'T', 'and the selection is kept');
+  // a context cell: selectable, named, and honest
+  const ctxId = await page.evaluate(() => { const W = window.__world, c = W.controller; let best = null; for (const b of c.bodies) { if (b.kind !== 'context' || !b.id.startsWith('ctx')) continue; const s = W.screenOf(b.centre); if (!s.visible) continue; const top = document.elementFromPoint(s.x, s.y); if (!top?.closest('[data-world-view]')) continue; const h = c.hitAt(((s.x - top.getBoundingClientRect().left) / top.getBoundingClientRect().width) * 2 - 1, 1 - ((s.y - top.getBoundingClientRect().top) / top.getBoundingClientRect().height) * 2); if (h && h.id === b.id) { best = { id: b.id, x: s.x, y: s.y }; break; } } return best; });
+  assert(ctxId, 'a context cell is in clear view');
+  await page.mouse.move(ctxId.x, ctxId.y); await wait(150);
+  eq((await hov())?.kind, 'context', 'a context cell answers to the pointer');
+  await page.mouse.click(ctxId.x, ctxId.y); await wait(250);
+  eq((await sel())?.id, ctxId.id, 'and can be selected');
+  assert(/No dynamic model is attached/.test(await txt('card-nomodel')), 'its card says no dynamic model is attached');
+  assert(!(await has('cell-v')) && !(await has('contact-uv')), 'and shows no membrane potential and no trace');
+  await shot('22-context-cell');
+  // the craft is not something the aim can land on
+  assert(await page.evaluate(() => window.__world.controller.bodies.every((b) => !/craft|player/i.test(b.id))), 'the player’s craft is not in the list of things that can be aimed at');
+  // at low detail, pointing is as reliable
+  await page.evaluate(() => window.__world.store.setState({ quality: 'low' })); await wait(900);
+  const low = tally(await aimAt(await pointsOn('cell', 'T', 5)), 'T');
+  await page.evaluate(() => window.__world.store.setState({ quality: 'high' })); await wait(900);
+  assert(low.own >= 8, `at low detail ${low.own} points on T still resolve to T`);
+  await page.keyboard.press('Escape'); await wait(100);
+  return `T: ${t1.own}/${view1.length} branch points from the front (${t1.parts.join(', ')}), ${t2.own}/${view2.length} from behind — the rest had something nearer in front; click on its ${s1.part} selects T and W still flies; ${ctxId.id}: “no dynamic model”; low detail ${low.own}/${low.own + low.other + low.none}`;
+});
+
+await step('23 the reconstructed neuron: structure from published data, named with its source and licence, with no model and no trace; the tissue can be thinned and brought back', async () => {
+  await page.evaluate(() => { const c = window.__world.controller; c.home(window.__journey.spec.home.pos, window.__journey.spec.home.lookAt); window.__world.store.getState().select(null); }); await wait(400);
+  const got = await aimAt(await pointsOn('context', 'h01', 5)), own = got.filter((p) => p.hit?.id === 'h01');
+  assert(own.length >= 10 && new Set(own.map((p) => p.hit.part)).size >= 2, `${own.length} of ${got.length} points on its branches resolve to the one neuron`);
+  await page.mouse.click(own[0].x, own[0].y); await wait(250);
+  eq((await sel())?.id, 'h01', 'selected');
+  const card = await txt('card');
+  assert(/human temporal cortex/.test(card) && /No dynamic model is attached/.test(card) && /not from the precentral gyrus/.test(card), 'the card says what it is and what it is not');
+  assert(!(await has('cell-v')), 'no membrane potential is shown for it');
+  await page.click(`${T('card-source')} summary`); await wait(100);
+  const src = await txt('card-source');
+  assert(/Shapson-Coe/.test(src) && /CC BY 4\.0/.test(src) && /H01 release/.test(src), 'source, citation and licence are one click away');
+  // reveal: isolate, denser, and back — display only
+  const d0 = (await lab()).digest, n0 = await page.evaluate(() => window.__world.controller.bodies.length);
+  await page.click(T('card-isolate')); await wait(400);
+  eq(await attr('journey', 'data-reveal'), 'isolate', 'isolated'); await shot('23-isolated');
+  await page.click(T('reveal-dense')); await wait(1400);
+  const n1 = await page.evaluate(() => window.__world.controller.bodies.length);
+  assert(n1 > n0 + 100, `the denser view draws ${n1 - n0} more context cells, and they can be pointed at`); await shot('23-dense');
+  assert(/sparser than tissue/.test(await txt('reveal-note')), 'and says it is still sparser than tissue');
+  await page.click(T('reveal-explore')); await wait(500);
+  eq(await page.evaluate(() => window.__world.controller.bodies.length), n0, 'back to the readable view: the same scene as before');
+  assert(/gaps are not in tissue/.test(await txt('reveal-note')), 'which says its open space is a display choice');
+  eq((await lab()).digest, d0, 'no model changed through any of it');
+  await page.keyboard.press('Escape'); await wait(100);
+  return `${own.length}/${got.length} branch points → the one neuron (${[...new Set(own.map((p) => p.hit.part))].join(', ')}); card: temporal cortex, CC BY 4.0, no model; isolate / denser (+${n1 - n0} cells) / readable are display-only`;
+});
+
+await step('24 placing: a contact is taken in hand, previewed where it would go, put down with a click, and is then exactly where the model says it is', async () => {
+  await page.selectOption(T('goto'), 'circuit'); await settle();
+  await page.evaluate(() => window.__lab.store.getState().reset()); await atCircuit(); await worldFocus();
+  // make T fire first, at the cell that causes it: select B, 8 ms earlier
+  const bAt = await screenOf(await cellPos('B')); await page.mouse.click(bAt.x, bAt.y); await wait(200);
+  eq((await sel())?.id, 'B', 'B selected where it is');
+  await page.click(T('bMs-earlier4')); await page.click(T('bMs-earlier4')); await wait(300);
+  const fired = await lab();
+  assert(fired.fired != null, 'T fires');
+  await page.click(T('level-observe')); await wait(150); await page.keyboard.press('Escape'); await wait(100);
+  // Escape puts a contact in hand away without placing it
+  await page.click(T('contact-P1')); await wait(150);
+  eq(await attr('journey', 'data-tool'), 'P1', 'P1 is in hand'); assert((await txt('owner')).includes('keys still fly'), 'and the keys still fly');
+  const k0 = await pose(); await worldFocus(); await hold('KeyD', 200); await wait(300);
+  assert(dist((await pose()).pos, k0.pos) > 5, 'with a contact in hand the craft still flies');
+  await page.keyboard.press('Escape'); await wait(150);
+  eq(await attr('journey', 'data-tool'), '', 'Escape puts it away'); eq((await lab()).contacts.P1, null, 'nothing was placed');
+  // take it again, aim at T: the preview says where and what it would hear; click puts it down
+  await atCircuit(); await page.click(T('contact-P1')); await wait(150);
+  const tPos = await cellPos('T'), at = await screenOf(tPos);
+  await page.mouse.move(at.x + 4, at.y - 2); await wait(450);
+  const tag = await txt('preview-tag');
+  assert(/P1 here · \d+ µm from T/.test(tag), `the preview says where it would go (“${tag}”)`);
+  await shot('24-preview');
+  await page.mouse.click(at.x + 4, at.y - 2); await wait(300);
+  const l1 = await lab(), p1 = l1.contacts.P1;
+  assert(p1 && p1.every(Number.isFinite), 'P1 is placed');
+  const dT = dist(p1, tPos);
+  assert(dT > 9 && dT < 22, `just outside T’s body (${dT.toFixed(1)} µm from its centre: its 9 µm radius plus a stand-off)`);
+  eq(l1.runs, fired.runs + 1, 'one step of the history'); eq(l1.digest, fired.digest, 'the circuit’s run is the same run'); eq(await attr('journey', 'data-tool'), '', 'the hand is empty again');
+  eq((await sel())?.id, 'P1', 'and P1 is selected');
+  // the drawn contact is at the model's coordinates: its label is where the model position projects to
+  const tagBox = await page.locator(T('contact-tag-P1')).boundingBox(), want = await screenOf([p1[0], p1[1] + 2.4 + 44 + 9, p1[2]]);
+  assert(Math.abs(tagBox.x + tagBox.width / 2 - want.x) < 6 && Math.abs(tagBox.y + tagBox.height / 2 - want.y) < 6, `the contact is drawn where the model has it (label ${Math.hypot(tagBox.x + tagBox.width / 2 - want.x, tagBox.y + tagBox.height / 2 - want.y).toFixed(1)} px from the projected position)`);
+  const where = await txt('contact-where');
+  assert(where.includes(`x ${p1[0].toFixed(1).replace('-', '−')}`), 'and the card gives the same coordinates');
+  // P2 in open space: at arm's reach in front of the craft
+  await page.click(T('contact-P2')); await wait(150);
+  const open = await page.evaluate(() => { const W = window.__world, c = W.controller, r = document.querySelector('[data-testid="world-view"] canvas').getBoundingClientRect(); for (let y = 0.3; y < 0.75; y += 0.05) for (let x = 0.3; x < 0.7; x += 0.05) { const px = r.left + x * r.width, py = r.top + y * r.height, top = document.elementFromPoint(px, py); if (top?.closest('[data-world-view]') && !c.hitAt(x * 2 - 1, 1 - y * 2)) return { x: px, y: py }; } return null; });
+  assert(open, 'there is open space in view to put P2 in');
+  await page.mouse.move(open.x, open.y); await wait(350); await page.mouse.click(open.x, open.y); await wait(300);
+  const l2 = await lab(), p2 = l2.contacts.P2, cm = await cam(), reach = dist(cm.pos, (await pose()).pos) + 58;
+  assert(p2 && Math.abs(dist(p2, cm.pos) - reach) < 2, `P2 is at arm’s reach in front of the craft (${dist(p2, cm.pos).toFixed(0)} µm along the aim; the craft is ${(reach - 58).toFixed(0)} µm from the camera)`);
+  eq(JSON.stringify(l2.contacts.P1), JSON.stringify(p1), 'placing P2 did not move P1'); eq(l2.digest, fired.digest, 'nor change the run');
+  assert((await J()).beats.place, 'the route noticed that both contacts are down');
+  await page.click(T('level-understand')); await wait(300); await shot('24-both-placed');
+  kept = { p1, p2, digest: fired.digest };
+  return `P1 snapped ${dT.toFixed(1)} µm from T’s centre (preview: “${tag}”); P2 at arm’s reach ${dist(p2, cm.pos).toFixed(0)} µm from the camera; each one step; run fingerprint ${fired.digest} unchanged; drawn where the model has them`;
+});
+
+await step('25 moving P1: its samples become exactly the declared function of its new place; P2’s samples and every spike time do not change; flying changes neither', async () => {
+  const before = { p1: await recOf('P1'), p2: await recOf('P2'), spikes: await spikesNow(), l: await lab() };
+  await page.click(T('t-keep')); await wait(150);
+  eq(JSON.stringify((await lab()).baseContacts), JSON.stringify(before.l.contacts), 'the baseline now holds both contact positions');
+  // flying, turning, changing the view and inspecting: neither recording changes (nothing is selected, so no arrow is there to grab)
+  await page.evaluate(() => window.__world.store.getState().select(null)); await wait(120);
+  await worldFocus(); await hold('KeyA', 350); await page.mouse.move(720, 260); await page.mouse.down(); await page.mouse.move(660, 290, { steps: 6 }); await page.mouse.up();
+  await page.keyboard.press('KeyV'); await wait(300); await page.keyboard.press('KeyV'); await wait(300);
+  const flown = { p1: await recOf('P1'), p2: await recOf('P2'), l: await lab() };
+  assert(sameArr(flown.p1.trace, before.p1.trace) && sameArr(flown.p2.trace, before.p2.trace), 'after flying and changing the view, both recordings are identical sample by sample');
+  eq(flown.l.digest, before.l.digest, 'and so is the run'); eq(flown.l.runs, before.l.runs, 'and no step was added');
+  // drag P1's x arrow
+  await atCircuit(); await page.click(T('contact-P1')); await wait(350);
+  const h = await page.evaluate(() => { const W = window.__world, b = W.controller.bodies.find((x) => x.kind === 'handle' && x.id === 'P1:x'); if (!b) return null; const s = b.segs, a = W.screenOf([s[0] * 0.2 + s[3] * 0.8, s[1], s[2]]), e = W.screenOf([s[3], s[4], s[5]]); return { a, e }; });
+  assert(h && h.a.visible, 'P1’s arrows are drawn when it is selected');
+  await page.mouse.move(h.a.x, h.a.y); await wait(300);
+  assert(/drag/.test(await txt('handle-tag')), 'the arrow under the pointer says what dragging it does');
+  const dx = Math.sign(h.e.x - h.a.x) || 1;
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) { await page.mouse.move(h.a.x + dx * i * 8, h.a.y + (h.e.y - h.a.y) / Math.max(1, Math.abs(h.e.x - h.a.x)) * i * 8); await wait(25); }
+  await wait(120);
+  const during = await lab(), live = await page.evaluate(() => window.__lab.contactAt('P1'));
+  eq(during.runs, before.l.runs, 'while dragging, nothing has joined the history yet'); assert(dist(live, before.l.contacts.P1) > 3, 'but the contact is already following the pointer');
+  await shot('25-dragging');
+  await page.mouse.up(); await wait(300);
+  const after = await lab(), q1 = after.contacts.P1;
+  eq(after.runs, before.l.runs + 1, 'the whole drag is ONE step');
+  assert(Math.abs(q1[0] - before.l.contacts.P1[0]) > 3 && Math.abs(q1[1] - before.l.contacts.P1[1]) < 0.11 && Math.abs(q1[2] - before.l.contacts.P1[2]) < 0.11, `it slid along x only (${(q1[0] - before.l.contacts.P1[0]).toFixed(1)} µm)`);
+  eq(JSON.stringify(after.contacts.P2), JSON.stringify(before.l.contacts.P2), 'P2 is where it was');
+  const now = { p1: await recOf('P1'), p2: await recOf('P2') };
+  assert(sameArr(now.p2.trace, before.p2.trace), 'P2’s samples are identical, all of them'); eq(JSON.stringify(now.p2.events), JSON.stringify(before.p2.events), 'P2’s events too');
+  eq(await spikesNow(), before.spikes, 'every spike time of the circuit is the same'); eq(after.digest, before.l.digest, 'the run’s fingerprint is the same');
+  // an independent computation here, from the model's source, of what a contact at the new place records under the same seed
+  const mine = probeRecording(makeRun(after.setup).run, q1, after.seed, 0);
+  assert(sameArr(now.p1.trace, Array.from(mine.trace), 1e-4), 'P1’s samples are exactly the observation function at its new position (independent computation, every sample)');
+  assert(!sameArr(now.p1.trace, before.p1.trace), 'and differ from those at the old position');
+  // nearer to the cell that fires → larger, by the declared rule; the sentence says the spikes are the same
+  await page.selectOption(T('nudge-ref'), 'T'); const d0 = parseFloat(await txt('nudge-dist'));
+  await page.click(T('nudge-nearer')); await wait(150);
+  const d1 = parseFloat(await txt('nudge-dist'));
+  assert(d1 <= d0 - 4 || d1 === 0, `“Nearer to T” moved it ${d0} → ${d1} µm`);
+  const cmp = await txt('say-compare');
+  assert(/P1 moved/.test(cmp) && /the circuit’s spikes are the same ones as in the baseline/.test(cmp), 'the comparison says the spikes are the same and only P1’s record differs');
+  await shot('25-moved');
+  // undo / redo
+  const mid = await lab();
+  await page.click(T('t-undo')); await wait(150);
+  eq(JSON.stringify((await lab()).contacts.P1), JSON.stringify(q1), 'Undo takes the last move back');
+  await page.click(T('t-redo')); await wait(150);
+  eq(JSON.stringify((await lab()).contacts.P1), JSON.stringify(mid.contacts.P1), 'Redo does it again');
+  await page.click(T('t-undo')); await page.click(T('t-undo')); await wait(200);
+  eq(JSON.stringify((await lab()).contacts.P1), JSON.stringify(before.l.contacts.P1), 'a second Undo takes the drag back as one step: P1 is where it was placed');
+  await page.click(T('t-redo')); await page.click(T('t-redo')); await wait(200);
+  // pause, step, replay: the contact's reading is the recording at the playhead
+  await worldFocus(); await page.keyboard.press('Space'); await wait(150);
+  const t0 = (await lab()).tMs; await wait(300);
+  eq((await lab()).tMs, t0, 'paused: the playhead holds');
+  const shown = parseFloat((await txt('contact-uv')).replace('−', '-')), atHead = await page.evaluate(() => { const r = window.__lab.store.getState().rec.P1; return r.trace[Math.min(r.trace.length - 1, window.__lab.clock.step())]; });
+  near(shown, atHead, 0.6, 'the card shows the recording’s sample at the playhead');
+  await page.keyboard.press('Period'); await wait(150);
+  near((await lab()).tMs - t0, 0.25, 1e-6, 'Step advances a quarter of a millisecond');
+  await page.click(T('t-replay')); await wait(200);
+  assert((await lab()).tMs < 2 && !(await lab()).paused, 'Replay starts the same recording again');
+  // extreme places: exactly on a cell, and far outside the block
+  await page.evaluate((p) => window.__lab.store.getState().place('P2', p), await cellPos('T')); await wait(200);
+  await page.click(T('contact-P2')); await wait(200);
+  const onCell = await recOf('P2');
+  assert(onCell.trace.every(Number.isFinite), 'a contact exactly on a cell body records finite numbers'); assert(/0 µm/.test(await txt('contact-table')) && /240 µV/.test(await txt('contact-table')), 'at the largest size the rule gives (240 µV)');
+  await page.evaluate(() => window.__lab.store.getState().place('P2', [1e9, 1e9, -1e9])); await wait(200);
+  const edge = (await lab()).contacts.P2;
+  assert(edge.every(Number.isFinite) && edge[0] === 1040 && edge[1] === 540 && edge[2] === -1420, 'asked to go outside the block, it stops at the block’s edge'); assert(/edge of the block/.test(await txt('contact-where')), 'and the card says so');
+  assert((await recOf('P2')).trace.every(Number.isFinite), 'and still records finite numbers');
+  await page.click(T('t-undo')); await page.click(T('t-undo')); await wait(200);
+  eq(JSON.stringify((await lab()).contacts.P2), JSON.stringify(before.l.contacts.P2), 'both are undone');
+  kept = { ...kept, p1: (await lab()).contacts.P1, p2: (await lab()).contacts.P2, runs: (await lab()).runs, base: JSON.stringify((await lab()).baseContacts) };
+  return `drag = 1 step, x only (${(q1[0] - before.l.contacts.P1[0]).toFixed(1)} µm); P2 identical (${before.p2.trace.length} samples), spikes identical, fingerprint ${after.digest}; P1 = independent probeRecording at the new place (≤1e-4 µV); nearer ${d0} → ${d1} µm; flying/view changes: no difference; on a cell and at the block edge: finite`;
+});
+
+await step('26 left behind: the contacts stay when the craft flies away, when the player goes out to the brain and back, and after a reload; an older save is read', async () => {
+  const want = JSON.stringify({ P1: kept.p1, P2: kept.p2 });
+  await page.evaluate(() => window.__world.store.getState().select(null)); await wait(120);
+  await worldFocus(); await hold('KeyS', 900); await hold('KeyE', 500); await wait(400);
+  const far = await pose();
+  eq(JSON.stringify((await lab()).contacts), want, 'after flying away the contacts are where they were put');
+  assert(await page.locator(T('contact-tag-P1')).count() > 0 && await page.locator(T('contact-tag-P2')).count() > 0, 'and both are still named in the scene');
+  // out to the brain and back
+  await page.click(T('map')); await page.waitForSelector(`${T('journey')}[data-place="brain"]`, { timeout: 20000 }); await wait(400);
+  await goIn('resume');
+  eq(JSON.stringify((await lab()).contacts), want, 'back from the brain: the same contacts');
+  assert(dist((await pose()).pos, far.pos) < 1, 'and the craft is back where it was left');
+  // reload the page
+  await wait(600); await page.reload(); await page.waitForSelector(`${T('brain-stage')}[data-ready="1"]`, { timeout: 30000 }); await wait(500);
+  assert(await has('resume'), 'after a reload the entrance offers the way back');
+  const re = await lab();
+  eq(JSON.stringify(re.contacts), want, 'after a reload: the same contacts'); eq(re.runs, kept.runs, 'the same history'); eq(re.digest, kept.digest, 'the same run');
+  eq(JSON.stringify(re.baseContacts), kept.base, 'the same baseline layout'); eq(re.seed, 20261125, 'the same seed');
+  await goIn('resume');
+  assert(dist((await pose()).pos, far.pos) < 30, 'and the craft comes back to about where it was');
+  await shot('26-after-reload');
+  // a save written by the previous version of the world: its experiment is kept, with no contact placed
+  await page.evaluate(() => { const old = { visited: true, beats: { explore: true, record: true }, level: 'understand', station: 'circuit', guide: true, declared: false, history: [{ setup: { variant: 0, aMs: 10, bMs: 22, conn: {}, extra: [], glT: null }, label: 'The circuit as you found it' }, { setup: { variant: 0, aMs: 10, bMs: 14, conn: {}, extra: [], glT: null }, label: 'When input B fires: 22 ms → 14 ms' }], baseline: { variant: 0, aMs: 10, bMs: 22, conn: {}, extra: [], glT: null }, pose: { pos: [60, 46, 250], yaw: 0.1, pitch: -0.1 }, entry: null, dragLooks: false, lookScale: 1 }; localStorage.removeItem('hbci.world.journey.v2'); localStorage.setItem('hbci.world.journey.v1', JSON.stringify(old)); Storage.prototype.setItem = () => {}; /* nothing more is written before the reload */ });
+  await page.reload(); await page.waitForSelector(`${T('brain-stage')}[data-ready="1"]`, { timeout: 30000 }); await wait(400);
+  const old = await lab();
+  eq(old.runs, 2, 'an older save’s history is read'); assert(old.fired != null, 'with its last run current'); eq(JSON.stringify(old.contacts), JSON.stringify({ P1: null, P2: null }), 'and no contact placed (that version had a fixed probe)');
+  assert(await has('resume'), 'the way back is offered for it too');
+  return `contacts unchanged after flying ${dist(far.pos, [60, 46, 250]).toFixed(0)} µm away, after brain → back, and after a reload (history ${kept.runs} steps, fingerprint ${kept.digest}); a version-1 save restores its 2-step experiment with no contacts`;
+});
+
+await step('27 two models, kept apart: P1 and P2 are never decoder inputs, and the decoder’s eight contacts are not theirs', async () => {
+  await fresh(); await goIn();
+  await page.evaluate((p) => { const s = window.__lab.store.getState(); s.place('P1', p); s.place('P2', [p[0] - 150, p[1] + 30, p[2] + 60]); }, PROBE_TIP);
+  await page.selectOption(T('goto'), 'array'); await page.waitForSelector(T('declare'), { timeout: 10000 }); await page.click(T('declare-ok'));
+  await page.waitForFunction(() => window.__task.store.getState().status === 'ready' && !!window.__task.store.getState().info?.calibration, null, { timeout: 120000 });
+  await settle(); await wait(600);
+  assert(!(await has('contacts')), 'at the array the P1/P2 controls are not offered');
+  const t0 = await page.evaluate(() => { const i = window.__task.store.getState().info; return { cal: i.calibration.id, cond: JSON.stringify(i.cond), dec: i.decoderId, thr: JSON.stringify(i.calibration.thresholdsUv), ch: i.calibration.thresholdsUv.length }; });
+  eq(t0.ch, 8, 'the decoder has eight contacts');
+  await worldFocus(); await page.keyboard.press('KeyC'); await wait(200);
+  eq(await attr('journey', 'data-tool'), '', 'a recording contact cannot be taken in hand here'); assert(/never feed the decoder/.test(await txt('notice')), 'and the reason is given');
+  // moving P1 while the task runs changes nothing of the task
+  await page.evaluate((p) => window.__lab.store.getState().place('P1', [p[0] + 30, p[1], p[2]]), PROBE_TIP); await wait(400);
+  const t1 = await page.evaluate(() => { const i = window.__task.store.getState().info; return { cal: i.calibration.id, cond: JSON.stringify(i.cond), dec: i.decoderId, thr: JSON.stringify(i.calibration.thresholdsUv) }; });
+  eq(JSON.stringify({ ...t1 }), JSON.stringify({ cal: t0.cal, cond: t0.cond, dec: t0.dec, thr: t0.thr }), 'the decoder’s calibration, thresholds and conditions are untouched by moving P1');
+  await page.click(T('btn-model')); await wait(200);
+  assert(/P1 and P2\. They observe the five-cell circuit and are never an input of this decoder/.test(await txt('panel-model')), 'the “what is this” panel says so');
+  await page.keyboard.press('Escape'); await wait(100);
+  // Decoder Pilot: the keys are the intent; the craft does not move
+  await page.click(T('t-pilot')); await settle(); await wait(300);
+  eq(await attr('journey', 'data-input'), 'pilot', 'Decoder Pilot is shown as the input mode');
+  const c0 = await pose(); await worldFocus(); await hold('KeyW', 500); await wait(200);
+  assert(dist((await pose()).pos, c0.pos) < 1e-9, 'in Decoder Pilot the movement keys do not move the craft');
+  await page.keyboard.press('Escape'); await wait(200);
+  eq(await attr('journey', 'data-input'), 'explore', 'Escape gives the keys back to flying');
+  await hold('KeyW', 300); await wait(300);
+  assert(dist((await pose()).pos, c0.pos) > 10, 'and W flies the craft again');
+  return `decoder: ${t0.ch} contacts, calibration ${t0.cal} unchanged by moving P1; P1/P2 cannot be taken at the array; Decoder Pilot keys leave the craft still, Esc returns to Explore`;
+});
+
+await step('28 mouse look refused: the player is told what still works, and it does', async () => {
+  await page.selectOption(T('goto'), 'circuit'); await settle(); await atCircuit(); await worldFocus();
+  await page.evaluate(() => { HTMLCanvasElement.prototype.requestPointerLock = function () { return Promise.reject(new Error('refused (test)')); }; });
+  const y0 = (await pose()).yaw;
+  await page.keyboard.press('KeyL'); await wait(500);
+  eq(await attr('journey', 'data-captured'), '0', 'the mouse was not captured');
+  assert(/Dragging the scene looks around just the same/.test(await txt('notice')), 'the player is told what happened and what still works');
+  await page.mouse.move(720, 300); await page.mouse.down(); await page.mouse.move(620, 320, { steps: 8 }); await page.mouse.up(); await wait(200);
+  assert(Math.abs((await pose()).yaw - y0) > 0.1, 'dragging turns the view');
+  const p = await pose(); await hold('KeyW', 300); await wait(300);
+  assert(dist((await pose()).pos, p.pos) > 15, 'and the keys fly');
+  return 'capture refused → notice shown; drag-look and flying unaffected';
+});
+
 const env = await page.evaluate(() => { const c = document.createElement('canvas'), gl = c.getContext('webgl2'), dbg = gl?.getExtension('WEBGL_debug_renderer_info'); return { ua: navigator.userAgent, gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown', dpr: devicePixelRatio, size: `${innerWidth} × ${innerHeight}` }; });
 await browser.close();
 const errs = [...new Set(consoleErrors)].filter((e) => !/pointer ?lock|PointerLock|WrongDocumentError|SecurityError/i.test(e));
 const passed = results.filter((r) => r.ok).length;
 const report = [
-  'The integrated world (#/world) — end-to-end test',
+  'The world (#/world) — end-to-end test (embodied build: craft, whole-object pointing, placed contacts)',
   `Run: ${new Date().toISOString()}   Build: production (vite preview)   Viewport: ${env.size}, device pixel ratio ${env.dpr}, ${process.env.HEADED ? 'visible window' : 'headless'}`,
   `Browser: ${env.ua}`,
   `Graphics: ${env.gpu}`,

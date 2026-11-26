@@ -3,7 +3,7 @@
 // W-A-S-D stays where the fingers are on any layout. Arrow keys always work as a second set of movement keys.
 export type Action =
   | 'forward' | 'back' | 'left' | 'right' | 'up' | 'down' | 'brake'
-  | 'focus' | 'return' | 'overview' | 'capture' | 'pause' | 'step' | 'tool' | 'context' | 'help';
+  | 'focus' | 'return' | 'overview' | 'capture' | 'view' | 'pause' | 'step' | 'tool' | 'context' | 'help';
 
 export const ACTIONS: Array<{ id: Action; label: string; group: 'Move' | 'Look at' | 'Model' | 'Other' }> = [
   { id: 'forward', label: 'Forward', group: 'Move' }, { id: 'back', label: 'Back', group: 'Move' },
@@ -12,7 +12,7 @@ export const ACTIONS: Array<{ id: Action; label: string; group: 'Move' | 'Look a
   { id: 'brake', label: 'Brake / precise', group: 'Move' },
   { id: 'capture', label: 'Mouse look on / off', group: 'Look at' },
   { id: 'focus', label: 'Focus the selection', group: 'Look at' }, { id: 'return', label: 'Return to where I was', group: 'Look at' },
-  { id: 'overview', label: 'Overview', group: 'Look at' },
+  { id: 'overview', label: 'Overview', group: 'Look at' }, { id: 'view', label: 'Third / first person', group: 'Look at' },
   { id: 'pause', label: 'Pause / run the model', group: 'Model' }, { id: 'step', label: 'Step the model', group: 'Model' },
   { id: 'tool', label: 'Use the tool', group: 'Model' }, { id: 'context', label: 'Explore ↔ Pilot', group: 'Model' },
   { id: 'help', label: 'Show the controls', group: 'Other' },
@@ -21,7 +21,7 @@ export const MOVE: readonly Action[] = ['forward', 'back', 'left', 'right', 'up'
 
 export const DEFAULT_KEYS: Record<Action, string> = {
   forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD', up: 'KeyE', down: 'KeyQ', brake: 'Shift',
-  focus: 'KeyF', return: 'KeyR', overview: 'KeyM', capture: 'KeyL', pause: 'Space', step: 'Period', tool: 'KeyC', context: 'KeyP', help: 'KeyH',
+  focus: 'KeyF', return: 'KeyR', overview: 'KeyM', capture: 'KeyL', view: 'KeyV', pause: 'Space', step: 'Period', tool: 'KeyC', context: 'KeyP', help: 'KeyH',
 };
 const ARROWS: Record<string, Action> = { ArrowUp: 'forward', ArrowDown: 'back', ArrowLeft: 'left', ArrowRight: 'right' };
 const STORE = 'hbci.world.keys.v1';

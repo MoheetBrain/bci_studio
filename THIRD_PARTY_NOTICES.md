@@ -54,6 +54,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## H01 release — one reconstructed neuron
+
+`public/world/h01-exemplar.json` contains the skeleton (branch geometry and calibre) of one proofread cell, segment
+`2252715458`, of the H01 release: a cubic millimetre of human temporal cortex imaged by serial-section electron
+microscopy and segmented automatically (Google Research; Lichtman Laboratory, Harvard University).
+
+Licensed under the Creative Commons Attribution 4.0 International licence (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/ — source: https://h01-release.storage.googleapis.com/data.html
+
+Please cite: Shapson-Coe A, Januszewski M, Berger DR, et al. A petavoxel fragment of human cerebral cortex
+reconstructed at nanoscale resolution. Science 384, eadk4858 (2024). doi:10.1126/science.adk4858
+
+Modified for this studio: converted to micrometres, rotated into the cell's own frame, the nodes inside the cell body
+merged, each unbranched stretch simplified to within 0.18 µm, and drawn as tubes. It is shown as structure only; no
+model in this studio computes anything in it, and its authors do not endorse this use.
+
 ## npm packages
 
 meshoptimizer (MIT, © Arseny Kapoulkine), three and three-mesh-bvh (MIT), React (MIT), React Three Fiber and Drei

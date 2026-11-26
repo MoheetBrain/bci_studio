@@ -1,5 +1,5 @@
-The integrated world (#/world) — interactive performance sample
-Run: 2026-11-25T20:23:06.269Z   Build: production (vite preview), visible Chrome window
+The world (#/world), embodied build — interactive performance sample
+Run: 2026-11-26T00:01:18.480Z   Build: production (vite preview), visible Chrome window
 Machine: Apple M5 Ultra, macOS 27.0.1, 'AC Power'
 Browser: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36
 Graphics: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Ultra, Unspecified Version)
@@ -10,82 +10,122 @@ that value means the page kept up with this display — it is a ceiling set by t
 capacity. The target was 60 Hz (16.7 ms). “Main-thread work” is the part of each frame the page itself spends
 (scripts and submitting draw calls); what the GPU then spends cannot be read from inside a page and is not reported.
 
-PROFILE 1 — device pixel ratio 1: brain canvas 1920 × 1080, tissue canvas 1920 × 1010 physical pixels; 30 s per segment
+PROFILE 1 — device pixel ratio 1: brain canvas 1920 × 1080, tissue canvas 1920 × 1010 physical pixels; 20 s per segment
 
 Whole brain — turning it by dragging, hovering to name regions (460 k triangles, one draw call)
-  3618 frames in 30.1 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.5 ms · p99 9.1 ms · worst 9.4 ms
-  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
-  main-thread work median 0.1 ms · p95 0.2 ms · p99 0.2 ms per frame  (1 % of a 60 Hz frame at p95)
-  response         not sampled in this segment
-
-Going in — dive, caption, cross-fade, arrival glide (includes the first frames of the tissue view)
-  406 frames in 3.4 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.6 ms · p99 9.2 ms · worst 25.1 ms
+  2438 frames in 20.3 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.2 ms · p99 10.3 ms · worst 23.3 ms
   long frames      over 16.7 ms (a missed frame at 60 Hz): 1 · over 33.3 ms: 0 · over 100 ms: 0
-  main-thread work median 0.3 ms · p95 0.6 ms · p99 0.7 ms per frame  (4 % of a 60 Hz frame at p95)
+  main-thread work median 0.1 ms · p95 0.2 ms · p99 0.3 ms per frame  (1 % of a 60 Hz frame at p95)
   response         not sampled in this segment
+  pointing         not sampled in this segment
 
-Circuit — flying, looking, wheel glides, replay, new runs every few seconds, overview; linked trace open
-  3658 frames in 30.5 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.4 ms · p99 9.2 ms · worst 9.4 ms
+Going in — dive, caption, cross-fade, the craft’s arrival (includes the first frames of the tissue view)
+  686 frames in 5.8 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.3 ms · worst 25.1 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 2 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.5 ms · p95 0.7 ms · p99 0.8 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         not sampled in this segment
+  pointing         not sampled in this segment
+
+First minute — flying the craft beside the reconstructed neuron, pointing along its branches, looking, third ↔ first person
+  2473 frames in 20.6 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.2 ms · p99 10.3 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.4 ms · p95 0.8 ms · p99 0.9 ms per frame  (5 % of a 60 Hz frame at p95)
+  response         160 inputs · median 6.9 ms · p95 8.9 ms
+  pointing         575 “what is aimed at” tests among 234 things · median 0.1 ms · p95 0.2 ms · p99 0.3 ms each (run every fourth frame)
+
+Close approach — the craft a few µm from the reconstructed neuron’s body: pointing, orbiting looks, side-slips, both views
+  1490 frames in 12.4 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10 ms · p99 10.4 ms · worst 10.5 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.4 ms · p95 0.8 ms · p99 1 ms per frame  (5 % of a 60 Hz frame at p95)
+  response         329 inputs · median 6.8 ms · p95 8.4 ms
+  pointing         340 “what is aimed at” tests among 234 things · median 0.1 ms · p95 0.2 ms · p99 0.3 ms each (run every fourth frame)
+
+Circuit — flying, looking, wheel glides, replay, new runs and a moved contact every few seconds, overview; linked traces open
+  2467 frames in 20.6 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.4 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.5 ms · p95 0.7 ms · p99 0.8 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         264 inputs · median 6.8 ms · p95 9.1 ms
+  pointing         521 “what is aimed at” tests among 236 things · median 0.1 ms · p95 0.2 ms · p99 0.2 ms each (run every fourth frame)
+
+Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (11 targets reached)
+  2415 frames in 20.1 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.4 ms · worst 10.5 ms
   long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
   main-thread work median 0.3 ms · p95 0.4 ms · p99 0.5 ms per frame  (2 % of a 60 Hz frame at p95)
-  response         407 inputs · median 7.3 ms · p95 8.1 ms
+  response         38 inputs · median 4 ms · p95 8.9 ms
+  pointing         not sampled in this segment
 
-Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (15 targets reached)
-  3619 frames in 30.2 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.4 ms · p99 9.2 ms · worst 9.5 ms
-  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
-  main-thread work median 0.2 ms · p95 0.4 ms · p99 0.5 ms per frame  (2 % of a 60 Hz frame at p95)
-  response         44 inputs · median 4.2 ms · p95 7.5 ms
-
-PROFILE 2 — device pixel ratio 2 (a Retina display draws this): brain canvas 3840 × 2160, tissue canvas 3840 × 2020 physical pixels; 15 s per segment
+PROFILE 2 — device pixel ratio 2 (a Retina display draws this): brain canvas 3840 × 2160, tissue canvas 3840 × 2020 physical pixels; 10 s per segment
 
 Whole brain — turning it by dragging, hovering to name regions (460 k triangles, one draw call)
-  1816 frames in 15.1 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.7 ms · p99 10.2 ms · worst 10.4 ms
+  1219 frames in 10.2 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.2 ms · p99 10.3 ms · worst 17.3 ms
   long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
   main-thread work median 0.1 ms · p95 0.2 ms · p99 0.2 ms per frame  (1 % of a 60 Hz frame at p95)
   response         not sampled in this segment
+  pointing         not sampled in this segment
 
-Going in — dive, caption, cross-fade, arrival glide (includes the first frames of the tissue view)
-  403 frames in 3.4 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 9.7 ms · p99 10.2 ms · worst 33.4 ms
-  long frames      over 16.7 ms (a missed frame at 60 Hz): 2 · over 33.3 ms: 1 · over 100 ms: 0
-  main-thread work median 0.4 ms · p95 0.6 ms · p99 0.7 ms per frame  (4 % of a 60 Hz frame at p95)
+Going in — dive, caption, cross-fade, the craft’s arrival (includes the first frames of the tissue view)
+  681 frames in 5.8 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.4 ms · worst 40.1 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 3 · over 33.3 ms: 1 · over 100 ms: 0
+  main-thread work median 0.4 ms · p95 0.7 ms · p99 0.9 ms per frame  (4 % of a 60 Hz frame at p95)
   response         not sampled in this segment
+  pointing         not sampled in this segment
 
-Circuit — flying, looking, wheel glides, replay, new runs every few seconds, overview; linked trace open
-  1844 frames in 15.4 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 8.5 ms · p99 10.1 ms · worst 10.3 ms
+First minute — flying the craft beside the reconstructed neuron, pointing along its branches, looking, third ↔ first person
+  1204 frames in 10 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.3 ms · worst 10.4 ms
   long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
-  main-thread work median 0.3 ms · p95 0.5 ms · p99 0.5 ms per frame  (3 % of a 60 Hz frame at p95)
-  response         212 inputs · median 7.2 ms · p95 8.8 ms
+  main-thread work median 0.4 ms · p95 0.8 ms · p99 1 ms per frame  (5 % of a 60 Hz frame at p95)
+  response         80 inputs · median 6.8 ms · p95 8.9 ms
+  pointing         277 “what is aimed at” tests among 234 things · median 0.1 ms · p95 0.2 ms · p99 0.3 ms each (run every fourth frame)
 
-Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (8 targets reached)
-  1818 frames in 15.2 s; page visible 100 % of the time; detail “high”
-  frame interval   median 8.3 ms · p95 9 ms · p99 10.3 ms · worst 10.4 ms
+Close approach — the craft a few µm from the reconstructed neuron’s body: pointing, orbiting looks, side-slips, both views
+  774 frames in 6.5 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.4 ms · worst 10.4 ms
   long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
-  main-thread work median 0.2 ms · p95 0.4 ms · p99 0.6 ms per frame  (2 % of a 60 Hz frame at p95)
-  response         31 inputs · median 4.7 ms · p95 9.3 ms
+  main-thread work median 0.4 ms · p95 0.7 ms · p99 0.9 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         180 inputs · median 6.8 ms · p95 9.2 ms
+  pointing         173 “what is aimed at” tests among 234 things · median 0.1 ms · p95 0.2 ms · p99 0.3 ms each (run every fourth frame)
+
+Circuit — flying, looking, wheel glides, replay, new runs and a moved contact every few seconds, overview; linked traces open
+  1279 frames in 10.7 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.3 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.5 ms · p95 0.7 ms · p99 0.9 ms per frame  (4 % of a 60 Hz frame at p95)
+  response         140 inputs · median 6.8 ms · p95 9.2 ms
+  pointing         250 “what is aimed at” tests among 236 things · median 0.1 ms · p95 0.2 ms · p99 0.2 ms each (run every fourth frame)
+
+Electrode array — decoder task while steering; three contacts lost, then a recalibration in the worker (5 targets reached)
+  1211 frames in 10.1 s; page visible 100 % of the time; detail “high”
+  frame interval   median 8.3 ms · p95 10.3 ms · p99 10.3 ms · worst 10.4 ms
+  long frames      over 16.7 ms (a missed frame at 60 Hz): 0 · over 33.3 ms: 0 · over 100 ms: 0
+  main-thread work median 0.3 ms · p95 0.5 ms · p99 0.7 ms per frame  (3 % of a 60 Hz frame at p95)
+  response         14 inputs · median 4.1 ms · p95 6.7 ms
+  pointing         not sampled in this segment
 
 Loading (from a local server; no network is involved)
-  to “brain on screen”: cold (new browser profile) 561 ms · warm (reload) 263 ms
-  from the click on “Enter” to a flyable tissue view: 3019 ms, of which about 2.5 s is the authored dive and arrival
+  to “brain on screen”: cold (new browser profile) 447 ms · warm (reload) 244 ms
+  from the click on “Enter” to a flyable tissue view: 5364 ms, of which about 2.5 s is the authored dive and arrival
 
 Payload (production build, dist/assets)
-  all JavaScript 2967 kB raw, 934 kB gzip · all CSS 217 kB raw
-  the world's own chunks: Journey.js 117 kB, Journey.css 20 kB, WorldFrame.js 64 kB, WorldWorkspace.js 6 kB, WorldWorkspace.css 13 kB, pilot.worker.js 24 kB
-  the brain is the atlas already in the studio (8.9 MB on disk); the tissue downloads no mesh, texture or dataset — every shape is generated in the browser
+  all JavaScript 3033 kB raw, 956 kB gzip · all CSS 221 kB raw
+  the world's own chunks: Journey.js 161 kB, Journey.css 24 kB, WorldFrame.js 87 kB, WorldWorkspace.css 13 kB, WorldWorkspace.js 6 kB, pilot.worker.js 24 kB
+  the brain is the atlas already in the studio (8.9 MB on disk); the tissue downloads one file — the reconstructed neuron, 467 kB of JSON (12,687 nodes) — and every other shape is generated in the browser
 
 Memory over repeated trips (out to the brain and back in)
-  JS heap after one trip: 67.3 MB; after six more: 66.8 MB (-0.5 MB).
+  JS heap after one trip: 70.0 MB; after six more: 73.4 MB (+3.4 MB).
   No garbage collection was forced, so this is an upper bound on growth. GPU memory is not exposed by the browser and was not measured.
 
 Pointer capture (real browser grant, profile 1)
   window in front: yes
-  requested by the “Mouse look” button: granted; centre mark shown: yes; that click selected nothing; mouse movement turned the view: yes; Escape released it and held keys were forgotten: yes
+  requested by the “Mouse look” button: NOT granted; centre mark shown: no; that click selected nothing; mouse movement turned the view: no; Escape released it and held keys were forgotten: yes
 
 Adaptive detail
   The world lowers its detail setting by itself when more than half of 150 consecutive frames take over 22.5 ms. In this run it never did: every segment stayed at “high”.

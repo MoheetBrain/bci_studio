@@ -206,6 +206,38 @@
   .jd-chain li + li::before { content: '→'; position: absolute; left: -13px; color: #6F7C97; }
   .jd-chain li.bypassed { background: none; border: 1px dashed rgba(255, 197, 107, .6); color: #FFE0AE; } .jd-chain em { font-style: normal; opacity: .8; }
 
+  /* ── the embodied build: craft, contacts, tissue reveal ── */
+  .j-move { width: 204px; max-height: calc(100% - 252px); overflow: hidden auto; scrollbar-width: thin; }
+  .j-owner b { color: inherit; }
+  .j-owner.mode-explore { border-color: rgba(127, 231, 255, .5); color: #D5F7FF; }
+  .j-owner.mode-inspect { border-color: rgba(159, 232, 192, .6); color: #D6F8E6; }
+  .j-owner.mode-pilot { border-color: rgba(255, 197, 107, .7); color: #FFE0AE; }
+  .j-owner.interface { border-color: rgba(244, 179, 255, .6); color: #F4D3FF; }
+  .j-orient { display: flex; align-items: center; gap: 7px; padding: 3px 7px; border-radius: 8px; background: rgba(8, 9, 20, .62); }
+  .j-orient canvas { width: 34px; height: 34px; flex: none; display: block; }
+  .j-orient p { font-size: 10.5px; line-height: 1.35; color: #B8C4DC; min-width: 0; } .j-orient b { color: #F0B8CC; font-weight: 600; }
+  .j-contacts { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: #A9B6CF; }
+  .j-contacts > span { flex: none; padding-left: 3px; } .j-contacts em { font-style: normal; font-size: 10px; color: #9FB0CE; }
+  .j-contacts .j-pad-btn[data-state='held'] { border-color: #FFC56B; background: rgba(255, 197, 107, .24); color: #FFE9C4; }
+  .j-contacts .j-pad-btn[data-state='placed'] em { color: #8CFFB5; }
+  .j-reveal { display: grid; gap: 2px; }
+  .j-seg.small { display: flex; align-items: center; backdrop-filter: none; }
+  .j-seg.small > span { flex: none; padding: 0 5px 0 4px; font-size: 10.5px; color: #8FA0BF; }
+  .j-seg.small button { flex: 1; padding: 3px 4px; font-size: 11px; }
+  .j-reveal .j-fine { font-size: 10.5px; line-height: 1.3; padding: 1px 4px; border-radius: 6px; background: rgba(8, 9, 20, .5); }
+  .j-wires { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11.5px; color: #A9B6CF; }
+  .j-chip.off { opacity: .55; text-decoration: line-through; }
+  .j-nudge.six { grid-template-columns: repeat(6, 1fr); } .j-nudge.six .j-btn { font-size: 11px; padding: 0 2px; }
+  .j-nudge select { min-width: 0; } .j-nudge .j-fine { grid-column: 1 / -1; }
+  .j-table.tight { font-size: 11px; } .j-table tr.ref td { color: #FFD9A8; }
+  .j-card { max-height: calc(100% - 100px); overflow: auto; }
+  .j-card details summary { cursor: pointer; color: #9FD0FF; font-size: 12px; } .j-card details[open] summary { margin-bottom: 4px; } .j-card details p + p { margin-top: 4px; }
+  .journey.placing .jc-view { cursor: crosshair; }
+  .j-aimtag { position: fixed; left: 0; top: 0; z-index: 7; pointer-events: none; transition: opacity .12s; will-change: transform; }
+  .j-aimtag span { display: inline-block; max-width: 240px; padding: 3px 8px; border-radius: 7px; background: rgba(9, 7, 20, .88); border: 1px solid rgba(127, 231, 255, .5); color: #E6FAFF; font-size: 11.5px; line-height: 1.35; white-space: nowrap; }
+  .j-aimtag em { font-style: normal; color: #FFD9A8; }
+  .jd-trace { height: 190px; }
+
   /* smaller windows: the world keeps its share */
   @media (max-width: 1180px) {
     .jd-body.open { grid-template-columns: minmax(0, 1fr); }
@@ -213,7 +245,7 @@
     .j-dock[data-level='inspect'] .jd-why.extra { display: block; }
     .j-mid { max-width: min(560px, calc(100% - 380px)); }
     .j-card, .j-rightcol { width: min(270px, calc(100% - 28px)); }
-    .jd-trace { height: 138px; }
+    .jd-trace { height: 178px; }
     .j-dock kbd { display: none; }
     .j-dock .j-btn.opt { display: none; } .j-dock[data-level='inspect'] .j-btn.opt { display: inline-flex; }
     .j-dock .j-btn { padding: 0 8px; }
@@ -221,11 +253,14 @@
   }
   @media (max-width: 920px) {
     .j-mid { max-width: calc(100% - 24px); padding-bottom: 152px; }
-    .j-move { width: 150px; } .jb-layer.as-map { width: 150px; height: 108px; }
+    .j-move { width: 168px; } .jb-layer.as-map { width: 150px; height: 108px; }
     .j-btn { padding: 0 8px; font-size: 12px; }
   }
   @media (max-height: 800px) {
-    .jd-trace { height: 132px; }
+    /* a short window: the keys and the wheel do the flying; the panel keeps what has no key */
+    .j-pad, .j-speed, .j-orient, .j-reveal .j-fine { display: none; }
+    .j-move { max-height: calc(100% - 236px); }
+    .jd-trace { height: 156px; }
     .j-card { margin-top: 78px; } .j-rightcol { margin-top: 78px; }
     .j-cursor canvas { max-height: 128px; width: auto; margin: 0 auto; }
     .j-cursor { padding: 8px 10px; gap: 3px; } .j-cursor header .j-fine { display: none; }
@@ -252,11 +287,12 @@
     .place-brain .j-card { margin-top: 84px; }
     .j-panel, .j-panel.wide { justify-self: stretch; width: auto; margin: 84px 8px 0; z-index: 12; }
     .j-keys { grid-template-columns: 1fr; }
-    .j-move { width: 132px; margin: 0 0 204px 8px; } .j-move .j-goto span { display: none; }
+    .j-move { width: 150px; margin: 0 0 204px 8px; } .j-move .j-goto span { display: none; } .j-orient p span { display: none; }
+    .j-move { max-height: calc(100% - 300px); }
     .jb-layer.as-map { width: 108px; height: 78px; margin: 0 0 112px 8px; } .jb-mapbtn span { font-size: 9.5px; }
     .j-cursor canvas { max-height: 150px; width: auto; margin: 0 auto; }
     .j-dock { padding: 6px 8px 8px; } .j-dock .j-btn { padding: 0 7px; min-height: 28px; }
-    .jd-trace { height: 150px; } .jd-trace.scope { height: 196px; }
+    .jd-trace { height: 190px; } .jd-trace.scope { height: 196px; }
     .jd-main { font-size: 12.5px; } .jd-chainrow { font-size: 11px; }
     .j-declare { padding: 14px; font-size: 13px; }
     .j-veil-text { font-size: 13px; }

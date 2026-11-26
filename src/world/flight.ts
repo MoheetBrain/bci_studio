@@ -168,3 +168,151 @@ export function nearSurface(pos: V3, cells: ReadonlyArray<{ centre: V3; radius: 
   for (const c of cells) if (Math.hypot(pos[0] - c.centre[0], pos[1] - c.centre[1], pos[2] - c.centre[2]) < c.radius + margin) return true;
   return false;
 }
+
+// ── whole-object aiming ─────────────────────────────────────────────────────────────────────────────────────────
+// Every visible thing that can be pointed at is a BODY: an owner id plus the simple shapes that stand in for what is
+// drawn — a sphere for a cell body or a contact, capsules along every branch (the same centre lines and calibres the
+// mesh is built from). Pointing at any of them resolves to the owner, with the name of the part that was hit.
+//
+// Occlusion: the nearest shape the ray really passes through wins, whatever it belongs to — you cannot select through
+// something opaque in front. Only when the ray passes through nothing does a near miss count (thin branches are a few
+// pixels wide), and then the smallest miss on screen wins. Two exceptions, both deliberate: manipulation handles are
+// drawn on top and are picked first; and a declared connection (a thin tube that starts inside a cell body) gives way
+// to a body behind it that looks clearly wider, as before.
+export type BodyKind = 'cell' | 'context' | 'site' | 'link' | 'landmark' | 'handle';
+export interface PickBody {
+  kind: BodyKind;
+  id: string;
+  /** A sphere part (cell body, contact, handle knob). */
+  centre?: V3; radius?: number; spherePart?: string;
+  /** Capsules, 7 numbers each: ax, ay, az, bx, by, bz, radius. */
+  segs?: Float32Array;
+  /** Part name per capsule (index into `partNames`). */
+  parts?: Uint8Array; partNames?: readonly string[];
+  /** Runs of capsules with a sphere that contains them, so that most of a large arbor is skipped without being tested. */
+  chunks?: Array<{ c: V3; r: number; from: number; to: number }>;
+  /** A sphere containing the whole body. */
+  bound: { c: V3; r: number };
+}
+export interface BodyHit { kind: BodyKind; id: string; t: number; part: string; point: V3; exact: boolean }
+
+/** Group a body's capsules into runs of `size` with bounding spheres (capsules arrive in branch order, so runs are compact). */
+export function chunkBody(segs: Float32Array, size = 48): Array<{ c: V3; r: number; from: number; to: number }> {
+  const out: Array<{ c: V3; r: number; from: number; to: number }> = [], n = segs.length / 7;
+  for (let from = 0; from < n; from += size) {
+    const to = Math.min(n, from + size);
+    let cx = 0, cy = 0, cz = 0;
+    for (let i = from; i < to; i++) { cx += segs[i * 7] + segs[i * 7 + 3]; cy += segs[i * 7 + 1] + segs[i * 7 + 4]; cz += segs[i * 7 + 2] + segs[i * 7 + 5]; }
+    const k = 1 / (2 * (to - from)); cx *= k; cy *= k; cz *= k;
+    let r = 0;
+    for (let i = from; i < to; i++) for (const o of [0, 3]) r = Math.max(r, Math.hypot(segs[i * 7 + o] - cx, segs[i * 7 + o + 1] - cy, segs[i * 7 + o + 2] - cz) + segs[i * 7 + 6]);
+    out.push({ c: [cx, cy, cz], r, from, to });
+  }
+  return out;
+}
+/** The sphere that contains a set of capsules and an optional sphere part. */
+export function boundOf(segs: Float32Array | undefined, centre?: V3, radius = 0): { c: V3; r: number } {
+  let lo: V3 = [Infinity, Infinity, Infinity], hi: V3 = [-Infinity, -Infinity, -Infinity];
+  const eat = (x: number, y: number, z: number, r: number) => { lo = [Math.min(lo[0], x - r), Math.min(lo[1], y - r), Math.min(lo[2], z - r)]; hi = [Math.max(hi[0], x + r), Math.max(hi[1], y + r), Math.max(hi[2], z + r)]; };
+  if (centre) eat(centre[0], centre[1], centre[2], radius);
+  if (segs) for (let i = 0; i < segs.length; i += 7) { eat(segs[i], segs[i + 1], segs[i + 2], segs[i + 6]); eat(segs[i + 3], segs[i + 4], segs[i + 5], segs[i + 6]); }
+  const c: V3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+  return { c, r: Math.hypot(hi[0] - c[0], hi[1] - c[1], hi[2] - c[2]) };
+}
+
+/** Does the ray come within `r` of the sphere's centre in front of the origin (or start inside it)? */
+function nearSphere(o: V3, d: V3, c: V3, r: number): boolean {
+  const ox = c[0] - o[0], oy = c[1] - o[1], oz = c[2] - o[2], b = ox * d[0] + oy * d[1] + oz * d[2], cc = ox * ox + oy * oy + oz * oz;
+  if (cc <= r * r) return true;
+  return b > 0 && cc - b * b <= r * r;
+}
+
+/**
+ * What the ray is aimed at among `bodies`. `slack` is how far, as an angle (radians ≈ pixels × field of view ÷ view
+ * height), a ray may pass a shape and still pick it when it passes through nothing at all.
+ */
+export function pickBody(o: V3, d: V3, bodies: readonly PickBody[], maxDist = Infinity, slack = 0.006): BodyHit | null {
+  let best: BodyHit | null = null, near: BodyHit | null = null, nearMiss = Infinity, handle: BodyHit | null = null, handleMiss = Infinity;
+  let bestR = 0, linkR = 0, sphere: BodyHit | null = null, sphereR = 0;
+  const at = (t: number): V3 => [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
+  for (const b of bodies) {
+    const reach = b.kind === 'handle' ? 4 : 1;
+    if (!nearSphere(o, d, b.bound.c, b.bound.r + (Math.hypot(b.bound.c[0] - o[0], b.bound.c[1] - o[1], b.bound.c[2] - o[2]) + b.bound.r) * slack * reach)) continue;
+    const consider = (t: number, miss: number, r: number, part: string) => {
+      if (!(t > 0) || t > maxDist) return;
+      if (b.kind === 'handle') {
+        // handles are drawn over everything and are generous to hit
+        const m = Math.max(0, miss) / t;
+        if (m <= slack * reach && m < handleMiss) { handleMiss = m; handle = { kind: b.kind, id: b.id, t, part, point: at(t), exact: miss <= 0 }; }
+        return;
+      }
+      if (miss <= 0) {
+        if (!best || t < best.t) { best = { kind: b.kind, id: b.id, t, part, point: at(t), exact: true }; bestR = r; if (b.kind === 'link') linkR = r; }
+        if (b.kind !== 'link' && part === (b.spherePart ?? 'body') && b.centre && (!sphere || t < sphere.t)) { sphere = { kind: b.kind, id: b.id, t, part, point: at(t), exact: true }; sphereR = r; }
+      } else {
+        const m = miss / t;
+        if (m <= slack && m < nearMiss) { nearMiss = m; near = { kind: b.kind, id: b.id, t, part, point: at(t), exact: false }; }
+      }
+    };
+    if (b.centre && b.radius) {
+      const t = raySphere(o, d, b.centre, b.radius);
+      if (t > 0) consider(t, 0, b.radius, b.spherePart ?? 'body');
+      else {
+        // not through it: how far past its surface?
+        const ox = b.centre[0] - o[0], oy = b.centre[1] - o[1], oz = b.centre[2] - o[2], tc = ox * d[0] + oy * d[1] + oz * d[2];
+        if (tc > 0) consider(tc, Math.sqrt(Math.max(0, ox * ox + oy * oy + oz * oz - tc * tc)) - b.radius, b.radius, b.spherePart ?? 'body');
+      }
+    }
+    const s = b.segs;
+    if (!s) continue;
+    const test = (from: number, to: number) => {
+      for (let i = from; i < to; i++) {
+        const k = i * 7, h = raySegment(o, d, [s[k], s[k + 1], s[k + 2]], [s[k + 3], s[k + 4], s[k + 5]]);
+        if (!h) continue;
+        const r = s[k + 6], miss = h.dist - r;
+        // through the capsule: the surface is met a little before the closest approach
+        consider(miss <= 0 ? Math.max(1e-6, h.t - Math.sqrt(Math.max(0, r * r - h.dist * h.dist))) : h.t, miss, r, b.partNames?.[b.parts ? b.parts[i] : 0] ?? '');
+      }
+    };
+    if (b.chunks) { for (const c of b.chunks) if (nearSphere(o, d, c.c, c.r + (Math.hypot(c.c[0] - o[0], c.c[1] - o[1], c.c[2] - o[2]) + c.r) * slack)) test(c.from, c.to); }
+    else test(0, s.length / 7);
+  }
+  if (handle) return handle;
+  // a declared connection in front of a body that looks clearly wider gives way to the body
+  const b0 = best as BodyHit | null, s0 = sphere as BodyHit | null;
+  if (b0 && b0.kind === 'link' && s0 && sphereR / s0.t >= (1.5 * Math.max(linkR, bestR)) / Math.max(1e-6, b0.t)) return s0;
+  return b0 ?? near;
+}
+
+// ── the player's craft and the camera that follows it ───────────────────────────────────────────────────────────
+export interface Boom { dist: number; height: number }
+/**
+ * Where a third-person camera sits for a craft at `pos` aimed along (yaw, pitch): behind it by `dist` and above by
+ * `height` (along the camera's own up), looking the same way. `pull` (0…1) shortens the boom towards the craft.
+ */
+export function boomPose(pos: V3, yaw: number, pitch: number, boom: Boom, pull = 0): { pos: V3; yaw: number; pitch: number } {
+  const f = lookDir(yaw, pitch), r = rightDir(yaw), u: V3 = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]], k = 1 - pull;
+  return { pos: [pos[0] - f[0] * boom.dist * k + u[0] * boom.height * k, pos[1] - f[1] * boom.dist * k + u[1] * boom.height * k, pos[2] - f[2] * boom.dist * k + u[2] * boom.height * k], yaw, pitch };
+}
+/** How far the boom must be pulled in (0…1) so that the camera is outside every sphere (cell bodies, grown by `margin`). */
+export function boomPull(pos: V3, yaw: number, pitch: number, boom: Boom, spheres: ReadonlyArray<{ centre: V3; radius: number }>, margin: number): number {
+  let pull = 0;
+  for (let step = 0; step < 6; step++) {
+    const c = boomPose(pos, yaw, pitch, boom, pull).pos;
+    if (!spheres.some((s) => Math.hypot(c[0] - s.centre[0], c[1] - s.centre[1], c[2] - s.centre[2]) < s.radius + margin)) return pull;
+    pull = Math.min(0.9, pull + 0.16);
+  }
+  return pull;
+}
+/** Move `v` towards `to` by the exact first-order response over `dt` (time constant `tau`): frame-rate independent. */
+export const ease = (v: number, to: number, dt: number, tau: number) => to + (v - to) * Math.exp(-dt / Math.max(1e-4, tau));
+/** The same for an angle, the short way round. */
+export const easeAngle = (v: number, to: number, dt: number, tau: number) => { const d = Math.atan2(Math.sin(to - v), Math.cos(to - v)); return v + d * (1 - Math.exp(-dt / Math.max(1e-4, tau))); };
+/**
+ * A critically damped approach of `v` to `to` that starts from the speed it already has (`vel`), so a move begins
+ * gently and ends without overshoot. Returns the new value and the new speed. `time` ≈ how long most of the move takes.
+ */
+export function smoothDamp(v: number, to: number, vel: number, time: number, dt: number): [number, number] {
+  const w = 2 / Math.max(1e-4, time), x = w * dt, e = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x), d = v - to, t = (vel + w * d) * dt;
+  return [to + (d + t) * e, (vel - w * t) * e];
+}

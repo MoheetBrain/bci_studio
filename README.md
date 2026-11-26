@@ -28,7 +28,7 @@ npm run preview      # http://127.0.0.1:5181  (also serves the search service)
 npm run check        # typecheck + 150 unit tests + the three model-versus-RTL checks
 npm run test:e2e     # production build, then the 27-step walkthrough in headless Chrome (also captures the screens)
 npm run test:e2e:experiment   # production build, then the 17-step acceptance test of the BCI experiment
-npm run test:e2e:world        # production build, then the 19-step test of the world (#/world)
+npm run test:e2e:world        # production build, then the 28-step test of the world (#/world)
 npm run test:e2e:neuroverse   # production build, then the 29-step test of the three prototype toys (#/world/dev)
 node tests/e2e/perf.mjs      # opens a visible Chrome window for ~40 s; writes docs/evidence/performance.txt
 node tests/e2e/capture-looks.mjs && node tests/e2e/compare.mjs   # same-camera look captures + before/after sheets (dev server running)
@@ -43,20 +43,27 @@ The browser tests drive the Chrome already installed on the machine (`playwright
 `http://127.0.0.1:5180/#/world` — or “Enter the neural world →” on the brain, or “World” in the dock.
 
 It opens on the whole brain (one volunteer’s MRI-derived surface, the atlas’s own labels). Enter the left precentral
-gyrus and you are an observer inside a block of **illustrative** cortex:
+gyrus and you are flying a small research craft through a block of **illustrative** cortex:
 
-- **fly** with W A S D and E Q, drag to look (L for mouse look), Shift to brake, F / R / M to look at the selection,
-  return to the exact pose, and see the whole block; Space pauses the model, never the camera;
+- **fly** it with W A S D and E Q, drag to look (L for mouse look), Shift to brake; the camera follows the craft, or
+  V looks out of it; F inspects the selection while the craft waits, R returns to it, M shows the whole block; Space
+  pauses the model, never the craft;
+- **point** at anything — any branch lights its whole neuron and says what it is. One neuron is a real one: a
+  reconstructed human cell from the H01 release (CC BY 4.0), shown as structure with no model attached; the rest are
+  generated shapes, and the context cells say they have no model;
 - **change one cause** in a five-cell circuit — when an input fires, or whether an inhibitory connection is on — and
-  see why the cell they both reach does or does not fire; replay, compare with the baseline, undo;
-- **look from outside** through a recording probe (microvolts, a synthetic observation — not the millivolts inside);
+  see why the cell they both reach does or does not fire; replay, compare with the baseline, undo, redo;
+- **record from outside**: take contacts P1 and P2 in hand, put them down, drag or step one to an exact place and
+  leave the other — the same spikes, the same noise, a different recording (microvolts: a synthetic observation, not
+  the millivolts inside). They stay where you put them, also after a reload;
 - **decode**: at the electrode array your keys become a synthetic intended velocity, a fitted decoder moves a cursor,
   you lose three contacts and get control back by switching decoder or recalibrating;
 - **go back out** to the brain without losing the experiment.
 
-Every signal there is computed by a stated model and every cell shape is generated; nothing is a recording and nothing
-reads a brain. Record of the build, its limits and its measurements: [`docs/WORLD.md`](docs/WORLD.md). Whether it is
-enjoyable, and whether anyone learns from it, has not been tested: nobody has played it yet.
+Every signal there is computed by a stated model; nothing is a recording and nothing reads a brain. Record of the
+build, its limits and its measurements: [`docs/EMBODIED.md`](docs/EMBODIED.md) (and, for the journey as a whole,
+[`docs/WORLD.md`](docs/WORLD.md)). Whether it is enjoyable, and whether anyone learns from it, has not been tested:
+nobody has played it yet.
 
 The three prototypes it was built from are kept as development aids at `#/world/dev`
 ([`docs/NEUROVERSE.md`](docs/NEUROVERSE.md)).
@@ -109,6 +116,7 @@ public/atlas/   atlas + specimen assets + licence                            doc
 ## Read next
 
 - `docs/HANDOVER.md` — what was built, what was reused, test results, limitations, next task.
+- `docs/EMBODIED.md` — the current world: the craft you fly, pointing at whole neurons, the reconstructed H01 neuron (CC BY 4.0), the two recording contacts you place and move; what was checked and what is untested.
 - `docs/WORLD.md` — the integrated world at `#/world`: what was built, the design decision, what was checked and measured, what is untested; `docs/evidence/world/` holds the test report, performance sample, screenshots and the recorded walkthrough.
 - `docs/NEUROVERSE.md` — the three prototype toys the world was built from: what was built, the models and their limits, what the checks found, what is still untested; `docs/NEUROVERSE_PLAYTEST.md` is the sheet for playing them; `docs/evidence/neuroverse/` holds the test report, performance sample, screenshots and recordings.
 - `docs/BCI_EXPERIMENT.md` — the interactive BCI experiment: models, sources, assumptions, acceptance results, limits; `docs/evidence/experiment/` holds its test report and screenshots.

@@ -5,11 +5,19 @@
 // reconstructions of real neurons, they are not the cells at any atlas location, and no model in this app computes
 // anything along them: the LIF cells are single points. The positions of the BODIES are the models' own coordinates.
 import { BufferAttribute, BufferGeometry, Vector3 } from 'three';
-import { mulberry32 } from '../experiment/model/rng';
-import type { SceneCell } from './runtime';
+import { mulberry32 } from '../experiment/model/rng.ts';
+import type { SceneCell } from './runtime.ts';
 
-interface Build { pos: number[]; nor: number[]; cell: number[]; kind: number[]; along: number[]; tip: number[]; idx: number[] }
-const newBuild = (): Build => ({ pos: [], nor: [], cell: [], kind: [], along: [], tip: [], idx: [] });
+interface Build {
+  pos: number[]; nor: number[]; cell: number[]; kind: number[]; along: number[]; tip: number[]; idx: number[];
+  /** Picking stand-ins of the cell being built: capsules along every branch (7 numbers each) and the part each belongs to. */
+  caps: number[]; capPart: number[]; part: number;
+}
+const newBuild = (): Build => ({ pos: [], nor: [], cell: [], kind: [], along: [], tip: [], idx: [], caps: [], capPart: [], part: 3 });
+/** Names of the parts of a drawn neuron (what a hit on one of its capsules is called). */
+export const PART_NAMES = ['cell body', 'apical dendrite', 'basal dendrite', 'dendrite', 'axon', 'axon initial segment'] as const;
+export interface CellProxy { segs: Float32Array; parts: Uint8Array }
+const takeProxy = (b: Build): CellProxy => { const p = { segs: Float32Array.from(b.caps), parts: Uint8Array.from(b.capPart) }; b.caps = []; b.capPart = []; return p; };
 export interface Detail { somaU: number; somaV: number; radial: number; segPer100: number; branches: number }
 export const FOREGROUND: Detail = { somaU: 36, somaV: 24, radial: 9, segPer100: 13, branches: 1 };
 export const BACKDROP: Detail = { somaU: 12, somaV: 8, radial: 4, segPer100: 4, branches: 0.5 };
@@ -47,9 +55,13 @@ function tube(b: Build, pts: Vector3[], r0: number, r1: number, cell: number, ki
     return out.set(c('x'), c('y'), c('z'));
   };
   const p = new Vector3(), q = new Vector3(), tan = new Vector3(), nrm = new Vector3(1, 0, 0), bin = new Vector3();
+  let px = 0, py = 0, pz = 0, pr = 0;
   for (let s = 0; s <= segs; s++) {
     const t = s / segs;
-    at(t, p); at(Math.min(1, t + 0.01), q); tan.copy(q).sub(at(Math.max(0, t - 0.01), q)).normalize();
+    at(t, p);
+    // the picking capsule from the previous ring to this one: the same centre line and calibre as the mesh
+    { const rr = r0 + (r1 - r0) * Math.pow(t, 0.8); if (s > 0) { b.caps.push(px, py, pz, p.x, p.y, p.z, Math.max(pr, rr)); b.capPart.push(b.part); } px = p.x; py = p.y; pz = p.z; pr = rr; }
+    at(Math.min(1, t + 0.01), q); tan.copy(q).sub(at(Math.max(0, t - 0.01), q)).normalize();
     // carry the frame along the curve: remove the tangent's part from the previous normal
     nrm.addScaledVector(tan, -nrm.dot(tan));
     if (nrm.lengthSq() < 1e-6) { nrm.set(Math.abs(tan.x) > 0.9 ? 0 : 1, Math.abs(tan.x) > 0.9 ? 1 : 0, 0); nrm.addScaledVector(tan, -nrm.dot(tan)); }
@@ -96,6 +108,7 @@ function buildCell(b: Build, c: SceneCell, index: number, d: Detail, seed: numbe
   const rnd = mulberry32(seed), C = new Vector3(c.pos[0], c.pos[1], c.pos[2]), r = c.radius, some = (p: number) => rnd() < p * d.branches;
   if (c.shape === 'pyramidal') {
     soma(b, C, r, 1.22, true, index, d, rnd() * 6);
+    b.part = 1;
     // apical dendrite: up towards the surface, with oblique branches and a tuft
     const n = 5, H = 190 + rnd() * 130, trunk = [C.clone().add(new Vector3(0, r * 1.05, 0))];
     for (let k = 1; k <= n; k++) trunk.push(trunk[k - 1].clone().add(new Vector3((rnd() - 0.5) * 24, H / n, (rnd() - 0.5) * 24)));
@@ -107,17 +120,20 @@ function buildCell(b: Build, c: SceneCell, index: number, d: Detail, seed: numbe
     }
     for (let k = 0; k < 3; k++) { const az = (k / 3) * 2 * Math.PI + rnd(), dir = new Vector3(Math.cos(az) * 0.8, 0.75, Math.sin(az) * 0.8).normalize(); branch(b, trunk[n], dir, 45 + rnd() * 45, 0.95, 0.4, index, 1, 0.75, d, rnd, false); }
     // basal dendrites
+    b.part = 2;
     const nb = d.branches >= 1 ? 4 + Math.floor(rnd() * 2.2) : 3;
     for (let k = 0; k < nb; k++) {
       const az = (k / nb) * 2 * Math.PI + rnd() * 0.8, el = -0.15 - rnd() * 0.75, dir = new Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));
       branch(b, C.clone().addScaledVector(dir, r * 0.85), dir, 60 + rnd() * 55, 1.7, 0.48, index, 1, 0.05, d, rnd, d.branches >= 1 && rnd() < 0.75);
     }
     // axon: thin, straight down
+    b.part = 4;
     const ax = [C.clone().add(new Vector3(0, -r * 1.1, 0))];
     for (let k = 1; k <= 3; k++) ax.push(ax[k - 1].clone().add(new Vector3((rnd() - 0.5) * 16, -(40 + rnd() * 22), (rnd() - 0.5) * 16)));
     tube(b, ax, 1.0, 0.5, index, 2, 0.05, 0.7, d, true);
   } else {
     soma(b, C, r, 1.0, false, index, d, rnd() * 6);
+    b.part = 3;
     const nd = d.branches >= 1 ? 6 + Math.floor(rnd() * 2.5) : 4;
     for (let k = 0; k < nd; k++) {
       const u = rnd() * 2 - 1, az = rnd() * 2 * Math.PI, s = Math.sqrt(1 - u * u), dir = new Vector3(s * Math.cos(az), u, s * Math.sin(az));
@@ -139,11 +155,14 @@ function finish(b: Build): BufferGeometry {
   return g;
 }
 
-/** One geometry for the cells a toy's model owns. Vertex attribute aCell = index into `cells`. */
-export function buildForeground(cells: readonly SceneCell[], seed = 1): BufferGeometry {
-  const b = newBuild();
-  cells.forEach((c, i) => buildCell(b, c, i, FOREGROUND, 7000 + seed * 131 + i * 17));
-  return finish(b);
+/**
+ * One geometry for the cells a scene's models own, and the picking stand-ins of each cell's branches (in the order of
+ * `cells`). Vertex attribute aCell = index into `cells`.
+ */
+export function buildForeground(cells: readonly SceneCell[], seed = 1): { geometry: BufferGeometry; proxies: CellProxy[] } {
+  const b = newBuild(), proxies: CellProxy[] = [];
+  cells.forEach((c, i) => { buildCell(b, c, i, FOREGROUND, 7000 + seed * 131 + i * 17); proxies.push(takeProxy(b)); });
+  return { geometry: finish(b), proxies };
 }
 
 /**
@@ -179,17 +198,21 @@ export interface Box { min: [number, number, number]; max: [number, number, numb
  * Backdrop cells scattered through a block of tissue, never nearer than a sphere's radius to any of the `avoid`
  * points (the model's own cells, the electrodes) and never on top of each other. They take part in nothing.
  */
-export function buildBackdropBlock(count: number, box: Box, avoid: ReadonlyArray<{ p: readonly number[]; r: number }>, seed = 4242): { geometry: BufferGeometry; bodies: Array<[number, number, number]> } {
-  const b = newBuild(), rnd = mulberry32(seed), bodies: Array<[number, number, number]> = [];
+export function buildBackdropBlock(count: number, box: Box, avoid: ReadonlyArray<{ p: readonly number[]; r: number }>, seed = 4242, firstIndex = 0): { geometry: BufferGeometry; bodies: Array<[number, number, number]>; radii: number[]; shapes: Array<'pyramidal' | 'multipolar'>; proxies: CellProxy[] } {
+  const b = newBuild(), rnd = mulberry32(seed), bodies: Array<[number, number, number]> = [], radii: number[] = [], shapes: Array<'pyramidal' | 'multipolar'> = [], proxies: CellProxy[] = [];
   let guard = 0;
   while (bodies.length < count && guard++ < count * 60) {
     const x = box.min[0] + rnd() * (box.max[0] - box.min[0]), y = box.min[1] + rnd() * (box.max[1] - box.min[1]), z = box.min[2] + rnd() * (box.max[2] - box.min[2]);
     if (avoid.some((a) => Math.hypot(a.p[0] - x, a.p[1] - y, a.p[2] - z) < a.r)) continue;
     if (bodies.some((p) => Math.hypot(p[0] - x, p[1] - y, p[2] - z) < 52)) continue;
     bodies.push([x, y, z]);
-    buildCell(b, { id: '', label: '', pos: [x, y, z], radius: 7.5 + rnd() * 3, tint: 'far', shape: rnd() < 0.8 ? 'pyramidal' : 'multipolar' }, -1, BACKDROP, 90000 + bodies.length * 13);
+    const radius = 7.5 + rnd() * 3, shape = rnd() < 0.8 ? 'pyramidal' as const : 'multipolar' as const;
+    radii.push(radius); shapes.push(shape);
+    // aCell = the context cell's own number, so that pointing at any part of it can light the whole of it
+    buildCell(b, { id: '', label: '', pos: [x, y, z], radius, tint: 'far', shape }, firstIndex + bodies.length - 1, BACKDROP, 90000 + seed * 7 + bodies.length * 13);
+    proxies.push(takeProxy(b));
   }
-  return { geometry: finish(b), bodies };
+  return { geometry: finish(b), bodies, radii, shapes, proxies };
 }
 
 /** Fine fibres (line segments) wandering through a block: the grain of the tissue between the cells. Scenery. */
@@ -224,4 +247,75 @@ export function buildMotes(count: number, box: Box, seed = 7): BufferGeometry {
   g.setAttribute('aSeed', new BufferAttribute(sd, 1));
   g.computeBoundingSphere();
   return g;
+}
+
+// ── a reconstructed cell, from its skeleton ─────────────────────────────────────────────────────────────────────
+/** The node arrays of a morphology asset (public/world/h01-exemplar.json): positions in µm in the cell's own frame. */
+export interface SkeletonNodes { x: number[]; y: number[]; z: number[]; r: number[]; parent: number[]; label: number[]; path: number[] }
+/** Calibre is never drawn thinner than this (µm), so that the finest processes stay visible. A display floor only. */
+export const SKELETON_MIN_RADIUS_UM = 0.24;
+const SKELETON_PART = [4, 3, 5, 0];              // asset label (axon, dendrite, initial segment, body) → PART_NAMES index
+const SKELETON_KIND = [2, 1, 2, 0];              // … → the material's kind (0 body, 1 dendrite, 2 axon)
+
+/**
+ * Geometry and picking stand-ins for a reconstructed cell: a sphere of the skeleton's own radius for the cell body and
+ * a tube through every stretch of the skeleton at the skeleton's own calibre (floored for visibility). Nothing is
+ * smoothed, grown or mirrored; a long stretch that simply stops (where the sample ended) is drawn fading out.
+ */
+export function buildSkeletonCell(n: SkeletonNodes, index: number, origin: readonly [number, number, number]): { geometry: BufferGeometry; proxy: CellProxy } {
+  const b = newBuild(), N = n.x.length, kids: number[][] = Array.from({ length: N }, () => []);
+  for (let i = 1; i < N; i++) kids[n.parent[i]].push(i);
+  const P = (i: number, out: Vector3) => out.set(origin[0] + n.x[i], origin[1] + n.y[i], origin[2] + n.z[i]);
+  const R = (i: number) => Math.max(SKELETON_MIN_RADIUS_UM, n.r[i]);
+  // the cell body
+  const C = P(0, new Vector3());
+  soma(b, C, n.r[0], 1, false, index, { somaU: 40, somaV: 26, radial: 7, segPer100: 13, branches: 1 }, 2.1);
+  // every maximal unbranched stretch: from a branch point (or the body) through single children to a tip or the next branch
+  const a = new Vector3(), c = new Vector3(), tan = new Vector3(), nrm = new Vector3(), bin = new Vector3(), tmp = new Vector3();
+  const stack: Array<[number, number]> = kids[0].map((k) => [0, k]);
+  while (stack.length) {
+    const [from, first] = stack.pop()!;
+    const chain = [from, first];
+    while (kids[chain[chain.length - 1]].length === 1) chain.push(kids[chain[chain.length - 1]][0]);
+    const last = chain[chain.length - 1];
+    for (const k of kids[last]) stack.push([last, k]);
+    const tipEnd = kids[last].length === 0;
+    let len = 0;
+    for (let k = 1; k < chain.length; k++) len += P(chain[k], a).distanceTo(P(chain[k - 1], c));
+    const lab = n.label[first], kind = SKELETON_KIND[lab] ?? 1, part = SKELETON_PART[lab] ?? 3;
+    const thick = Math.max(R(first), R(last)) > 0.5, RAD = thick ? 7 : 4, base = b.pos.length / 3;
+    // a stretch that stops after more than a few µm did not end there in the tissue: the sample did
+    const fades = tipEnd && len > 9;
+    nrm.set(0.31, 0.87, 0.38);
+    let run = 0;
+    for (let k = 0; k < chain.length; k++) {
+      const i = chain[k];
+      P(i, a);
+      // from the body, a branch starts at the body's surface rather than at its centre
+      if (k === 0 && from === 0) { P(first, c); tmp.copy(c).sub(a).normalize(); a.addScaledVector(tmp, Math.min(n.r[0] * 0.92, a.distanceTo(c) * 0.9)); }
+      if (k > 0) run += a.distanceTo(P(chain[k - 1], c));
+      // tangent: along the neighbours
+      P(chain[Math.max(0, k - 1)], c); P(chain[Math.min(chain.length - 1, k + 1)], tan); tan.sub(c);
+      if (tan.lengthSq() < 1e-9) tan.set(0, 1, 0); tan.normalize();
+      nrm.addScaledVector(tan, -nrm.dot(tan));
+      if (nrm.lengthSq() < 1e-6) { nrm.set(Math.abs(tan.x) > 0.9 ? 0 : 1, Math.abs(tan.x) > 0.9 ? 1 : 0, 0); nrm.addScaledVector(tan, -nrm.dot(tan)); }
+      nrm.normalize(); bin.crossVectors(tan, nrm);
+      const r = k === 0 && from === 0 ? Math.max(R(first), Math.min(n.r[0] * 0.3, R(first) * 2.2)) : R(i);
+      for (let j = 0; j < RAD; j++) {
+        const ang = (j / RAD) * 2 * Math.PI, cx = Math.cos(ang), sx = Math.sin(ang), nx = nrm.x * cx + bin.x * sx, ny = nrm.y * cx + bin.y * sx, nz = nrm.z * cx + bin.z * sx;
+        b.pos.push(a.x + nx * r, a.y + ny * r, a.z + nz * r); b.nor.push(nx, ny, nz); b.cell.push(index); b.kind.push(kind);
+        b.along.push(Math.min(1, n.path[i] / 260)); b.tip.push(fades ? run / len : 0);
+      }
+      if (k > 0) { P(chain[k - 1], c); b.caps.push(c.x, c.y, c.z, a.x, a.y, a.z, Math.max(R(i), R(chain[k - 1]))); b.capPart.push(part); }
+    }
+    for (let k = 0; k + 1 < chain.length; k++) for (let j = 0; j < RAD; j++) { const p0 = base + k * RAD + j, p1 = base + k * RAD + ((j + 1) % RAD); b.idx.push(p0, p1, p0 + RAD, p1, p1 + RAD, p0 + RAD); }
+    if (tipEnd) {
+      // close the end
+      const tip = b.pos.length / 3; P(last, a);
+      b.pos.push(a.x, a.y, a.z); b.nor.push(tan.x, tan.y, tan.z); b.cell.push(index); b.kind.push(kind); b.along.push(Math.min(1, n.path[last] / 260)); b.tip.push(fades ? 1 : 0);
+      const ring = base + (chain.length - 1) * RAD;
+      for (let j = 0; j < RAD; j++) b.idx.push(ring + j, ring + ((j + 1) % RAD), tip);
+    }
+  }
+  return { geometry: finish(b), proxy: takeProxy(b) };
 }

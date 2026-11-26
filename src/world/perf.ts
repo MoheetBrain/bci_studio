@@ -7,9 +7,13 @@ let nFrames = 0, nResp = 0, last = 0, started = 0, recording = false;
 const pending: number[] = [];
 const work = new Float32Array(N);
 let nWork = 0, workT0 = 0;
+const picks = new Float32Array(8000);
+let nPick = 0;
 
 export const perf = {
-  start(): void { nFrames = 0; nResp = 0; nWork = 0; last = 0; pending.length = 0; started = performance.now(); recording = true; },
+  /** How long one "what is aimed at" query took (the whole scene's stand-ins, every neuron and branch). */
+  pick(ms: number): void { if (recording && nPick < picks.length) picks[nPick++] = ms; },
+  start(): void { nFrames = 0; nResp = 0; nWork = 0; nPick = 0; last = 0; pending.length = 0; started = performance.now(); recording = true; },
   /** Around everything the page does for one frame (all canvases): main-thread time, NOT the GPU's. */
   begin(): void { workT0 = performance.now(); },
   end(): void { if (recording && workT0 && nWork < N) work[nWork++] = performance.now() - workT0; },
@@ -34,6 +38,7 @@ export const perf = {
       frameMs: { median: q(frames, nFrames, 0.5), p95: q(frames, nFrames, 0.95), p99: q(frames, nFrames, 0.99), worst: +worst.toFixed(1), over100ms: over100 },
       responseMs: { n: nResp, median: q(responses, nResp, 0.5), p95: q(responses, nResp, 0.95) },
       workMs: { n: nWork, median: q(work, nWork, 0.5), p95: q(work, nWork, 0.95), p99: q(work, nWork, 0.99) },
+      pickMs: { n: nPick, median: q(picks, nPick, 0.5), p95: q(picks, nPick, 0.95), p99: q(picks, nPick, 0.99) },
       jsHeapMB: mem ? +(mem.usedJSHeapSize / 1048576).toFixed(1) : null,
       visible: typeof document !== 'undefined' ? document.visibilityState : 'unknown',
     };
